@@ -1,9 +1,5 @@
-import clause prover_state
+import clause prover_state utils
 open tactic
-
-meta_definition tactic_of_option {A} : option A → tactic A
-| none := failed
-| (some a) := return a
 
 -- set_option new_elaborator true
 -- c1 : ... ¬a ...
