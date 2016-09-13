@@ -1,51 +1,36 @@
-import init.meta.tactic
-import clausifier
-open expr tactic
+import clause prover_state
+open tactic
 
-meta_definition mk_resolvent : expr → nat → expr → nat → tactic expr
-| a 0 b 0 :=
-  do ai ← clause_info_of_proof a,
-  match ai with
-  | clause_info.cons bnd lit rest := do
-    t ← infer_type rest,
-    if is_false t = ff then fail "non-false tail" else return (app b a)
-  | clause_info.tail t := fail "resolution against tail"
-  end
-| a (m+1) b n :=
-  do ai ← clause_info_of_proof a,
-  match ai with
-  | clause_info.cons bnd lit rest := do
-    sub ← mk_resolvent rest m b n,
-    return (lambda_local_const bnd sub)
-  | _ := fail "not a cons"
-  end
-| a m b (n+1) :=
-  do bi ← clause_info_of_proof b,
-  match bi with
-  | clause_info.cons bnd lit rest := do
-    sub ← mk_resolvent a m rest n,
-    return (lambda_local_const bnd sub)
-  | _ := fail "not a cons"
-  end
+meta_definition tactic_of_option {A} : option A → tactic A
+| none := failed
+| (some a) := return a
 
-meta_definition resolve_idx (a : name) (ai : nat) (b : name) (bi : nat) (res : name) : tactic unit := do
-ae ← get_local a,
-be ← get_local b,
-rese ← mk_resolvent ae ai be bi,
-rest ← infer_type rese,
-assertv res rest rese
+-- set_option new_elaborator true
+-- c1 : ... ¬a ...
+-- c2 : ...  a ...
+meta_definition try_resolve (c1 c2 : cls) (i1 i2 : nat) : tactic cls := do
+qf1 ← cls.open_metan c1 (cls.num_quants c1),
+qf2 ← cls.open_metan c2 (cls.num_quants c2),
+unify (cls.lit.formula (cls.get_lit qf1.1 i1)) (cls.lit.formula (cls.get_lit qf2.1 i2)),
+op2 ← cls.open_constn qf2.1 (cls.num_lits qf2.1),
+op1 ← cls.open_constn qf1.1 i1,
+a_in_c2 ← tactic_of_option (list.nth op2.2 i2),
+c1_wo_not_a ← return $ cls.inst op1.1 (cls.prf (cls.close_constn op2.1 [a_in_c2])),
+bs ← sort_and_constify_metas (qf1.2 ++ qf2.2),
+qf' ← cls.inst_mvars $ cls.close_constn c1_wo_not_a (list_remove op2.2 i2 ++ op1.2),
+trace (cls.prf qf'),
+trace (cls.type qf'),
+trace bs,
+return $ cls.close_constn qf' bs
 
-example {a b} : (a → false) → (¬a → b) → b :=
-λna nab, nab na
-
-example {a b} : (¬a → false) → (a → b → false) → (b → false) :=
-_
-
-example {a b c} : (a → b) → (¬a → c) → (¬b → ¬c → false) :=
-λab nac nb nc, absurd (λx, nb (ab x)) (λx, nc (nac x))
-
-example {a b} : ¬(¬a ∨ b) ∨ (a → b) :=
-by do clausify_target,
-  resolve_idx `cls_3 0 `cls_1 1 `cls_4,
-  resolve_idx `cls_4 0 `cls_2 0 `cls_5,
-  assumption
+example (i : Type) (p : i → Prop) (f : i → i)
+  (cls : ∀x, p x → ¬p (f x) → false) : true :=
+by do
+prf ← get_local `cls,
+type ← infer_type prf,
+c ← return $ cls.mk 1 2 prf type,
+c' ← try_resolve c c 1 0,
+c'' ← try_resolve c' c' 1 0,
+trace (cls.prf c''),
+trace (cls.type c''),
+mk_const ``true.intro >>= apply
