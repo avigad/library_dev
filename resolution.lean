@@ -14,7 +14,7 @@ a_in_c2 ← monadfail_of_option (list.nth op2.2 i2),
 c1_wo_not_a ← return $ cls.inst op1.1 (cls.prf (cls.close_constn op2.1 [a_in_c2])),
 bs ← sort_and_constify_metas (qf1.2 ++ qf2.2),
 qf' ← cls.inst_mvars $ cls.close_constn c1_wo_not_a (list_remove op2.2 i2 ++ op1.2),
-return $ cls.close_constn qf' bs
+cls.inst_mvars $ cls.close_constn qf' bs
 
 /-
 example (i : Type) (p : i → Prop) (f : i → i)

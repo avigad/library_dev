@@ -75,7 +75,7 @@ meta_definition open_metan (c : cls) : nat → tactic (cls × list expr)
 meta_definition close_constn (c : cls) (bs : list expr) : cls :=
 match bs with
 | nil := c
-| b::bs' := close_constn (close_const c b) bs'
+| b::bs' := close_const (close_constn c bs') b
 end
 
 meta_definition inst_mvars (c : cls) : tactic cls := do
@@ -122,6 +122,14 @@ list.filter (λl, p (get_lit c l) = tt) (range (num_lits c))
 
 meta_definition get_lits (c : cls) : list lit :=
 map (get_lit c) (range (num_lits c))
+
+set_option new_elaborator true
+meta_definition normalize (c : cls) : tactic cls := do
+opened  ← open_constn c (num_quants c + num_lits c),
+lconsts_in_types ← return $ contained_lconsts_list (list.map local_type opened.2),
+quants' ← return $ filter (λlc, rb_map.contains lconsts_in_types (local_uniq_name lc) = tt) opened.2,
+lits' ← return $ filter (λlc, rb_map.contains lconsts_in_types (local_uniq_name lc) = ff) opened.2,
+@return tactic tactic_is_monad _ $ close_constn opened.1 (quants' ++ lits')
 
 end cls
 

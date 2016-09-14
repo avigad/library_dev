@@ -90,15 +90,13 @@ match l with
 | _ := return none
 end
 
-lemma imp_r {a b c} : (¬(a → b) → c) → (a → ¬b → c) := λnabc a nb, nabc (λab, absurd (ab a) nb)
-meta_definition inf_imp_r (l : cls.lit) (c : cls) : tactic (option (list cls)) :=
+lemma all_r {a b c} : (¬(∀x:a, b x) → c) → (∀x:a, ¬b x → c) := λnabc a nb, nabc (λab, absurd (ab a) nb)
+meta_definition inf_all_r (l : cls.lit) (c : cls) : tactic (option (list cls)) :=
 match l with
-| cls.lit.pos (pi _ _ a b) :=
-  if has_var b = ff then do
+| cls.lit.pos (pi n bi a b) := do
     nb ← mk_mapp ``not [some b],
-    prf' ← mk_mapp ``imp_r [none, none, none, some (cls.prf c)],
-    return $ some [cls.mk 0 (cls.num_lits c + 1) prf' (imp a (imp nb (binding_body (cls.type c))))]
-  else return none
+    prf' ← mk_mapp ``all_r [none, none, none, some (cls.prf c)],
+    return $ some [cls.mk 1 (cls.num_lits c) prf' (pi n bi a (imp nb (binding_body (cls.type c))))]
 | _ := return none
 end
 
@@ -127,7 +125,7 @@ meta_definition clausification_rules : list head_lit_rule :=
 [ inf_false_r, inf_true_l, inf_not_r,
   inf_and_l, inf_and_r,
   inf_or_l, inf_or_r,
-  inf_imp_l, inf_imp_r ]
+  inf_imp_l, inf_all_r ]
 
 meta_definition clausify_at (c : cls) (i : nat) : tactic (option (list cls)) :=
 do opened ← cls.open_constn c (cls.num_quants c + i),

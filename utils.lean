@@ -83,4 +83,26 @@ definition foldl {A B} (f : B → A → B) : B → list A → B
 | b [] := b
 | b (a::ass) := foldl (f b a) ass
 
+private meta_definition contained_lconsts' : expr → rb_map name unit → rb_map name unit
+| (var _) m := m
+| (sort _) m := m
+| (const _ _) m := m
+| (meta _ t) m := contained_lconsts' t m
+| (local_const uniq pp bi t) m := contained_lconsts' t (rb_map.insert m uniq ())
+| (app a b) m := contained_lconsts' a (contained_lconsts' b m)
+| (lam _ _ d b) m := contained_lconsts' d (contained_lconsts' b m)
+| (pi _ _ d b) m := contained_lconsts' d (contained_lconsts' b m)
+| (elet _ t v b) m := contained_lconsts' t (contained_lconsts' v (contained_lconsts' b m))
+| (macro _ _ _) m := m
+
+meta_definition contained_lconsts (e : expr) : rb_map name unit :=
+contained_lconsts' e (rb_map.mk name unit)
+
+meta_definition contained_lconsts_list (es : list expr) : rb_map name unit :=
+foldl (λlcs e, contained_lconsts' e lcs) (rb_map.mk name unit) es
+
+meta_definition local_type : expr → expr
+| (local_const _ _ _ t) := t
+| e := e
+
 end list

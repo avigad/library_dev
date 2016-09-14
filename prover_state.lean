@@ -102,9 +102,10 @@ resolution_prover_of_tactic (get_local id >>= clear),
 @monad.bind resolution_prover _ _ _ stateT.read (λstate,
 stateT.write (mk (rb_map.erase (active state) id) (passive state) (newly_derived state)))
 
-meta_definition add_inferred (c : cls) : resolution_prover unit :=
+meta_definition add_inferred (c : cls) : resolution_prover unit := do
+c' ← resolution_prover_of_tactic (cls.normalize c),
 @monad.bind resolution_prover _ _ _ stateT.read (λstate,
-stateT.write (mk (active state) (passive state) (c :: newly_derived state)))
+stateT.write (mk (active state) (passive state) (c' :: newly_derived state)))
 
 meta_definition inference :=
 active_cls → resolution_prover unit
