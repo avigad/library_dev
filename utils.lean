@@ -35,6 +35,11 @@ definition list_remove {A} : list A → nat → list A
 | (x::xs) 0     := xs
 | (x::xs) (i+1) := x :: list_remove xs i
 
+definition list_orb : list bool → bool
+| (tt::xs) := tt
+| (ff::xs) := list_orb xs
+| [] := ff
+
 meta_definition get_metas : expr → list expr
 | (var _) := []
 | (sort _) := []

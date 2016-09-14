@@ -140,6 +140,6 @@ first_some (map (clausify_at c) (range (cls.num_lits c)))
 meta_definition clausification_inference : inference := λgiven, do
 one_step_clausified ← resolution_prover_of_tactic $ clausification_inference_core (active_cls.c given),
 match one_step_clausified with
-| some simpld := return (simpld, [active_cls.id given])
-| none := return ([], [])
+| some simpld := do forM' simpld add_inferred, remove_redundant (active_cls.id given)
+| none := return ()
 end

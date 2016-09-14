@@ -19,6 +19,43 @@ try_subsume_core (cls.get_lits small_open.1) (cls.get_lits large_open.1)
 meta_definition does_subsume (small large : cls) : tactic bool :=
 (try_subsume small large >> return tt) <|> return ff
 
+meta_definition any_tt (active : rb_map name active_cls) (pred : active_cls → tactic bool) : tactic bool :=
+rb_map.fold active (return ff) $ λk a cont, do
+  v ← pred a, if v = tt then return tt else cont
+
+meta_definition forward_subsumption : inference := redundancy_inference $ λgiven, do
+active ← get_active,
+resolution_prover_of_tactic $ any_tt active (λa, does_subsume (active_cls.c a) (active_cls.c given))
+
+meta_definition forward_subsumption_pre : resolution_prover unit := preprocessing_rule $ λnew, do
+active ← get_active,
+filterM (λn, resolution_prover_of_tactic $
+  any_tt active (λa, does_subsume (active_cls.c a) n)) new
+
+meta_definition subsumption_interreduction : list cls → tactic (list cls)
+| (c::cs) := do
+  which_cs_subsume_c ← @mapM tactic _ _ _ (λd, does_subsume d c) cs,
+  if list_orb which_cs_subsume_c = tt then
+    subsumption_interreduction cs
+  else do
+    cs_not_subsumed_by_c ← filterM (λd, do ss ← does_subsume c d, return (bool.bnot ss)) cs,
+    cs' ← subsumption_interreduction cs_not_subsumed_by_c,
+    return (c::cs')
+| [] := return []
+
+meta_definition subsumption_interreduction_pre : resolution_prover unit :=
+preprocessing_rule $ λnew, resolution_prover_of_tactic (subsumption_interreduction new)
+
+meta_definition keys_where_tt (active : rb_map name active_cls) (pred : active_cls → tactic bool) : tactic (list name) :=
+@rb_map.fold _ _ (tactic (list name)) active (return []) $ λk a cont, do
+  v ← pred a, rest ← cont, return $ if v = tt then k::rest else rest
+
+meta_definition backward_subsumption : inference := λgiven, do
+active ← get_active,
+ss ← resolution_prover_of_tactic $
+  keys_where_tt active (λa, does_subsume (active_cls.c given) (active_cls.c a)),
+@forM' resolution_prover _ _ _ ss remove_redundant
+
 set_option new_elaborator true
 example
   (i : Type)
@@ -29,38 +66,18 @@ example
   (prf3 : ∀x, p (f x) → ¬p x → false)
   : true :=
 by do
-  prf1 ← get_local `prf1, ty1 ← infer_type prf1, cls1 ← return $ cls.mk 1 1 prf1 ty1,
-  prf2 ← get_local `prf2, ty2 ← infer_type prf2, cls2 ← return $ cls.mk 1 2 prf2 ty2,
-  prf3 ← get_local `prf3, ty3 ← infer_type prf3, cls3 ← return $ cls.mk 1 2 prf3 ty3,
-  forM' [cls1,cls2,cls3] (λc1, forM' [cls1,cls2,cls3] (λc2, do
-    trace "Subsuming:",
-    trace (cls.type c1),
-    trace (cls.type c2),
-    does_subsume c1 c2 >>= trace,
-    trace ""
-  )),
-  mk_const ``true.intro >>= apply
+prf1 ← get_local `prf1, ty1 ← infer_type prf1, cls1 ← return $ cls.mk 1 1 prf1 ty1,
+prf2 ← get_local `prf2, ty2 ← infer_type prf2, cls2 ← return $ cls.mk 1 2 prf2 ty2,
+prf3 ← get_local `prf3, ty3 ← infer_type prf3, cls3 ← return $ cls.mk 1 2 prf3 ty3,
+forM' [cls1,cls2,cls3] (λc1, forM' [cls1,cls2,cls3] (λc2, do
+  trace "Subsuming:",
+  trace (cls.type c1),
+  trace (cls.type c2),
+  does_subsume c1 c2 >>= trace,
+  trace ""
+)),
+trace "Subsumption interreduction:",
+irrd ← subsumption_interreduction [cls1,cls2,cls3],
+trace (map cls.type irrd),
+mk_const ``true.intro >>= apply
 set_option new_elaborator false
-
-meta_definition any_tt (active : rb_map name active_cls) (pred : active_cls → tactic bool) : tactic bool :=
-rb_map.fold active (return ff) $ λk a cont, do
-  v ← pred a, if v = tt then return tt else cont
-
-meta_definition forward_subsumption : inference := redundancy_inference $ λgiven, do
-active ← get_active,
-resolution_prover_of_tactic $ any_tt active (λa, does_subsume (active_cls.c a) (active_cls.c given))
-
-meta_definition forward_subsumption_new : preprocessing_rule := λnew, do
-active ← get_active,
-filterM (λn, resolution_prover_of_tactic $
-  any_tt active (λa, does_subsume (active_cls.c a) n)) new
-
-meta_definition keys_where_tt (active : rb_map name active_cls) (pred : active_cls → tactic bool) : tactic (list name) :=
-@rb_map.fold _ _ (tactic (list name)) active (return []) $ λk a cont, do
-  v ← pred a, rest ← cont, return $ if v = tt then k::rest else rest
-
-meta_definition backward_subsumption : inference := λgiven, do
-active ← get_active,
-ss ← resolution_prover_of_tactic $
-  keys_where_tt active (λa, does_subsume (active_cls.c given) (active_cls.c a)),
-return ([], ss)

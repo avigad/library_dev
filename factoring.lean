@@ -35,10 +35,13 @@ by do
   mk_const ``true.intro >>= apply
 set_option new_elaborator false
 
-meta_definition factor : inference := take given, do
-factors ← resolution_prover_of_tactic $ @sequence tactic _ _ (do
+meta_definition try_infer_factor (c : cls) (i j : nat) : resolution_prover unit := do
+f ← resolution_prover_of_tactic (try_factor c i j),
+add_inferred f
+
+meta_definition factor : inference :=
+take given, @sequence resolution_prover _ _ (do
   i ← active_cls.selected given,
   j ← range (cls.num_lits (active_cls.c given)),
-  return ((do f ← try_factor (active_cls.c given) i j, return [f]) <|> return [])
-),
-return (join factors, [])
+  return $ @orelse resolution_prover _ _ (try_infer_factor (active_cls.c given) i j) (return ())
+) >> return ()
