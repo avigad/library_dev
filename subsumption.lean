@@ -8,7 +8,7 @@ else first (do
   j ← list_zipwithindex large,
   return (do
     unify_lit i.1 j.1,
-    try_subsume_core (list_remove small i.2) large))
+    try_subsume_core (list_remove small i.2) (list_remove large j.2)))
 
 -- FIXME: this is incorrect if a quantifier is unused
 meta_definition try_subsume (small large : cls) : tactic unit := do
@@ -25,12 +25,13 @@ rb_map.fold active (return ff) $ λk a cont, do
 
 meta_definition forward_subsumption : inference := redundancy_inference $ λgiven, do
 active ← get_active,
-resolution_prover_of_tactic $ any_tt active (λa, does_subsume (active_cls.c a) (active_cls.c given))
+resolution_prover_of_tactic $ any_tt active (λa, do
+  ss ← does_subsume (active_cls.c a) (active_cls.c given),
+  return (decidable.to_bool (ss = tt ∧ active_cls.id given ≠ active_cls.id a)))
 
 meta_definition forward_subsumption_pre : resolution_prover unit := preprocessing_rule $ λnew, do
-active ← get_active,
-filterM (λn, resolution_prover_of_tactic $
-  any_tt active (λa, does_subsume (active_cls.c a) n)) new
+active ← get_active, resolution_prover_of_tactic $ filterM (λn,
+  do ss ← any_tt active (λa, does_subsume (active_cls.c a) n), return (bool.bnot ss)) new
 
 meta_definition subsumption_interreduction : list cls → tactic (list cls)
 | (c::cs) := do
@@ -54,8 +55,9 @@ meta_definition backward_subsumption : inference := λgiven, do
 active ← get_active,
 ss ← resolution_prover_of_tactic $
   keys_where_tt active (λa, does_subsume (active_cls.c given) (active_cls.c a)),
-@forM' resolution_prover _ _ _ ss remove_redundant
+@forM' resolution_prover _ _ _ (list.filter (λid, id ≠ active_cls.id given) ss) remove_redundant
 
+/-
 set_option new_elaborator true
 example
   (i : Type)
@@ -81,3 +83,4 @@ irrd ← subsumption_interreduction [cls1,cls2,cls3],
 trace (map cls.type irrd),
 mk_const ``true.intro >>= apply
 set_option new_elaborator false
+-/

@@ -27,7 +27,7 @@ lemma not_r {a c} : (¬¬a → c) → (a → c) := λnnac a, nnac (clause_of_for
 meta_definition inf_not_r (l : cls.lit) (c : cls) : tactic (option (list cls)) :=
 match (cls.lit.is_pos l, is_not (cls.lit.formula l)) with
 | (tt, some a) := do
-  prf' ← mk_mapp ``true_l [none, some (cls.prf c)],
+  prf' ← mk_mapp ``not_r [none, none, some (cls.prf c)],
   return $ some [cls.mk 0 (cls.num_lits c) prf' (imp a (binding_body (cls.type c)))]
 | _ := return none
 end
@@ -132,7 +132,11 @@ meta_definition clausification_rules : list head_lit_rule :=
 meta_definition clausify_at (c : cls) (i : nat) : tactic (option (list cls)) :=
 do opened ← cls.open_constn c (cls.num_quants c + i),
 lit ← return $ cls.get_lit opened.1 0,
-first_some (map (λr, r lit opened.1) clausification_rules)
+maybe_clausified ← first_some (map (λr, r lit opened.1) clausification_rules),
+match maybe_clausified with
+| none := return none
+| some clsfd := return (some (map (λc', cls.close_constn c' opened.2) clsfd))
+end
 
 meta_definition clausification_inference_core (c : cls) : tactic (option (list cls)) :=
 first_some (map (clausify_at c) (range (cls.num_lits c)))

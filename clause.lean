@@ -9,6 +9,16 @@ structure cls :=
 
 namespace cls
 
+private meta_definition tactic_format (c : cls) : tactic format := do
+prf_fmt : format ← pp (prf c),
+type_fmt ← pp (type c),
+return $ prf_fmt ++ to_fmt " : " ++ type_fmt ++ to_fmt " (" ++
+  to_fmt (num_quants c) ++ to_fmt " quants, " ++ to_fmt (num_lits c) ++ to_fmt " lits)"
+
+attribute [instance]
+meta_definition cls_has_to_tactic_format : has_to_tactic_format cls :=
+has_to_tactic_format.mk tactic_format
+
 definition num_binders (c : cls) := num_quants c + num_lits c
 
 /- private -/ lemma clause_of_formula {p} : p → ¬p → false := λx y, y x
@@ -107,16 +117,8 @@ else
   lit.neg bind
 set_option new_elaborator false
 
-private meta_definition lits_where' (c : cls) (p : lit → bool) (i : nat) : list nat :=
-if i = cls.num_lits c then
-  []
-else if p (get_lit c i) = tt then
-  i :: lits_where' c p (i+1)
-else
-  lits_where' c p (i+1)
-
 meta_definition lits_where (c : cls) (p : lit → bool) : list nat :=
-lits_where' c p 0
+list.filter (λl, p (get_lit c l) = tt) (range (num_lits c))
 
 meta_definition get_lits (c : cls) : list lit :=
 map (get_lit c) (range (num_lits c))

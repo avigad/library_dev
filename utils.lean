@@ -1,7 +1,7 @@
 open tactic expr list
 
-meta_definition tactic_of_option {A} : option A → tactic A
-| none := failed
+meta_definition monadfail_of_option {m : Type → Type} [monad m] [alternative m] {A} : option A → m A
+| none := failure
 | (some a) := return a
 
 meta_definition imp (a b : expr) : expr :=
@@ -55,3 +55,32 @@ meta_definition get_metas : expr → list expr
 meta_definition get_meta_type : expr → expr
 | (meta _ t) := t
 | _ := mk_var 0
+
+meta_definition expr_size : expr → nat
+| (var _) := 1
+| (sort _) := 1
+| (const _ _) := 1
+| (meta n t) := 1
+| (local_const _ _ _ _) := 1
+| (app a b) := expr_size a + expr_size b
+| (lam _ _ d b) := expr_size b
+| (pi _ _ d b) := expr_size b
+| (elet _ t v b) := expr_size v + expr_size b
+| (macro _ _ _) := 1
+
+namespace rb_map
+meta_definition values {K V} (m : rb_map K V) : list V :=
+fold m [] (λk v vs, v::vs)
+end rb_map
+
+namespace list
+
+definition foldr {A B} (f : A → B → B) (b : B) : list A → B
+| [] := b
+| (a::ass) := f a (foldr ass)
+
+definition foldl {A B} (f : B → A → B) : B → list A → B
+| b [] := b
+| b (a::ass) := foldl (f b a) ass
+
+end list
