@@ -16,20 +16,6 @@ bs ← sort_and_constify_metas (qf1.2 ++ qf2.2),
 qf' ← cls.inst_mvars $ cls.close_constn c1_wo_not_a (list_remove op2.2 i2 ++ op1.2),
 cls.inst_mvars $ cls.close_constn qf' bs
 
-/-
-example (i : Type) (p : i → Prop) (f : i → i)
-  (cls : ∀x, p x → ¬p (f x) → false) : true :=
-by do
-prf ← get_local `cls,
-type ← infer_type prf,
-c ← return $ cls.mk 1 2 prf type,
-c' ← try_resolve c c 1 0,
-c'' ← try_resolve c' c' 1 0,
-trace (cls.prf c''),
-trace (cls.type c''),
-mk_const ``true.intro >>= apply
--/
-
 meta_definition add_try_as_inferred (t : tactic cls) : resolution_prover unit :=
 @orelse resolution_prover _ _ (resolution_prover_of_tactic t >>= add_inferred) (return ())
 

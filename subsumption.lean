@@ -56,31 +56,3 @@ active ← get_active,
 ss ← resolution_prover_of_tactic $
   keys_where_tt active (λa, does_subsume (active_cls.c given) (active_cls.c a)),
 @forM' resolution_prover _ _ _ (list.filter (λid, id ≠ active_cls.id given) ss) remove_redundant
-
-/-
-set_option new_elaborator true
-example
-  (i : Type)
-  (p : i → Prop)
-  (f : i → i)
-  (prf1 : ∀x, ¬p x → false)
-  (prf2 : ∀x, ¬p (f x) → p x → false)
-  (prf3 : ∀x, p (f x) → ¬p x → false)
-  : true :=
-by do
-prf1 ← get_local `prf1, ty1 ← infer_type prf1, cls1 ← return $ cls.mk 1 1 prf1 ty1,
-prf2 ← get_local `prf2, ty2 ← infer_type prf2, cls2 ← return $ cls.mk 1 2 prf2 ty2,
-prf3 ← get_local `prf3, ty3 ← infer_type prf3, cls3 ← return $ cls.mk 1 2 prf3 ty3,
-forM' [cls1,cls2,cls3] (λc1, forM' [cls1,cls2,cls3] (λc2, do
-  trace "Subsuming:",
-  trace (cls.type c1),
-  trace (cls.type c2),
-  does_subsume c1 c2 >>= trace,
-  trace ""
-)),
-trace "Subsumption interreduction:",
-irrd ← subsumption_interreduction [cls1,cls2,cls3],
-trace (map cls.type irrd),
-mk_const ``true.intro >>= apply
-set_option new_elaborator false
--/

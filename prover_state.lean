@@ -94,9 +94,6 @@ meta_definition take_newly_derived : resolution_prover (list cls) :=
 @monad.bind resolution_prover _ _ _ (stateT.write (mk (active state) (passive state) []))
 (λx, return (newly_derived state)))
 
-example : resolution_prover (rb_map name active_cls) :=
-@orelse resolution_prover _ _ get_active resolution_prover.failed
-
 meta_definition remove_redundant (id : name) : resolution_prover unit := do
 resolution_prover_of_tactic (get_local id >>= clear),
 @monad.bind resolution_prover _ _ _ stateT.read (λstate,
