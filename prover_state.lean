@@ -151,12 +151,15 @@ stateT.write (mk (active state') (passive state') newly_derived'))
 
 meta_definition clause_selection_strategy := resolution_prover name
 
+meta_definition clause_weight (c : cls) : nat :=
+10 * cls.num_lits c + expr_size (cls.type c)
+
 meta_definition find_minimal_weight (passive : rb_map name cls) : name :=
 match rb_map.fold passive none (λk c acc, match acc with
-| none := some (k, expr_size (cls.type c))
+| none := some (k, clause_weight c)
 | (some (n,s)) :=
-    if expr_size (cls.type c) < s then
-      some (k, expr_size (cls.type c))
+    if clause_weight c < s then
+      some (k, clause_weight c)
     else
       acc
 end) with
