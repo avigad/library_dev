@@ -117,6 +117,20 @@ match l with
 | _ := return none
 end
 
+lemma ex_l {a b c} : ((∃x:a, b x) → c) → (∀x:a, b x → c) := λeabc a b, eabc (exists.intro a b)
+meta_definition inf_ex_l (l : cls.lit) (c : cls) : tactic (option (list cls)) :=
+match l with
+| cls.lit.neg (app (app (const ex_name _) d) p) :=
+  if ex_name = ``Exists then do
+    prf' ← mk_mapp ``ex_l [none, none, none, some (cls.prf c)],
+    n ← mk_fresh_name, -- FIXME: (binding_name p) produces ugly [anonymous] output
+    return $ some [cls.mk 1 (cls.num_lits c) prf'
+      (pi n binder_info.default d
+        (imp (app p (mk_var 0)) (binding_body (cls.type c))))]
+  else return none
+| _ := return none
+end
+
 meta_definition first_some {a} : list (tactic (option a)) → tactic (option a)
 | [] := return none
 | (x::xs) := do xres ← x, match xres with some y := return (some y) | none := first_some xs end
@@ -125,7 +139,8 @@ meta_definition clausification_rules : list head_lit_rule :=
 [ inf_false_r, inf_true_l, inf_not_r,
   inf_and_l, inf_and_r,
   inf_or_l, inf_or_r,
-  inf_imp_l, inf_all_r ]
+  inf_imp_l, inf_all_r,
+  inf_ex_l ]
 
 meta_definition clausify_at (c : cls) (i : nat) : tactic (option (list cls)) :=
 do opened ← cls.open_constn c (cls.num_quants c + i),

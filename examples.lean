@@ -7,6 +7,8 @@ example {a} : (a ∧ a) ∨ (¬a ∧ ¬a) := by prover_tactic
 example (i : Type) (c : i) (p : i → Prop) (f : i → i) :
   p c → (∀x, p x → p (f x)) → p (f (f (f c))) := by prover_tactic
 
+example (i : Type) (p : i → Prop) : ∀x, p x → ∃x, p x := by prover_tactic
+
 /-
 -- Requires non-empty domain.
 example {i : Type} (p : i → Prop) :

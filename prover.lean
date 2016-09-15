@@ -48,8 +48,8 @@ meta_definition try_clausify (prf : expr) : tactic (list cls) :=
 
 meta_definition prover_tactic : tactic unit := do
 intros,
-target_name ← mk_fresh_name,
-mk_const ``classical.by_contradiction >>= apply, intro target_name,
+target_name ← mk_fresh_name, tgt ← target,
+mk_mapp ``classical.by_contradiction [some tgt] >>= apply, intro target_name,
 hyps ← local_context,
 initial_clauses ← @mapM tactic _ _ _ try_clausify hyps,
 initial_state ← resolution_prover_state.initial (join initial_clauses),
