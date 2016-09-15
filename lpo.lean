@@ -46,7 +46,7 @@ gamma (lpo prec_gt) s t
 set_option new_elaborator true
 meta_definition prec_gt_of_name_list (ns : list name) : expr → expr → bool :=
 let nis := rb_map.of_list (list_zipwithindex ns) in
-λs t, match (rb_map.find nis (local_uniq_name s), rb_map.find nis (local_uniq_name t)) with
+λs t, match (rb_map.find nis (name_of_funsym s), rb_map.find nis (name_of_funsym t)) with
 | (some si, some ti) := to_bool (si > ti)
 | _ := ff
 end

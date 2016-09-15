@@ -115,6 +115,26 @@ definition taken {A} : ℕ → list A → list A
 
 end list
 
+meta_definition name_of_funsym : expr → name
+| (local_const uniq _ _ _) := uniq
+| (const n _) := n
+| _ := name.anonymous
+
+private meta_definition contained_funsyms' : expr → rb_map name expr → rb_map name expr
+| (var _) m := m
+| (sort _) m := m
+| (const n ls) m := rb_map.insert m n (const n ls)
+| (meta _ t) m := contained_funsyms' t m
+| (local_const uniq pp bi t) m := contained_funsyms' t (rb_map.insert m uniq (local_const uniq pp bi t))
+| (app a b) m := contained_funsyms' a (contained_funsyms' b m)
+| (lam _ _ d b) m := contained_funsyms' d (contained_funsyms' b m)
+| (pi _ _ d b) m := contained_funsyms' d (contained_funsyms' b m)
+| (elet _ t v b) m := contained_funsyms' t (contained_funsyms' v (contained_funsyms' b m))
+| (macro _ _ _) m := m
+
+meta_definition contained_funsyms (e : expr) : rb_map name expr :=
+contained_funsyms' e (rb_map.mk name expr)
+
 private meta_definition contained_lconsts' : expr → rb_map name expr → rb_map name expr
 | (var _) m := m
 | (sort _) m := m

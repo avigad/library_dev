@@ -108,7 +108,7 @@ return (prec state)
 
 meta_definition get_term_order : resolution_prover (expr → expr → bool) := do
 state ← stateT.read,
-return (lpo (prec_gt_of_name_list (map expr.local_uniq_name (prec state))))
+return (lpo (prec_gt_of_name_list (map name_of_funsym (prec state))))
 
 private meta_definition set_precedence (new_prec : list expr) : resolution_prover unit := do
 @monad.bind resolution_prover _ _ _ stateT.read (λstate,
@@ -116,12 +116,12 @@ stateT.write (mk (active state) (passive state) (newly_derived state) new_prec))
 
 meta_definition register_consts_in_precedence (consts : list expr) := do
 p ← get_precedence,
-p_set ← return (rb_map.set_of_list (map expr.local_uniq_name p)),
-set_precedence $ list.dup_by expr.local_uniq_name (list.filter (λc, rb_map.contains p_set (expr.local_uniq_name c) = ff) consts) ++ p
+p_set ← return (rb_map.set_of_list (map name_of_funsym p)),
+set_precedence $ list.dup_by name_of_funsym (list.filter (λc, rb_map.contains p_set (name_of_funsym c) = ff) consts) ++ p
 
 meta_definition add_inferred (c : cls) : resolution_prover unit := do
 c' ← resolution_prover_of_tactic (cls.normalize c),
-register_consts_in_precedence (rb_map.values (contained_lconsts (cls.type c'))),
+register_consts_in_precedence (rb_map.values (contained_funsyms (cls.type c'))),
 @monad.bind resolution_prover _ _ _ stateT.read (λstate,
 stateT.write (mk (active state) (passive state) (c' :: newly_derived state) (prec state)))
 
