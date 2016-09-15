@@ -69,11 +69,30 @@ meta_definition expr_size : expr → nat
 | (macro _ _ _) := 1
 
 namespace rb_map
+
+meta_definition keys {K V} (m : rb_map K V) : list K :=
+fold m [] (λk v ks, k::ks)
+
 meta_definition values {K V} (m : rb_map K V) : list V :=
 fold m [] (λk v vs, v::vs)
+
+meta_definition set_of_list {A} [has_ordering A] : list A → rb_map A unit
+| [] := mk A unit
+| (x::xs) := insert (set_of_list xs) x ()
+
 end rb_map
 
 namespace list
+
+meta_definition dup {A} [has_ordering A] (l : list A) : list A :=
+rb_map.keys (rb_map.set_of_list l)
+
+meta_definition dup_by {A B} [has_ordering B] (f : A → B) (l : list A) : list A :=
+rb_map.values (rb_map.of_list (map (λx, (f x, x)) l))
+
+definition dup_by' {A B} [decidable_eq B] (f : A → B) : list A → list A
+| [] := []
+| (x::xs) := x :: filter (λy, f x ≠ f y) (dup_by' xs)
 
 definition foldr {A B} (f : A → B → B) (b : B) : list A → B
 | [] := b
