@@ -47,7 +47,7 @@ lemma and_r1 {a b c} : (¬(a ∧ b) → c) → (¬a → c) := λnabc na, nabc (�
 lemma and_r2 {a b c} : (¬(a ∧ b) → c) → (¬b → c) := λnabc na, nabc (λab, na (and.right ab))
 meta_definition inf_and_r (l : cls.lit) (c : cls) : tactic (option (list cls)) :=
 match l with
-| cls.lit.neg (app (app (const and_name _) a) b) :=
+| cls.lit.pos (app (app (const and_name _) a) b) :=
   if and_name = ``and then do
     prf₁ ← mk_mapp ``and_r1 [none, none, none, some (cls.prf c)],
     prf₂ ← mk_mapp ``and_r2 [none, none, none, some (cls.prf c)],
