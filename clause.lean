@@ -123,6 +123,9 @@ list.filter (λl, p (get_lit c l) = tt) (range (num_lits c))
 meta_definition get_lits (c : cls) : list lit :=
 map (get_lit c) (range (num_lits c))
 
+meta_definition is_maximal (gt : expr → expr → bool) (c : cls) (i : nat) : bool :=
+list_empty (filter (λj, gt (lit.formula $ get_lit c j) (lit.formula $ get_lit c i) = tt) (range $ num_lits c))
+
 set_option new_elaborator true
 meta_definition normalize (c : cls) : tactic cls := do
 opened  ← open_constn c (num_quants c + num_lits c),

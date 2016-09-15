@@ -52,9 +52,10 @@ target_name ← mk_fresh_name,
 mk_const ``classical.by_contradiction >>= apply, intro target_name,
 hyps ← local_context,
 initial_clauses ← @mapM tactic _ _ _ try_clausify hyps,
+initial_state ← resolution_prover_state.initial (join initial_clauses),
 res ← run_prover_loop dumb_selection weight_clause_selection
   default_preprocessing default_inferences
-  (resolution_prover_state.mk (rb_map.mk name active_cls) (rb_map.mk name cls) (join initial_clauses)),
+  initial_state,
 match res with
 | (some empty_clause, _) := apply empty_clause
 | (none, _) := trace "saturation" >> skip

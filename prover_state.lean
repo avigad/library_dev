@@ -1,4 +1,4 @@
-import clause
+import clause lpo
 open tactic monad
 
 structure active_cls :=
@@ -18,6 +18,7 @@ structure resolution_prover_state :=
 (active : rb_map name active_cls)
 (passive : rb_map name cls)
 (newly_derived : list cls)
+(prec : list expr)
 
 open resolution_prover_state
 
@@ -28,10 +29,12 @@ private meta_definition resolution_prover_state_tactic_fmt (s : resolution_prove
 active_fmts ← @mapM tactic _ _ _ pp (rb_map.values (active s)),
 passive_fmts ← @mapM tactic _ _ _ pp (rb_map.values (passive s)),
 new_fmts ← @mapM tactic _ _ _ pp (newly_derived s),
+prec_fmts ← @mapM tactic _ _ _ pp (prec s),
 return (join_with_nl
   ([to_fmt "active:"] ++ map (append (to_fmt "  ")) active_fmts ++
   [to_fmt "passive:"] ++ map (append (to_fmt "  ")) passive_fmts ++
-  [to_fmt "new:"] ++ map (append (to_fmt "  ")) new_fmts) ++ format.line)
+  [to_fmt "new:"] ++ map (append (to_fmt "  ")) new_fmts ++
+  [to_fmt "precedence order: " ++ to_fmt prec_fmts]))
 
 attribute [instance]
 meta_definition resolution_prover_state_has_to_tactic_format : has_to_tactic_format resolution_prover_state :=
@@ -69,14 +72,14 @@ do state ← stateT.read, return (active state)
 
 meta_definition add_active (a : active_cls) : resolution_prover unit :=
 @monad.bind resolution_prover _ _ _ stateT.read (λstate,
-stateT.write (mk (rb_map.insert (active state) (active_cls.id a) a) (passive state) (newly_derived state)))
+stateT.write (mk (rb_map.insert (active state) (active_cls.id a) a) (passive state) (newly_derived state) (prec state)))
 
 meta_definition get_passive : resolution_prover (rb_map name cls) :=
 do state ← stateT.read, return (passive state)
 
 private meta_definition add_passive (id : name) (c : cls) : resolution_prover unit :=
 @monad.bind resolution_prover _ _ _ stateT.read (λstate,
-stateT.write (mk (active state) (rb_map.insert (passive state) id c) (newly_derived state)))
+stateT.write (mk (active state) (rb_map.insert (passive state) id c) (newly_derived state) (prec state)))
 
 meta_definition register_as_passive (c : cls) : resolution_prover name := do
 id ← resolution_prover_of_tactic mk_fresh_name,
@@ -87,22 +90,40 @@ return id
 
 meta_definition remove_passive (id : name) : resolution_prover unit :=
 @monad.bind resolution_prover _ _ _ stateT.read (λstate,
-stateT.write (mk (active state) (rb_map.erase (passive state) id) (newly_derived state)))
+stateT.write (mk (active state) (rb_map.erase (passive state) id) (newly_derived state) (prec state)))
 
 meta_definition take_newly_derived : resolution_prover (list cls) :=
 @monad.bind resolution_prover _ _ _ stateT.read (λstate,
-@monad.bind resolution_prover _ _ _ (stateT.write (mk (active state) (passive state) []))
+@monad.bind resolution_prover _ _ _ (stateT.write (mk (active state) (passive state) [] (prec state)))
 (λx, return (newly_derived state)))
 
 meta_definition remove_redundant (id : name) : resolution_prover unit := do
 resolution_prover_of_tactic (get_local id >>= clear),
 @monad.bind resolution_prover _ _ _ stateT.read (λstate,
-stateT.write (mk (rb_map.erase (active state) id) (passive state) (newly_derived state)))
+stateT.write (mk (rb_map.erase (active state) id) (passive state) (newly_derived state) (prec state)))
+
+meta_definition get_precedence : resolution_prover (list expr) := do
+state ← stateT.read,
+return (prec state)
+
+meta_definition get_term_order : resolution_prover (expr → expr → bool) := do
+state ← stateT.read,
+return (lpo (prec_gt_of_name_list (map expr.local_uniq_name (prec state))))
+
+private meta_definition set_precedence (new_prec : list expr) : resolution_prover unit := do
+@monad.bind resolution_prover _ _ _ stateT.read (λstate,
+stateT.write (mk (active state) (passive state) (newly_derived state) new_prec))
+
+meta_definition register_consts_in_precedence (consts : list expr) := do
+p ← get_precedence,
+p_set ← return (rb_map.set_of_list (map expr.local_uniq_name p)),
+set_precedence $ list.dup_by expr.local_uniq_name (list.filter (λc, rb_map.contains p_set (expr.local_uniq_name c) = ff) consts) ++ p
 
 meta_definition add_inferred (c : cls) : resolution_prover unit := do
 c' ← resolution_prover_of_tactic (cls.normalize c),
+register_consts_in_precedence (rb_map.values (contained_lconsts (cls.type c'))),
 @monad.bind resolution_prover _ _ _ stateT.read (λstate,
-stateT.write (mk (active state) (passive state) (c' :: newly_derived state)))
+stateT.write (mk (active state) (passive state) (c' :: newly_derived state) (prec state)))
 
 meta_definition inference :=
 active_cls → resolution_prover unit
@@ -143,11 +164,35 @@ meta_definition dumb_selection : selection_strategy :=
 | neg_lit::_ := [neg_lit]
 end
 
+set_option new_elaborator true
+meta_definition selection21 : selection_strategy := take c, do
+gt ← get_term_order,
+maximal_lits ← return $ list.filter_maximal (λi j,
+  gt (cls.lit.formula $ cls.get_lit c i) (cls.lit.formula $ cls.get_lit c j)) (range (cls.num_lits c)),
+if list.length maximal_lits = 1 then return maximal_lits else do
+neg_lits ← return $ list.filter (λi, cls.lit.is_neg (cls.get_lit c i) = tt) (range (cls.num_lits c)),
+maximal_neg_lits ← return $ list.filter_maximal (λi j,
+  gt (cls.lit.formula $ cls.get_lit c i) (cls.lit.formula $ cls.get_lit c j)) neg_lits,
+if list_empty maximal_neg_lits = ff then
+  @return resolution_prover resolution_prover_is_monad _ (list.taken 1 maximal_neg_lits)
+else
+  return maximal_lits
+meta_definition selection22 : selection_strategy := take c, do
+gt ← get_term_order,
+maximal_lits ← return $ list.filter_maximal (λi j,
+  gt (cls.lit.formula $ cls.get_lit c i) (cls.lit.formula $ cls.get_lit c j)) (range (cls.num_lits c)),
+maximal_lits_neg ← return $ list.filter (λi, cls.lit.is_neg (cls.get_lit c i) = tt) maximal_lits,
+if list_empty maximal_lits_neg = ff then
+  @return resolution_prover resolution_prover_is_monad _ (list.taken 1 maximal_lits_neg)
+else
+  return maximal_lits
+set_option new_elaborator false
+
 meta_definition preprocessing_rule (f : list cls → resolution_prover (list cls)) : resolution_prover unit := do
 state ← stateT.read,
 newly_derived' ← f (newly_derived state),
 @monad.bind resolution_prover _ _ _ stateT.read (λstate',
-stateT.write (mk (active state') (passive state') newly_derived'))
+stateT.write (mk (active state') (passive state') newly_derived' (prec state')))
 
 meta_definition clause_selection_strategy := resolution_prover name
 
@@ -170,3 +215,15 @@ end
 meta_definition weight_clause_selection : clause_selection_strategy :=
 @monad.bind resolution_prover _ _ _ stateT.read (λstate,
 return (find_minimal_weight (passive state)))
+
+namespace resolution_prover_state
+
+meta_definition empty : resolution_prover_state :=
+mk (rb_map.mk name active_cls) (rb_map.mk name cls) [] []
+
+set_option new_elaborator true
+meta_definition initial (clauses : list cls) : tactic resolution_prover_state := do
+after_setup ← forM' clauses add_inferred empty,
+return after_setup.2
+
+end resolution_prover_state

@@ -102,26 +102,37 @@ definition foldl {A B} (f : B → A → B) : B → list A → B
 | b [] := b
 | b (a::ass) := foldl (f b a) ass
 
-private meta_definition contained_lconsts' : expr → rb_map name unit → rb_map name unit
+definition for_all {A} (p : A → Prop) [decidable_pred p] : list A → bool
+| (x::xs) := decidable.to_bool (p x) && for_all xs
+| [] := tt
+
+definition filter_maximal {A} (gt : A → A → bool) (l : list A) : list A :=
+filter (λx, for_all (λy, gt y x = ff) l = tt) l
+
+definition taken {A} : ℕ → list A → list A
+| (n+1) (x::xs) := x :: taken n xs
+| _ _ := []
+
+end list
+
+private meta_definition contained_lconsts' : expr → rb_map name expr → rb_map name expr
 | (var _) m := m
 | (sort _) m := m
 | (const _ _) m := m
 | (meta _ t) m := contained_lconsts' t m
-| (local_const uniq pp bi t) m := contained_lconsts' t (rb_map.insert m uniq ())
+| (local_const uniq pp bi t) m := contained_lconsts' t (rb_map.insert m uniq (local_const uniq pp bi t))
 | (app a b) m := contained_lconsts' a (contained_lconsts' b m)
 | (lam _ _ d b) m := contained_lconsts' d (contained_lconsts' b m)
 | (pi _ _ d b) m := contained_lconsts' d (contained_lconsts' b m)
 | (elet _ t v b) m := contained_lconsts' t (contained_lconsts' v (contained_lconsts' b m))
 | (macro _ _ _) m := m
 
-meta_definition contained_lconsts (e : expr) : rb_map name unit :=
-contained_lconsts' e (rb_map.mk name unit)
+meta_definition contained_lconsts (e : expr) : rb_map name expr :=
+contained_lconsts' e (rb_map.mk name expr)
 
-meta_definition contained_lconsts_list (es : list expr) : rb_map name unit :=
-foldl (λlcs e, contained_lconsts' e lcs) (rb_map.mk name unit) es
+meta_definition contained_lconsts_list (es : list expr) : rb_map name expr :=
+list.foldl (λlcs e, contained_lconsts' e lcs) (rb_map.mk name expr) es
 
 meta_definition local_type : expr → expr
 | (local_const _ _ _ t) := t
 | e := e
-
-end list

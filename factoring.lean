@@ -5,10 +5,12 @@ meta_definition inst_lit (c : cls) (i : nat) (e : expr) : tactic cls := do
 opened ← cls.open_constn c i,
 return $ cls.close_constn (cls.inst opened.1 e) opened.2
 
-meta_definition try_factor (c : cls) (i j : nat) : tactic cls :=
-if i > j then try_factor c j i else do
+meta_definition try_factor (gt : expr → expr → bool) (c : cls) (i j : nat) : tactic cls :=
+if i > j then try_factor gt c j i else do
 qf ← cls.open_metan c (cls.num_quants c),
 unify_lit (cls.get_lit qf.1 i) (cls.get_lit qf.1 j),
+qfi ← cls.inst_mvars qf.1,
+@guard tactic _ (cls.is_maximal gt qfi i = tt) _,
 at_j ← cls.open_constn qf.1 j,
 match list.nth at_j.2 i with
 | none := failed
@@ -19,7 +21,8 @@ match list.nth at_j.2 i with
 end
 
 meta_definition try_infer_factor (c : cls) (i j : nat) : resolution_prover unit := do
-f ← resolution_prover_of_tactic (try_factor c i j),
+gt ← get_term_order,
+f ← resolution_prover_of_tactic (try_factor gt c i j),
 add_inferred f
 
 meta_definition factor_inf : inference :=
