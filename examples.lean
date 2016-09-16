@@ -9,12 +9,17 @@ example (i : Type) (c : i) (p : i → Prop) (f : i → i) :
 
 example (i : Type) (p : i → Prop) : ∀x, p x → ∃x, p x := by prover_tactic
 
+example (i : Type) (c : i) (p : i → i → Prop) : (∀x y, p x y) → (∀x,∃z, ¬p x z) → false := by prover_tactic
+
+example (i : Type) (p : i → Prop) : (∀x, p x) → ¬¬∀x, p x := by prover_tactic
+
 /-
 -- Requires non-empty domain.
 example {i : Type} (p : i → Prop) :
   (∀x y, p x ∨ p y) → (∀x y, ¬p x ∨ ¬p y) → false := by prover_tactic
 -/
 
+/-
 example (i : Type) (p q : i → i → Prop) (a b c d : i) :
   (∀x y z, p x y ∧ p y z → p x z) →
   (∀x y z, q x y ∧ q y z → q x z) →
@@ -22,6 +27,7 @@ example (i : Type) (p q : i → i → Prop) (a b c d : i) :
   (∀x y, p x y ∨ q x y) →
   p a b ∨ q c d :=
 by prover_tactic
+-/
 
 /-
 -- This example from Davis-Putnam actually requires a non-empty domain

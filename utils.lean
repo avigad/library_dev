@@ -156,3 +156,13 @@ list.foldl (λlcs e, contained_lconsts' e lcs) (rb_map.mk name expr) es
 meta_definition local_type : expr → expr
 | (local_const _ _ _ t) := t
 | e := e
+
+meta_definition lambdas : list expr → expr → expr
+| (local_const uniq pp info t :: es) f :=
+               lam pp info t (abstract_local (lambdas es f) uniq)
+| _ f := f
+
+meta_definition pis : list expr → expr → expr
+| (local_const uniq pp info t :: es) f :=
+               pi pp info t (abstract_local (pis es f) uniq)
+| _ f := f

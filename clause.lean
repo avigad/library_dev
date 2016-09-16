@@ -48,8 +48,8 @@ meta_definition close_const (c : cls) (e : expr) : cls :=
 match e with
 | local_const uniq pp info t :=
     let abst_type' := abstract_local (type c) (local_uniq_name e) in
-    let type' := pi pp info t (abstract_local (type c) uniq) in
-    let prf' := lam pp info t (abstract_local (prf c) uniq) in
+    let type' := pi pp binder_info.default t (abstract_local (type c) uniq) in
+    let prf' := lam pp binder_info.default t (abstract_local (prf c) uniq) in
     if num_quants c > 0 ∨ has_var abst_type' then
       mk (num_quants c + 1) (num_lits c) prf' type'
     else
