@@ -1,6 +1,6 @@
 open tactic expr list
 
-meta_definition monadfail_of_option {m : Type → Type} [monad m] [alternative m] {A} : option A → m A
+definition monadfail_of_option {m : Type → Type} [monad m] [alternative m] {A} : option A → m A
 | none := failure
 | (some a) := return a
 
