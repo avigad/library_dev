@@ -1,3 +1,5 @@
+-- Polytime version of lexicographic path order as described in:
+-- Things to know when implementing LPO, Bernd Löchner, ESFOR 2004
 import utils
 open expr decidable monad
 
@@ -9,39 +11,21 @@ definition majo {T} (gt : T → T → bool) (s : T) : list T → bool
 | [] := tt
 | (t::ts) := gt s t && majo ts
 
-meta_definition contained (var_name : name) : expr → bool
-| (var _) := ff
-| (sort _) := ff
-| (const _ _) := ff
-| (app a b) := contained var_name a || contained var_name b
-| (lam _ _ d b) := contained var_name b
-| (pi _ _ d b) := contained var_name b
-| (elet _ t v b) := contained var_name v || contained var_name b
-| (macro _ _ _) := ff
-| (local_const uniq _ _ _) := to_bool (uniq = var_name)
-| (meta n t) := to_bool (n = var_name)
-
-meta_definition contained_list (var_name : name) : list expr → bool
-| (e::es) := contained var_name e || contained_list var_name es
-| [] := ff
-
-meta_definition gamma (lpo : expr → expr → bool) (s t : expr) : bool :=
-to_bool (get_app_fn s = get_app_fn t) &&
-lex lpo (get_app_args s) (get_app_args t) &&
-majo lpo s (get_app_args t)
-
-meta_definition beta (prec_gt lpo : expr → expr → bool) (s t : expr) : bool :=
-prec_gt (get_app_fn s) (get_app_fn t) &&
-majo lpo s (get_app_args t)
-
 meta_definition alpha (lpo : expr → expr → bool) : list expr → expr → bool
 | [] _ := ff
 | (s::ss) t := to_bool (s = t) || lpo s t || alpha lpo ss t
 
+meta_definition lex_ma (lpo : expr → expr → bool) (s t : expr) : list expr → list expr → bool
+| (si::ss) (ti::ts) :=
+  if si = ti then lex_ma lpo s t ss ts
+  else if lpo si ti = tt then majo lpo s ts || alpha lpo (si::ss) t
+  else alpha lpo (si::ss) t
+| _ _ := ff
+
 meta_definition lpo (prec_gt : expr → expr → bool) (s t : expr) : bool :=
-alpha (lpo prec_gt) (get_app_args s) t ||
-beta prec_gt (lpo prec_gt) s t ||
-gamma (lpo prec_gt) s t
+if prec_gt (get_app_fn s) (get_app_fn t) = tt then majo (lpo prec_gt) s (get_app_args t)
+else if get_app_fn s = get_app_fn t then lex_ma (lpo prec_gt) s t (get_app_args t) (get_app_args t)
+else alpha (lpo prec_gt) (get_app_args s) t
 
 set_option new_elaborator true
 meta_definition prec_gt_of_name_list (ns : list name) : expr → expr → bool :=
