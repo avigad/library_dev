@@ -20,14 +20,13 @@ match list.nth at_j.2 i with
   return $ cls.close_constn qf' cs
 end
 
-meta_definition try_infer_factor (c : cls) (i j : nat) : resolution_prover unit := do
-gt ← get_term_order,
+meta_definition try_infer_factor (gt : expr → expr → bool) (c : cls) (i j : nat) : resolution_prover unit := do
 f ← resolution_prover_of_tactic (try_factor gt c i j),
 add_inferred f
 
 meta_definition factor_inf : inference :=
-take given, sequence' (do
+take given, do gt ← get_term_order, sequence' (do
   i ← active_cls.selected given,
   j ← range (cls.num_lits (active_cls.c given)),
-  return $ @orelse resolution_prover _ _ (try_infer_factor (active_cls.c given) i j) (return ())
+  return $ @orelse resolution_prover _ _ (try_infer_factor gt (active_cls.c given) i j) (return ())
 )
