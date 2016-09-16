@@ -2,8 +2,6 @@ import clause
 import prover_state
 open expr list tactic monad decidable
 
-lemma clause_of_formula {p} : p → ¬¬p := λx y, y x
-
 meta_definition head_lit_rule := cls.lit → cls → tactic (option (list cls))
 
 meta_definition inf_false_l (l : cls.lit) (c : cls) : tactic (option (list cls)) :=
@@ -35,7 +33,7 @@ if cls.lit.is_pos l = tt ∧ is_true_const (cls.lit.formula l) = tt then
 else
   return none
 
-lemma not_r {a c} : (¬¬a → c) → (a → c) := λnnac a, nnac (clause_of_formula a)
+lemma not_r {a c} : (¬¬a → c) → (a → c) := λnnac a, nnac (λx, x a)
 meta_definition inf_not_r (l : cls.lit) (c : cls) : tactic (option (list cls)) :=
 match (cls.lit.is_pos l, is_not (cls.lit.formula l)) with
 | (tt, some a) := do
