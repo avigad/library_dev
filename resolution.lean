@@ -16,12 +16,11 @@ qf2 ← cls.open_metan c2 (cls.num_quants c2),
 unify (cls.lit.formula (cls.get_lit qf1.1 i1)) (cls.lit.formula (cls.get_lit qf2.1 i2)),
 qf1i ← cls.inst_mvars qf1.1,
 @guard tactic _ (cls.is_maximal gt qf1i i1 = tt) _,
-op2 ← cls.open_constn qf2.1 (cls.num_lits qf2.1),
-op1 ← cls.open_constn qf1.1 i1,
-a_in_c2 ← monadfail_of_option (list.nth op2.2 i2),
-c1_wo_not_a ← return $ cls.inst op1.1 (cls.prf (cls.close_constn op2.1 [a_in_c2])),
+focused_qf1 ← cls.focus qf1.1 i1,
+op1 ← cls.open_constn focused_qf1 (cls.num_binders focused_qf1),
+op2 ← cls.open_constn qf2.1 i2,
 bs ← sort_and_constify_metas (qf1.2 ++ qf2.2),
-qf' ← cls.inst_mvars $ cls.close_constn c1_wo_not_a (list_remove op2.2 i2 ++ op1.2),
+qf' ← cls.inst_mvars $ cls.close_constn (cls.inst op2.1 (cls.prf op1.1)) (op1.2 ++ op2.2),
 cls.inst_mvars $ cls.close_constn qf' bs
 
 meta_definition try_add_resolvent : resolution_prover unit := do

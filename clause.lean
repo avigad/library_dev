@@ -4,6 +4,7 @@ open expr list tactic monad decidable
 structure cls :=
 (num_quants : ℕ)
 (num_lits : ℕ)
+(has_fin : bool)
 (prf : expr)
 (type : expr)
 
@@ -19,19 +20,21 @@ attribute [instance]
 meta_definition cls_has_to_tactic_format : has_to_tactic_format cls :=
 has_to_tactic_format.mk tactic_format
 
-definition num_binders (c : cls) := num_quants c + num_lits c
+definition num_binders (c : cls) : ℕ :=
+if has_fin c = tt then num_quants c + num_lits c - 1
+else num_quants c + num_lits c
 
-/- private -/ lemma clause_of_formula {p} : p → ¬p → false := λx y, y x
+meta_definition of_proof_and_type (prf type : expr) : cls :=
+mk 0 1 tt prf type
 
 meta_definition of_proof (prf : expr) : tactic cls := do
-prf' ← mk_mapp ``clause_of_formula [none, some prf],
-type' ← infer_type prf',
-return (mk 0 1 prf' type')
+type ← infer_type prf,
+return (of_proof_and_type prf type)
 
 meta_definition inst (c : cls) (e : expr) : cls :=
 (if num_quants c > 0
   then mk (num_quants c - 1) (num_lits c)
-  else mk 0 (num_lits c - 1))
+  else mk 0 (num_lits c - 1)) (has_fin c)
 (app (prf c) e) (instantiate_var (binding_body (type c)) e)
 
 meta_definition open_const (c : cls) : tactic (cls × expr) := do
@@ -51,10 +54,10 @@ match e with
     let type' := pi pp binder_info.default t (abstract_local (type c) uniq) in
     let prf' := lam pp binder_info.default t (abstract_local (prf c) uniq) in
     if num_quants c > 0 ∨ has_var abst_type' then
-      mk (num_quants c + 1) (num_lits c) prf' type'
+      mk (num_quants c + 1) (num_lits c) (has_fin c) prf' type'
     else
-      mk 0 (num_lits c + 1) prf' type'
-| _ := mk 0 0 (mk_var 0) (mk_var 0)
+      mk 0 (num_lits c + 1) (has_fin c) prf' type'
+| _ := mk 0 0 (has_fin c) (mk_var 0) (mk_var 0)
 end
 set_option new_elaborator false
 
@@ -81,40 +84,47 @@ end
 meta_definition inst_mvars (c : cls) : tactic cls := do
 prf' ← instantiate_mvars (prf c),
 type' ← instantiate_mvars (type c),
-return $ cls.mk (cls.num_quants c) (cls.num_lits c) prf' type'
-
-private meta_definition get_binder (e : expr) (i : nat) :=
-if i = 0 then binding_domain e else get_binder (binding_body e) (i-1)
+return $ mk (num_quants c) (num_lits c) (has_fin c) prf' type'
 
 inductive lit
-| pos : expr → lit
-| neg : expr → lit
+| left : expr → lit
+| right : expr → lit
+| final : expr → lit
 
 namespace lit
 
 definition formula : lit → expr
-| (pos f) := f
-| (neg f) := f
+| (left f) := f
+| (right f) := f
+| (final f) := f
 
 definition is_neg : lit → bool
-| (pos _) := ff
-| (neg _) := tt
+| (left _) := tt
+| (right _) := ff
+| (final _) := ff
 
 definition is_pos (l : lit) : bool := bool.bnot (is_neg l)
 
-meta_definition to_formula : lit → tactic expr
-| (pos f) := mk_mapp ``not [some f]
-| (neg f) := return f
+meta_definition to_formula (l : lit) : tactic expr :=
+if is_neg l = tt then mk_mapp ``not [some (formula l)]
+else return (formula l)
 
 end lit
 
+private meta_definition get_binding_body (e : expr) (i : nat) :=
+if i = 0 then e else get_binding_body (binding_body e) (i-1)
+
+private meta_definition get_binder (e : expr) (i : nat) :=
+binding_domain (get_binding_body e i)
+
 set_option new_elaborator true
 meta_definition get_lit (c : cls) (i : nat) : lit :=
-let bind := get_binder (type c) (num_quants c + i) in
+if has_fin c ∧ num_lits c = i + 1 then lit.final (get_binding_body (type c) (num_quants c + i))
+else let bind := get_binder (type c) (num_quants c + i) in
 if is_app_of bind ``not = tt ∧ get_app_num_args bind = 1 then
-  lit.pos (app_arg bind)
+  lit.right (app_arg bind)
 else
-  lit.neg bind
+  lit.left bind
 set_option new_elaborator false
 
 meta_definition lits_where (c : cls) (p : lit → bool) : list nat :=
@@ -128,18 +138,38 @@ list_empty (filter (λj, gt (lit.formula $ get_lit c j) (lit.formula $ get_lit c
 
 set_option new_elaborator true
 meta_definition normalize (c : cls) : tactic cls := do
-opened  ← open_constn c (num_quants c + num_lits c),
+opened  ← open_constn c (num_binders c),
 lconsts_in_types ← return $ contained_lconsts_list (list.map local_type opened.2),
 quants' ← return $ filter (λlc, rb_map.contains lconsts_in_types (local_uniq_name lc) = tt) opened.2,
 lits' ← return $ filter (λlc, rb_map.contains lconsts_in_types (local_uniq_name lc) = ff) opened.2,
 @return tactic tactic_is_monad _ $ close_constn opened.1 (quants' ++ lits')
 
+lemma fin_to_pos_helper {p} (Hp : p) : ¬p → false := take Hnp, Hnp Hp
+meta_definition fin_to_pos (c : cls) : tactic cls := do
+guard $ has_fin c,
+op ← open_constn c (num_binders c),
+prf' ← mk_mapp ``fin_to_pos_helper [some (type op.1), some (prf op.1)],
+type' ← return (imp (app (const ``not []) (type op.1)) (const ``false [])),
+return $ close_constn (mk 0 1 ff prf' type') op.2
+
+set_option new_elaborator false
+meta_definition focus (c : cls) (i : nat) : tactic cls :=
+if has_fin c = tt ∧ i+1 = num_lits c then return c
+else if has_fin c = tt then do c' ← fin_to_pos c, focus c' i else do
+@guard tactic _ (lit.is_pos (get_lit c i) = tt) _,
+op ← open_constn c (num_lits c),
+hyp_i ← monadfail_of_option (list.nth op.2 i),
+prf' ← mk_mapp ``classical.by_contradiction [none, some (lambdas [hyp_i] (prf op.1))],
+type' ← return (lit.formula (get_lit c i)),
+return $ close_constn (mk 0 1 tt prf' type') (list_remove op.2 i)
+
 end cls
 
-meta_definition unify_lit : cls.lit → cls.lit → tactic unit
-| (cls.lit.pos a) (cls.lit.pos b) := unify a b
-| (cls.lit.neg a) (cls.lit.neg b) := unify a b
-| _ _ := fail "cannot unify literals"
+meta_definition unify_lit (l1 l2 : cls.lit) : tactic unit :=
+if cls.lit.is_pos l1 = cls.lit.is_pos l2 then
+  unify (cls.lit.formula l1) (cls.lit.formula l2)
+else
+  fail "cannot unify literals"
 
 -- FIXME: this is most definitely broken with meta-variables that were already in the goal
 meta_definition sort_and_constify_metas (exprs_with_metas : list expr) : tactic (list expr) := do

@@ -16,7 +16,7 @@ meta_definition run_prover_loop
 sequence' preprocessing_rules,
 new ← take_newly_derived, forM' new register_as_passive,
 passive : rb_map name cls ← get_passive,
-if rb_map.size passive = 0 then trace_clauses >> return none else do
+if rb_map.size passive = 0 then return none else do
 given_name ← clause_selection,
 given ← @monadfail_of_option resolution_prover _ resolution_prover_is_alternative _ (rb_map.find passive given_name),
 -- trace_clauses,
@@ -58,5 +58,5 @@ res ← run_prover_loop dumb_selection weight_clause_selection
   initial_state,
 match res with
 | (some empty_clause, _) := apply empty_clause
-| (none, _) := trace "saturation" >> skip
+| (none, saturation) := trace "saturation" >> trace saturation >> skip
 end
