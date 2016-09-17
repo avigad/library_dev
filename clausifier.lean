@@ -208,9 +208,10 @@ match l with
   if ex_name = ``Exists then do
     prf' ← mk_mapp ``ex_l [none, none, none, some (cls.prf c)],
     n ← mk_fresh_name, -- FIXME: (binding_name p) produces ugly [anonymous] output
+    px ← whnf $ app p (mk_var 0),
     return $ some [cls.mk 1 (cls.num_lits c) (cls.has_fin c) prf'
       (pi n binder_info.default d
-        (imp (app p (mk_var 0)) (binding_body (cls.type c))))]
+        (imp px (binding_body (cls.type c))))]
   else return none
 | _ := return none
 end

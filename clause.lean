@@ -13,8 +13,9 @@ namespace cls
 private meta_definition tactic_format (c : cls) : tactic format := do
 prf_fmt : format ← pp (prf c),
 type_fmt ← pp (type c),
+fin_fmt ← return $ to_fmt (if has_fin c = tt then ", has final" else ""),
 return $ prf_fmt ++ to_fmt " : " ++ type_fmt ++ to_fmt " (" ++
-  to_fmt (num_quants c) ++ to_fmt " quants, " ++ to_fmt (num_lits c) ++ to_fmt " lits)"
+  to_fmt (num_quants c) ++ to_fmt " quants, " ++ to_fmt (num_lits c) ++ to_fmt " lits" ++ fin_fmt ++ to_fmt ")"
 
 attribute [instance]
 meta_definition cls_has_to_tactic_format : has_to_tactic_format cls :=
@@ -110,6 +111,16 @@ if is_neg l = tt then mk_mapp ``not [some (formula l)]
 else return (formula l)
 
 end lit
+
+attribute [instance]
+meta_definition lit_has_to_tactic_format : has_to_tactic_format lit :=
+has_to_tactic_format.mk (λl, do
+pp_f ← pp (lit.formula l),
+return $ to_fmt (match l with
+| (lit.left _) := "left"
+| (lit.right _) := "right"
+| (lit.final _) := "final"
+end) ++ format.space ++ pp_f)
 
 private meta_definition get_binding_body (e : expr) (i : nat) :=
 if i = 0 then e else get_binding_body (binding_body e) (i-1)

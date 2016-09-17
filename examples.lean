@@ -30,3 +30,6 @@ by prover_tactic
 example (i : Type) (c : i) (f g : i → i → Prop) (z : i → i → i) :
   (∀x y, ¬((f x y → f y (z x y) ∧ f (z x y) (z x y)) ∧ (f x y ∧ g x y → g x (z x y) ∧ g (z x y) (z x y)))) -> false :=
 by prover_tactic
+
+example (person : Type) (someone : person) (drinks : person → Prop) :
+  ∃canary, drinks canary → ∀other, drinks other := by prover_tactic
