@@ -41,7 +41,7 @@ meta_definition resolution_prover_state_has_to_tactic_format : has_to_tactic_for
 has_to_tactic_format.mk resolution_prover_state_tactic_fmt
 
 meta_definition resolution_prover :=
-stateT resolution_prover_state tactic
+@stateT resolution_prover_state tactic tactic_is_monad
 
 attribute [instance]
 meta_definition resolution_prover_is_monad : monad resolution_prover :=
