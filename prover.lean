@@ -3,6 +3,9 @@ import subsumption misc_preprocessing
 import resolution factoring clausifier
 open monad tactic expr
 
+declare_trace resolution
+set_option trace.resolution false
+
 meta_definition trace_clauses : resolution_prover unit := do
 @monad.bind resolution_prover _ _ _ stateT.read
 (λstate, resolution_prover_of_tactic (tactic.trace state))
@@ -24,7 +27,8 @@ remove_passive given_name,
 if is_false (cls.type given) = tt then return (some (cls.prf given)) else do
 selected_lits ← literal_selection given,
 activated_given ← return $ active_cls.mk given_name selected_lits given,
--- resolution_prover_of_tactic (do fmt ← pp activated_given, trace (to_fmt "given: " ++ fmt)),
+resolution_prover_of_tactic (when (is_trace_enabled_for `resolution = tt) (do
+  fmt ← pp activated_given, trace (to_fmt "given: " ++ fmt))),
 add_active activated_given,
 seq_inferences inference_rules activated_given,
 run_prover_loop literal_selection clause_selection preprocessing_rules inference_rules
