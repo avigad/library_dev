@@ -85,6 +85,7 @@ meta_definition register_as_passive (c : cls) : resolution_prover name := do
 id ← resolution_prover_of_tactic mk_fresh_name,
 resolution_prover_of_tactic (assertv id (cls.type c) (cls.prf c)),
 prf' ← resolution_prover_of_tactic (get_local id),
+resolution_prover_of_tactic $ infer_type prf', -- FIXME: otherwise ""
 add_passive id (cls.mk (cls.num_quants c) (cls.num_lits c) (cls.has_fin c) prf' (cls.type c)),
 return id
 

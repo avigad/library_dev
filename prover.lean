@@ -24,7 +24,7 @@ remove_passive given_name,
 if is_false (cls.type given) = tt then return (some (cls.prf given)) else do
 selected_lits ← literal_selection given,
 activated_given ← return $ active_cls.mk given_name selected_lits given,
-resolution_prover_of_tactic (do fmt ← pp activated_given, trace (to_fmt "given: " ++ fmt)),
+-- resolution_prover_of_tactic (do fmt ← pp activated_given, trace (to_fmt "given: " ++ fmt)),
 add_active activated_given,
 seq_inferences inference_rules activated_given,
 run_prover_loop literal_selection clause_selection preprocessing_rules inference_rules
