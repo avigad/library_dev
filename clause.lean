@@ -13,7 +13,7 @@ namespace cls
 private meta_definition tactic_format (c : cls) : tactic format := do
 prf_fmt : format ← pp (prf c),
 type_fmt ← pp (type c),
-fin_fmt ← return $ to_fmt (if has_fin c = tt then ", has final" else ""),
+fin_fmt ← return $ to_fmt (if has_fin c then ", has final" else ""),
 return $ prf_fmt ++ to_fmt " : " ++ type_fmt ++ to_fmt " (" ++
   to_fmt (num_quants c) ++ to_fmt " quants, " ++ to_fmt (num_lits c) ++ to_fmt " lits" ++ fin_fmt ++ to_fmt ")"
 
@@ -22,7 +22,7 @@ meta_definition cls_has_to_tactic_format : has_to_tactic_format cls :=
 has_to_tactic_format.mk tactic_format
 
 definition num_binders (c : cls) : ℕ :=
-if has_fin c = tt then num_quants c + num_lits c - 1
+if has_fin c then num_quants c + num_lits c - 1
 else num_quants c + num_lits c
 
 meta_definition of_proof_and_type (prf type : expr) : cls :=
@@ -103,7 +103,7 @@ definition is_neg : lit → bool
 definition is_pos (l : lit) : bool := bool.bnot (is_neg l)
 
 meta_definition to_formula (l : lit) : tactic expr :=
-if is_neg l = tt then mk_mapp ``not [some (formula l)]
+if is_neg l then mk_mapp ``not [some (formula l)]
 else return (formula l)
 
 meta_definition type_str : lit → string
@@ -129,25 +129,25 @@ binding_domain (get_binding_body e i)
 meta_definition get_lit (c : cls) (i : nat) : lit :=
 if has_fin c ∧ num_lits c = i + 1 then lit.final (get_binding_body (type c) (num_quants c + i))
 else let bind := get_binder (type c) (num_quants c + i) in
-if is_app_of bind ``not = tt ∧ get_app_num_args bind = 1 then
+if is_app_of bind ``not ∧ get_app_num_args bind = 1 then
   lit.right (app_arg bind)
 else
   lit.left bind
 
 meta_definition lits_where (c : cls) (p : lit → bool) : list nat :=
-list.filter (λl, p (get_lit c l) = tt) (range (num_lits c))
+list.filter (λl, p (get_lit c l)) (range (num_lits c))
 
 meta_definition get_lits (c : cls) : list lit :=
 list.map (get_lit c) (range (num_lits c))
 
 meta_definition is_maximal (gt : expr → expr → bool) (c : cls) (i : nat) : bool :=
-list.empty (filter (λj, gt (lit.formula $ get_lit c j) (lit.formula $ get_lit c i) = tt) (range $ num_lits c))
+list.empty (filter (λj, gt (lit.formula $ get_lit c j) (lit.formula $ get_lit c i)) (range $ num_lits c))
 
 meta_definition normalize (c : cls) : tactic cls := do
 opened  ← open_constn c (num_binders c),
 lconsts_in_types ← return $ contained_lconsts_list (list.map local_type opened.2),
-quants' ← return $ filter (λlc, rb_map.contains lconsts_in_types (local_uniq_name lc) = tt) opened.2,
-lits' ← return $ filter (λlc, rb_map.contains lconsts_in_types (local_uniq_name lc) = ff) opened.2,
+quants' ← return $ filter (λlc, rb_map.contains lconsts_in_types (local_uniq_name lc)) opened.2,
+lits' ← return $ filter (λlc, ¬rb_map.contains lconsts_in_types (local_uniq_name lc)) opened.2,
 return $ close_constn opened.1 (quants' ++ lits')
 
 lemma fin_to_pos_helper {p} (Hp : p) : ¬p → false := take Hnp, Hnp Hp
@@ -159,7 +159,7 @@ type' ← return (imp (app (const ``not []) (type op.1)) (const ``false [])),
 return $ close_constn (mk 0 1 ff prf' type') op.2
 
 private meta_definition focus' (c : cls) (i : nat) : tactic cls := do
-guard $ lit.is_pos (get_lit c i) = tt,
+guard $ lit.is_pos (get_lit c i),
 op ← open_constn c (num_lits c),
 hyp_i ← option.to_monad (list.nth op.2 i),
 prf' ← mk_mapp ``classical.by_contradiction [none, some (lambdas [hyp_i] (prf op.1))],
@@ -167,9 +167,9 @@ type' ← return (lit.formula (get_lit c i)),
 return $ close_constn (mk 0 1 tt prf' type') (list.remove op.2 i)
 
 meta_definition focus (c : cls) (i : nat) : tactic cls :=
-if has_fin c = tt ∧ i+1 = num_lits c then
+if has_fin c ∧ i+1 = num_lits c then
   return c
-else if has_fin c = tt then
+else if has_fin c then
   do c' ← fin_to_pos c, focus' c' i
 else
   focus' c i
@@ -187,9 +187,9 @@ meta_definition sort_and_constify_metas : list expr → tactic (list expr)
 | exprs_with_metas := do
 inst_exprs ← mapM instantiate_mvars exprs_with_metas,
 metas ← return $ inst_exprs >>= get_metas,
-match list.filter (λm, has_meta_var (get_meta_type m) = ff) metas with
+match list.filter (λm, ¬has_meta_var (get_meta_type m)) metas with
 | [] :=
-     if list.empty metas = tt then
+     if list.empty metas then
        return []
      else do
        forM' metas (λm, do trace (expr.to_string m), t ← infer_type m, trace (expr.to_string t)),

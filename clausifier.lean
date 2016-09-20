@@ -191,7 +191,7 @@ lemma imp_l2 {a b c} : ((a → b) → c) → (b → c) := λabc b, abc (λa, b)
 meta_definition inf_imp_l (l : cls.lit) (c : cls) : tactic (option (list cls)) :=
 match l with
 | cls.lit.left (pi _ _ a b) :=
-  if has_var b = ff then do
+  if ¬has_var b then do
     prf₁ ← mk_mapp ``imp_l1 [none, none, none, some (cls.prf c)],
     prf₂ ← mk_mapp ``imp_l2 [none, none, none, some (cls.prf c)],
     na ← mk_mapp ``not [some a],

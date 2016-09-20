@@ -14,7 +14,7 @@ qf1 ← cls.open_metan c1 (cls.num_quants c1),
 qf2 ← cls.open_metan c2 (cls.num_quants c2),
 unify (cls.lit.formula (cls.get_lit qf1.1 i1)) (cls.lit.formula (cls.get_lit qf2.1 i2)),
 qf1i ← cls.inst_mvars qf1.1,
-guard $ cls.is_maximal gt qf1i i1 = tt,
+guard $ cls.is_maximal gt qf1i i1,
 focused_qf1 ← cls.focus qf1.1 i1,
 op1 ← cls.open_constn focused_qf1 (cls.num_binders focused_qf1),
 op2 ← cls.open_constn qf2.1 i2,
@@ -32,19 +32,19 @@ try_add_resolvent gt c1 c2 i1 i2 <|> return ()
 meta_definition resolution_left_inf : inference :=
 take given, do active : rb_map name active_cls ← get_active, sequence' $ do
   given_i ← active_cls.selected given,
-  guard $ cls.lit.is_neg (cls.get_lit (active_cls.c given) given_i) = tt,
+  guard $ cls.lit.is_neg (cls.get_lit (active_cls.c given) given_i),
   other ← rb_map.values active,
   other_i ← active_cls.selected other,
-  guard $ cls.lit.is_pos (cls.get_lit (active_cls.c other) other_i) = tt,
+  guard $ cls.lit.is_pos (cls.get_lit (active_cls.c other) other_i),
   [maybe_add_resolvent gt (active_cls.c other) (active_cls.c given) other_i given_i]
 
 meta_definition resolution_right_inf : inference :=
 take given, do active : rb_map name active_cls ← get_active, sequence' $ do
   given_i ← active_cls.selected given,
-  guard $ cls.lit.is_pos (cls.get_lit (active_cls.c given) given_i) = tt,
+  guard $ cls.lit.is_pos (cls.get_lit (active_cls.c given) given_i),
   other ← rb_map.values active,
   other_i ← active_cls.selected other,
-  guard $ cls.lit.is_neg (cls.get_lit (active_cls.c other) other_i) = tt,
+  guard $ cls.lit.is_neg (cls.get_lit (active_cls.c other) other_i),
   [maybe_add_resolvent gt (active_cls.c given) (active_cls.c other) given_i other_i]
 
 meta_definition resolution_inf : inference :=

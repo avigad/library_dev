@@ -9,12 +9,12 @@ private meta_definition try_factor' (gt : expr → expr → bool) (c : cls) (i j
 qf ← cls.open_metan c (cls.num_quants c),
 unify_lit (cls.get_lit qf.1 i) (cls.get_lit qf.1 j),
 qfi ← cls.inst_mvars qf.1,
-guard $ cls.is_maximal gt qfi i = tt,
+guard $ cls.is_maximal gt qfi i,
 at_j ← cls.open_constn qf.1 j,
 hyp_i ← option.to_monad (list.nth at_j.2 i),
 cs ← sort_and_constify_metas qf.2,
 qf' ← cls.inst_mvars $
-  if cls.has_fin c = tt ∧ j+1 = cls.num_lits c then
+  if cls.has_fin c ∧ j+1 = cls.num_lits c then
     cls.close_constn (cls.of_proof_and_type (app hyp_i (cls.prf at_j.1)) (const ``false [])) at_j.2
   else
     cls.close_constn (cls.inst at_j.1 hyp_i) at_j.2,

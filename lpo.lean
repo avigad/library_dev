@@ -18,12 +18,12 @@ meta_definition alpha (lpo : expr → expr → bool) : list expr → expr → bo
 meta_definition lex_ma (lpo : expr → expr → bool) (s t : expr) : list expr → list expr → bool
 | (si::ss) (ti::ts) :=
   if si = ti then lex_ma ss ts
-  else if lpo si ti = tt then majo lpo s ts || alpha lpo (si::ss) t
+  else if lpo si ti then majo lpo s ts || alpha lpo (si::ss) t
   else alpha lpo (si::ss) t
 | _ _ := ff
 
 meta_definition lpo (prec_gt : expr → expr → bool) : expr → expr → bool | s t :=
-if prec_gt (get_app_fn s) (get_app_fn t) = tt then majo lpo s (get_app_args t)
+if prec_gt (get_app_fn s) (get_app_fn t) then majo lpo s (get_app_args t)
 else if get_app_fn s = get_app_fn t then lex_ma lpo s t (get_app_args t) (get_app_args t)
 else alpha lpo (get_app_args s) t
 

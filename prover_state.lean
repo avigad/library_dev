@@ -117,7 +117,8 @@ do state ← stateT.read, stateT.write $ mk (active state) (passive state) (newl
 meta_definition register_consts_in_precedence (consts : list expr) := do
 p ← get_precedence,
 p_set ← return (rb_map.set_of_list (map name_of_funsym p)),
-set_precedence $ list.nub_on name_of_funsym (list.filter (λc, rb_map.contains p_set (name_of_funsym c) = ff) consts) ++ p
+new_syms ← return $ list.filter (λc, ¬rb_map.contains p_set (name_of_funsym c)) consts,
+set_precedence $ list.nub_on name_of_funsym (new_syms ++ p)
 
 meta_definition add_inferred (c : cls) : resolution_prover unit := do
 c' ← resolution_prover_of_tactic (cls.normalize c),
@@ -133,7 +134,7 @@ meta_definition seq_inferences : list inference → inference
 | (inf::infs) := λgiven, do
     inf given,
     now_active ← get_active,
-    if rb_map.contains now_active (active_cls.id given) = tt then
+    if rb_map.contains now_active (active_cls.id given) then
       seq_inferences infs given
     else
       return ()
@@ -141,7 +142,7 @@ meta_definition seq_inferences : list inference → inference
 meta_definition redundancy_inference (is_redundant : active_cls → resolution_prover bool) : inference :=
 λgiven, do
 is_red ← is_redundant given,
-if is_red = tt then remove_redundant (active_cls.id given) else return ()
+if is_red then remove_redundant (active_cls.id given) else return ()
 
 meta_definition simp_inference (simpl : active_cls → resolution_prover (option cls)) : inference :=
 λgiven, do maybe_simpld ← simpl given,
@@ -163,10 +164,10 @@ gt ← get_term_order,
 maximal_lits ← return $ list.filter_maximal (λi j,
   gt (cls.lit.formula $ cls.get_lit c i) (cls.lit.formula $ cls.get_lit c j)) (list.range (cls.num_lits c)),
 if list.length maximal_lits = 1 then return maximal_lits else do
-neg_lits ← return $ list.filter (λi, cls.lit.is_neg (cls.get_lit c i) = tt) (list.range (cls.num_lits c)),
+neg_lits ← return $ list.filter (λi, cls.lit.is_neg (cls.get_lit c i)) (list.range (cls.num_lits c)),
 maximal_neg_lits ← return $ list.filter_maximal (λi j,
   gt (cls.lit.formula $ cls.get_lit c i) (cls.lit.formula $ cls.get_lit c j)) neg_lits,
-if list.empty maximal_neg_lits = ff then
+if ¬list.empty maximal_neg_lits then
   return (list.taken 1 maximal_neg_lits)
 else
   return maximal_lits
@@ -174,8 +175,8 @@ meta_definition selection22 : selection_strategy := take c, do
 gt ← get_term_order,
 maximal_lits ← return $ list.filter_maximal (λi j,
   gt (cls.lit.formula $ cls.get_lit c i) (cls.lit.formula $ cls.get_lit c j)) (list.range (cls.num_lits c)),
-maximal_lits_neg ← return $ list.filter (λi, cls.lit.is_neg (cls.get_lit c i) = tt) maximal_lits,
-if list.empty maximal_lits_neg = ff then
+maximal_lits_neg ← return $ list.filter (λi, cls.lit.is_neg (cls.get_lit c i)) maximal_lits,
+if ¬list.empty maximal_lits_neg then
   return (list.taken 1 maximal_lits_neg)
 else
   return maximal_lits

@@ -24,10 +24,10 @@ given_name ← clause_selection,
 given ← option.to_monad (rb_map.find passive given_name),
 -- trace_clauses,
 remove_passive given_name,
-if is_false (cls.type given) = tt then return (some (cls.prf given)) else do
+if is_false (cls.type given) then return (some (cls.prf given)) else do
 selected_lits ← literal_selection given,
 activated_given ← return $ active_cls.mk given_name selected_lits given,
-resolution_prover_of_tactic (when (is_trace_enabled_for `resolution = tt) (do
+resolution_prover_of_tactic (when (is_trace_enabled_for `resolution) (do
   fmt ← pp activated_given, trace (to_fmt "given: " ++ fmt))),
 add_active activated_given,
 seq_inferences inference_rules activated_given,

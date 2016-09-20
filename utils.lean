@@ -82,7 +82,7 @@ definition for_all {A} (p : A → Prop) [decidable_pred p] : list A → bool
 | [] := tt
 
 definition filter_maximal {A} (gt : A → A → bool) (l : list A) : list A :=
-filter (λx, for_all (λy, gt y x = ff) l = tt) l
+filter (λx, for_all (λy, ¬gt y x) l) l
 
 definition taken {A} : ℕ → list A → list A
 | (n+1) (x::xs) := x :: taken n xs
