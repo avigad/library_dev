@@ -4,11 +4,11 @@ open tactic monad
 private meta_definition try_subsume_core : list cls.lit → list cls.lit → tactic unit
 | [] _ := skip
 | small large := first $ do
-  i ← list_zipwithindex small,
-  j ← list_zipwithindex large,
+  i ← list.zip_with_index small,
+  j ← list.zip_with_index large,
   return $ do
     unify_lit i.1 j.1,
-    try_subsume_core (list_remove small i.2) (list_remove large j.2)
+    try_subsume_core (list.remove small i.2) (list.remove large j.2)
 
 -- FIXME: this is incorrect if a quantifier is unused
 meta_definition try_subsume (small large : cls) : tactic unit := do
@@ -36,7 +36,7 @@ active ← get_active, resolution_prover_of_tactic $ filterM (λn,
 meta_definition subsumption_interreduction : list cls → tactic (list cls)
 | (c::cs) := do
   which_cs_subsume_c ← @mapM tactic _ _ _ (λd, does_subsume d c) cs,
-  if list_orb which_cs_subsume_c = tt then
+  if list.bor which_cs_subsume_c = tt then
     subsumption_interreduction cs
   else do
     cs_not_subsumed_by_c ← filterM (λd, do ss ← does_subsume c d, return (bool.bnot ss)) cs,

@@ -21,7 +21,7 @@ new ← take_newly_derived, forM' new register_as_passive,
 passive : rb_map name cls ← get_passive,
 if rb_map.size passive = 0 then return none else do
 given_name ← clause_selection,
-given ← @monadfail_of_option resolution_prover _ resolution_prover_is_alternative _ (rb_map.find passive given_name),
+given ← option.to_monad (rb_map.find passive given_name),
 -- trace_clauses,
 remove_passive given_name,
 if is_false (cls.type given) = tt then return (some (cls.prf given)) else do

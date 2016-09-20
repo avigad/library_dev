@@ -28,7 +28,7 @@ else if get_app_fn s = get_app_fn t then lex_ma lpo s t (get_app_args t) (get_ap
 else alpha lpo (get_app_args s) t
 
 meta_definition prec_gt_of_name_list (ns : list name) : expr → expr → bool :=
-let nis := rb_map.of_list (list_zipwithindex ns) in
+let nis := rb_map.of_list (list.zip_with_index ns) in
 λs t, match (rb_map.find nis (name_of_funsym s), rb_map.find nis (name_of_funsym t)) with
 | (some si, some ti) := to_bool (si > ti)
 | _ := ff

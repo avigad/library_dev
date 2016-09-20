@@ -1,48 +1,7 @@
 open tactic expr list
 
-definition monadfail_of_option {m : Type → Type} [monad m] [alternative m] {A} : option A → m A
-| none := failure
-| (some a) := return a
-
 meta_definition imp (a b : expr) : expr :=
 pi (default name) binder_info.default a b
-
-definition range : ℕ → list ℕ
-| (n+1) := n :: range n
-| 0 := []
-
-definition option_getorelse {B} (opt : option B) (val : B) : B :=
-match opt with
-| some x := x
-| none := val
-end
-
-definition list_empty {A} (l : list A) : bool :=
-match l with
-| [] := tt
-| _::_ := ff
-end
-
-private definition list_zipwithindex' {A} : nat → list A → list (A × nat)
-| _ nil := nil
-| i (x::xs) := (x,i) :: list_zipwithindex' (i+1) xs
-
-definition list_zipwithindex {A} : list A → list (A × nat) :=
-list_zipwithindex' 0
-
-definition list_remove {A} : list A → nat → list A
-| []      _     := []
-| (x::xs) 0     := xs
-| (x::xs) (i+1) := x :: list_remove xs i
-
-definition list_orb : list bool → bool
-| (tt::xs) := tt
-| (ff::xs) := list_orb xs
-| [] := ff
-
-definition list_contains {a} [decidable_eq a] (elem : a) : list a → bool
-| (x::xs) := if x = elem then tt else list_contains xs
-| [] := ff
 
 meta_definition get_metas : expr → list expr
 | (var _) := []
@@ -72,6 +31,18 @@ meta_definition expr_size : expr → nat
 | (elet _ t v b) := expr_size v + expr_size b
 | (macro _ _ _) := 1
 
+namespace option
+
+definition to_monad {m : Type → Type} [monad m] [alternative m] {A} : option A → m A
+| none := failure
+| (some a) := return a
+
+definition get_or_else {B} : option B → B → B
+| (some x) _   := x
+| none default := default
+
+end option
+
 namespace rb_map
 
 meta_definition keys {K V} (m : rb_map K V) : list K :=
@@ -81,22 +52,22 @@ meta_definition values {K V} (m : rb_map K V) : list V :=
 @fold _ V (list V) m [] (λk v vs, v::vs)
 
 meta_definition set_of_list {A} [has_ordering A] : list A → rb_map A unit
-| [] := mk A unit
+| []      := mk _ _
 | (x::xs) := insert (set_of_list xs) x ()
 
 end rb_map
 
 namespace list
 
-meta_definition dup {A} [has_ordering A] (l : list A) : list A :=
+meta_definition nub {A} [has_ordering A] (l : list A) : list A :=
 rb_map.keys (rb_map.set_of_list l)
 
-meta_definition dup_by {A B} [has_ordering B] (f : A → B) (l : list A) : list A :=
+meta_definition nub_on {A B} [has_ordering B] (f : A → B) (l : list A) : list A :=
 rb_map.values (rb_map.of_list (map (λx, (f x, x)) l))
 
-definition dup_by' {A B} [decidable_eq B] (f : A → B) : list A → list A
+definition nub_on' {A B} [decidable_eq B] (f : A → B) : list A → list A
 | [] := []
-| (x::xs) := x :: filter (λy, f x ≠ f y) (dup_by' xs)
+| (x::xs) := x :: filter (λy, f x ≠ f y) (nub_on' xs)
 
 definition foldr {A B} (f : A → B → B) (b : B) : list A → B
 | [] := b
@@ -107,7 +78,7 @@ definition foldl {A B} (f : B → A → B) : B → list A → B
 | b (a::ass) := foldl (f b a) ass
 
 definition for_all {A} (p : A → Prop) [decidable_pred p] : list A → bool
-| (x::xs) := decidable.to_bool (p x) && for_all xs
+| (x::xs) := if ¬p x then ff else for_all xs
 | [] := tt
 
 definition filter_maximal {A} (gt : A → A → bool) (l : list A) : list A :=
@@ -116,6 +87,37 @@ filter (λx, for_all (λy, gt y x = ff) l = tt) l
 definition taken {A} : ℕ → list A → list A
 | (n+1) (x::xs) := x :: taken n xs
 | _ _ := []
+
+definition empty {A} (l : list A) : bool :=
+match l with
+| [] := tt
+| _::_ := ff
+end
+
+private definition zip_with_index' {A} : ℕ → list A → list (A × ℕ)
+| _ nil := nil
+| i (x::xs) := (x,i) :: zip_with_index' (i+1) xs
+
+definition zip_with_index {A} : list A → list (A × ℕ) :=
+zip_with_index' 0
+
+definition remove {A} : list A → ℕ → list A
+| []      _     := []
+| (x::xs) 0     := xs
+| (x::xs) (i+1) := x :: remove xs i
+
+definition bor : list bool → bool
+| (tt::xs) := tt
+| (ff::xs) := bor xs
+| [] := ff
+
+definition contains {a} [decidable_eq a] (elem : a) : list a → bool
+| (x::xs) := if x = elem then tt else contains xs
+| [] := ff
+
+definition range : ℕ → list ℕ
+| (n+1) := n :: range n
+| 0 := []
 
 end list
 

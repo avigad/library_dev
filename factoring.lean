@@ -11,7 +11,7 @@ unify_lit (cls.get_lit qf.1 i) (cls.get_lit qf.1 j),
 qfi ← cls.inst_mvars qf.1,
 @guard tactic _ (cls.is_maximal gt qfi i = tt) _,
 at_j ← cls.open_constn qf.1 j,
-hyp_i ← monadfail_of_option (list.nth at_j.2 i),
+hyp_i ← option.to_monad (list.nth at_j.2 i),
 cs ← sort_and_constify_metas qf.2,
 qf' ← cls.inst_mvars $
   if cls.has_fin c = tt ∧ j+1 = cls.num_lits c then
@@ -30,6 +30,6 @@ add_inferred f
 meta_definition factor_inf : inference :=
 take given, do gt ← get_term_order, sequence' (do
   i ← active_cls.selected given,
-  j ← range (cls.num_lits (active_cls.c given)),
+  j ← list.range (cls.num_lits (active_cls.c given)),
   return $ @orelse resolution_prover _ _ (try_infer_factor gt (active_cls.c given) i j) (return ())
 )

@@ -141,7 +141,7 @@ meta_definition get_lits (c : cls) : list lit :=
 list.map (get_lit c) (range (num_lits c))
 
 meta_definition is_maximal (gt : expr → expr → bool) (c : cls) (i : nat) : bool :=
-list_empty (filter (λj, gt (lit.formula $ get_lit c j) (lit.formula $ get_lit c i) = tt) (range $ num_lits c))
+list.empty (filter (λj, gt (lit.formula $ get_lit c j) (lit.formula $ get_lit c i) = tt) (range $ num_lits c))
 
 meta_definition normalize (c : cls) : tactic cls := do
 opened  ← open_constn c (num_binders c),
@@ -161,10 +161,10 @@ return $ close_constn (mk 0 1 ff prf' type') op.2
 private meta_definition focus' (c : cls) (i : nat) : tactic cls := do
 @guard tactic _ (lit.is_pos (get_lit c i) = tt) _,
 op ← open_constn c (num_lits c),
-hyp_i ← monadfail_of_option (list.nth op.2 i),
+hyp_i ← option.to_monad (list.nth op.2 i),
 prf' ← mk_mapp ``classical.by_contradiction [none, some (lambdas [hyp_i] (prf op.1))],
 type' ← return (lit.formula (get_lit c i)),
-return $ close_constn (mk 0 1 tt prf' type') (list_remove op.2 i)
+return $ close_constn (mk 0 1 tt prf' type') (list.remove op.2 i)
 
 meta_definition focus (c : cls) (i : nat) : tactic cls :=
 if has_fin c = tt ∧ i+1 = num_lits c then
@@ -189,7 +189,7 @@ inst_exprs ← @mapM tactic _ _ _ instantiate_mvars exprs_with_metas,
 metas ← return $ inst_exprs >>= get_metas,
 match list.filter (λm, has_meta_var (get_meta_type m) = ff) metas with
 | [] :=
-     if list_empty metas = tt then
+     if list.empty metas = tt then
        return []
      else do
        forM' metas (λm, do trace (expr.to_string m), t ← infer_type m, trace (expr.to_string t)),

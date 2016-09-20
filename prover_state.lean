@@ -118,7 +118,7 @@ stateT.write (mk (active state) (passive state) (newly_derived state) new_prec))
 meta_definition register_consts_in_precedence (consts : list expr) := do
 p ← get_precedence,
 p_set ← return (rb_map.set_of_list (map name_of_funsym p)),
-set_precedence $ list.dup_by name_of_funsym (list.filter (λc, rb_map.contains p_set (name_of_funsym c) = ff) consts) ++ p
+set_precedence $ list.nub_on name_of_funsym (list.filter (λc, rb_map.contains p_set (name_of_funsym c) = ff) consts) ++ p
 
 meta_definition add_inferred (c : cls) : resolution_prover unit := do
 c' ← resolution_prover_of_tactic (cls.normalize c),
@@ -155,28 +155,28 @@ meta_definition selection_strategy := cls → resolution_prover (list nat)
 
 meta_definition dumb_selection : selection_strategy :=
 λc, return $ match cls.lits_where c cls.lit.is_neg with
-| [] := range (cls.num_lits c)
+| [] := list.range (cls.num_lits c)
 | neg_lit::_ := [neg_lit]
 end
 
 meta_definition selection21 : selection_strategy := take c, do
 gt ← get_term_order,
 maximal_lits ← return $ list.filter_maximal (λi j,
-  gt (cls.lit.formula $ cls.get_lit c i) (cls.lit.formula $ cls.get_lit c j)) (range (cls.num_lits c)),
+  gt (cls.lit.formula $ cls.get_lit c i) (cls.lit.formula $ cls.get_lit c j)) (list.range (cls.num_lits c)),
 if list.length maximal_lits = 1 then return maximal_lits else do
-neg_lits ← return $ list.filter (λi, cls.lit.is_neg (cls.get_lit c i) = tt) (range (cls.num_lits c)),
+neg_lits ← return $ list.filter (λi, cls.lit.is_neg (cls.get_lit c i) = tt) (list.range (cls.num_lits c)),
 maximal_neg_lits ← return $ list.filter_maximal (λi j,
   gt (cls.lit.formula $ cls.get_lit c i) (cls.lit.formula $ cls.get_lit c j)) neg_lits,
-if list_empty maximal_neg_lits = ff then
+if list.empty maximal_neg_lits = ff then
   @return resolution_prover resolution_prover_is_monad _ (list.taken 1 maximal_neg_lits)
 else
   return maximal_lits
 meta_definition selection22 : selection_strategy := take c, do
 gt ← get_term_order,
 maximal_lits ← return $ list.filter_maximal (λi j,
-  gt (cls.lit.formula $ cls.get_lit c i) (cls.lit.formula $ cls.get_lit c j)) (range (cls.num_lits c)),
+  gt (cls.lit.formula $ cls.get_lit c i) (cls.lit.formula $ cls.get_lit c j)) (list.range (cls.num_lits c)),
 maximal_lits_neg ← return $ list.filter (λi, cls.lit.is_neg (cls.get_lit c i) = tt) maximal_lits,
-if list_empty maximal_lits_neg = ff then
+if list.empty maximal_lits_neg = ff then
   @return resolution_prover resolution_prover_is_monad _ (list.taken 1 maximal_lits_neg)
 else
   return maximal_lits
