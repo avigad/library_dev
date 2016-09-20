@@ -25,12 +25,22 @@ definition num_binders (c : cls) : ℕ :=
 if has_fin c then num_quants c + num_lits c - 1
 else num_quants c + num_lits c
 
+private meta_definition parse_clause_type : expr → ℕ × ℕ × bool
+| (pi n bi d b) :=
+  match parse_clause_type b with
+  | (0, ls, fin) := if has_var b then (1, ls, fin) else (0, ls+1, fin)
+  | (qs, ls, fin) := (qs+1, ls, fin)
+  end
+| e := if expr.is_false e then (0, 0, ff) else (0, 1, tt)
+
 meta_definition of_proof_and_type (prf type : expr) : cls :=
-mk 0 1 tt prf type
+match parse_clause_type type with
+(qs, ls, fin) := mk qs ls fin prf type
+end
 
 meta_definition of_proof (prf : expr) : tactic cls := do
 type ← infer_type prf,
-return (of_proof_and_type prf type)
+return $ of_proof_and_type prf type
 
 meta_definition inst (c : cls) (e : expr) : cls :=
 (if num_quants c > 0
