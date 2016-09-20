@@ -7,9 +7,8 @@ variable c2 : cls
 variable i1 : nat
 variable i2 : nat
 
--- set_option new_elaborator true
--- c1 : ... ¬a ...
--- c2 : ...  a ...
+-- c1 : ... → a
+-- c2 : ... → a → ...
 meta_definition try_resolve : tactic cls := do
 qf1 ← cls.open_metan c1 (cls.num_quants c1),
 qf2 ← cls.open_metan c2 (cls.num_quants c2),
@@ -29,8 +28,6 @@ add_inferred c'
 
 meta_definition maybe_add_resolvent : resolution_prover unit :=
 @orelse resolution_prover _ _ (try_add_resolvent gt c1 c2 i1 i2) (return ())
-
-set_option new_elaborator true
 
 meta_definition resolution_left_inf : inference :=
 take given, do active : rb_map name active_cls ← get_active, sequence' $ do

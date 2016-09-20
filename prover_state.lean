@@ -129,12 +129,6 @@ stateT.write (mk (active state) (passive state) (c' :: newly_derived state) (pre
 meta_definition inference :=
 active_cls → resolution_prover unit
 
-meta_definition list_contains {a} [decidable_eq a] (elem : a) (l : list a) : bool :=
-match l with
-| x::xs := if x = elem then tt else list_contains elem xs
-| nil := ff
-end
-
 meta_definition seq_inferences : list inference → inference
 | [] := λgiven, return ()
 | (inf::infs) := λgiven, do
@@ -165,7 +159,6 @@ meta_definition dumb_selection : selection_strategy :=
 | neg_lit::_ := [neg_lit]
 end
 
-set_option new_elaborator true
 meta_definition selection21 : selection_strategy := take c, do
 gt ← get_term_order,
 maximal_lits ← return $ list.filter_maximal (λi j,
@@ -187,7 +180,6 @@ if list_empty maximal_lits_neg = ff then
   @return resolution_prover resolution_prover_is_monad _ (list.taken 1 maximal_lits_neg)
 else
   return maximal_lits
-set_option new_elaborator false
 
 meta_definition preprocessing_rule (f : list cls → resolution_prover (list cls)) : resolution_prover unit := do
 state ← stateT.read,
@@ -201,7 +193,7 @@ meta_definition clause_weight (c : cls) : nat :=
 10 * cls.num_lits c + expr_size (cls.type c)
 
 meta_definition find_minimal_weight (passive : rb_map name cls) : name :=
-match rb_map.fold passive none (λk c acc, match acc with
+match @rb_map.fold name cls (option (name × ℕ)) passive none (λk c acc, match acc with
 | none := some (k, clause_weight c)
 | (some (n,s)) :=
     if clause_weight c < s then
@@ -222,7 +214,6 @@ namespace resolution_prover_state
 meta_definition empty : resolution_prover_state :=
 mk (rb_map.mk name active_cls) (rb_map.mk name cls) [] []
 
-set_option new_elaborator true
 meta_definition initial (clauses : list cls) : tactic resolution_prover_state := do
 after_setup ← forM' clauses add_inferred empty,
 return after_setup.2

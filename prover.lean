@@ -15,7 +15,7 @@ meta_definition run_prover_loop
   (clause_selection : resolution_prover name)
   (preprocessing_rules : list (resolution_prover unit))
   (inference_rules : list inference)
-  : resolution_prover (option expr) := do
+  : unit → resolution_prover (option expr) | () := do
 sequence' preprocessing_rules,
 new ← take_newly_derived, forM' new register_as_passive,
 passive : rb_map name cls ← get_passive,
@@ -31,7 +31,7 @@ resolution_prover_of_tactic (when (is_trace_enabled_for `resolution = tt) (do
   fmt ← pp activated_given, trace (to_fmt "given: " ++ fmt))),
 add_active activated_given,
 seq_inferences inference_rules activated_given,
-run_prover_loop literal_selection clause_selection preprocessing_rules inference_rules
+run_prover_loop ()
 
 meta_definition default_preprocessing : list (resolution_prover unit) :=
 [
@@ -52,14 +52,14 @@ meta_definition try_clausify (prf : expr) : tactic (list cls) :=
 
 meta_definition prover_tactic : tactic unit := do
 intros,
-target_name ← mk_fresh_name, tgt ← target,
+target_name ← get_unused_name `target none, tgt ← target,
 mk_mapp ``classical.by_contradiction [some tgt] >>= apply, intro target_name,
 hyps ← local_context,
 initial_clauses ← @mapM tactic _ _ _ try_clausify hyps,
 initial_state ← resolution_prover_state.initial (join initial_clauses),
 res ← run_prover_loop selection21 weight_clause_selection
   default_preprocessing default_inferences
-  initial_state,
+  () initial_state,
 match res with
 | (some empty_clause, _) := apply empty_clause
 | (none, saturation) := trace "saturation" >> trace saturation >> skip

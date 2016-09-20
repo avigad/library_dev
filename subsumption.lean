@@ -1,14 +1,14 @@
 import clause prover_state
 open tactic monad
 
-private meta_definition try_subsume_core (small large : list cls.lit) : tactic unit :=
-if list_empty small = tt then skip
-else first (do
+private meta_definition try_subsume_core : list cls.lit → list cls.lit → tactic unit
+| [] _ := skip
+| small large := first $ do
   i ← list_zipwithindex small,
   j ← list_zipwithindex large,
-  return (do
+  return $ do
     unify_lit i.1 j.1,
-    try_subsume_core (list_remove small i.2) (list_remove large j.2)))
+    try_subsume_core (list_remove small i.2) (list_remove large j.2)
 
 -- FIXME: this is incorrect if a quantifier is unused
 meta_definition try_subsume (small large : cls) : tactic unit := do

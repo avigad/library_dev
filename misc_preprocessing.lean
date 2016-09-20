@@ -1,8 +1,6 @@
 import clause prover_state
 open expr list
 
-set_option new_elaborator true
-
 meta_definition is_taut (c : cls) : bool := do
 list_orb (do
   l1 ← cls.get_lits c, guard $ cls.lit.is_neg l1 = tt,

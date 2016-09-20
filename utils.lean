@@ -40,6 +40,10 @@ definition list_orb : list bool → bool
 | (ff::xs) := list_orb xs
 | [] := ff
 
+definition list_contains {a} [decidable_eq a] (elem : a) : list a → bool
+| (x::xs) := if x = elem then tt else list_contains xs
+| [] := ff
+
 meta_definition get_metas : expr → list expr
 | (var _) := []
 | (sort _) := []
@@ -71,10 +75,10 @@ meta_definition expr_size : expr → nat
 namespace rb_map
 
 meta_definition keys {K V} (m : rb_map K V) : list K :=
-fold m [] (λk v ks, k::ks)
+@fold K _ (list K) m [] (λk v ks, k::ks)
 
 meta_definition values {K V} (m : rb_map K V) : list V :=
-fold m [] (λk v vs, v::vs)
+@fold _ V (list V) m [] (λk v vs, v::vs)
 
 meta_definition set_of_list {A} [has_ordering A] : list A → rb_map A unit
 | [] := mk A unit

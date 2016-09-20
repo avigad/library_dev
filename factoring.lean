@@ -5,11 +5,7 @@ meta_definition inst_lit (c : cls) (i : nat) (e : expr) : tactic cls := do
 opened ← cls.open_constn c i,
 return $ cls.close_constn (cls.inst opened.1 e) opened.2
 
-example (p q) : (¬p → q → p) → (q → p) :=
-  take npqp q, @classical.by_cases p p (λp, p) (λnp, npqp np q)
-
-meta_definition try_factor (gt : expr → expr → bool) (c : cls) (i j : nat) : tactic cls :=
-if i > j then try_factor gt c j i else do
+private meta_definition try_factor' (gt : expr → expr → bool) (c : cls) (i j : nat) : tactic cls := do
 qf ← cls.open_metan c (cls.num_quants c),
 unify_lit (cls.get_lit qf.1 i) (cls.get_lit qf.1 j),
 qfi ← cls.inst_mvars qf.1,
@@ -23,6 +19,9 @@ qf' ← cls.inst_mvars $
   else
     cls.close_constn (cls.inst at_j.1 hyp_i) at_j.2,
 return $ cls.close_constn qf' cs
+
+meta_definition try_factor (gt : expr → expr → bool) (c : cls) (i j : nat) : tactic cls :=
+if i > j then try_factor' gt c j i else try_factor' gt c i j
 
 meta_definition try_infer_factor (gt : expr → expr → bool) (c : cls) (i j : nat) : resolution_prover unit := do
 f ← resolution_prover_of_tactic (try_factor gt c i j),
