@@ -14,7 +14,7 @@ qf1 ← cls.open_metan c1 (cls.num_quants c1),
 qf2 ← cls.open_metan c2 (cls.num_quants c2),
 unify (cls.lit.formula (cls.get_lit qf1.1 i1)) (cls.lit.formula (cls.get_lit qf2.1 i2)),
 qf1i ← cls.inst_mvars qf1.1,
-@guard tactic _ (cls.is_maximal gt qf1i i1 = tt) _,
+guard $ cls.is_maximal gt qf1i i1 = tt,
 focused_qf1 ← cls.focus qf1.1 i1,
 op1 ← cls.open_constn focused_qf1 (cls.num_binders focused_qf1),
 op2 ← cls.open_constn qf2.1 i2,
@@ -27,7 +27,7 @@ c' ← resolution_prover_of_tactic $ try_resolve gt c1 c2 i1 i2,
 add_inferred c'
 
 meta_definition maybe_add_resolvent : resolution_prover unit :=
-@orelse resolution_prover _ _ (try_add_resolvent gt c1 c2 i1 i2) (return ())
+try_add_resolvent gt c1 c2 i1 i2 <|> return ()
 
 meta_definition resolution_left_inf : inference :=
 take given, do active : rb_map name active_cls ← get_active, sequence' $ do

@@ -7,8 +7,8 @@ declare_trace resolution
 set_option trace.resolution false
 
 meta_definition trace_clauses : resolution_prover unit := do
-@monad.bind resolution_prover _ _ _ stateT.read
-(λstate, resolution_prover_of_tactic (tactic.trace state))
+state ← stateT.read,
+resolution_prover_of_tactic (tactic.trace state)
 
 meta_definition run_prover_loop
   (literal_selection : selection_strategy)
@@ -55,7 +55,7 @@ intros,
 target_name ← get_unused_name `target none, tgt ← target,
 mk_mapp ``classical.by_contradiction [some tgt] >>= apply, intro target_name,
 hyps ← local_context,
-initial_clauses ← @mapM tactic _ _ _ try_clausify hyps,
+initial_clauses ← mapM try_clausify hyps,
 initial_state ← resolution_prover_state.initial (join initial_clauses),
 res ← run_prover_loop selection21 weight_clause_selection
   default_preprocessing default_inferences

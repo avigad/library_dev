@@ -35,11 +35,11 @@ active ← get_active, resolution_prover_of_tactic $ filterM (λn,
 
 meta_definition subsumption_interreduction : list cls → tactic (list cls)
 | (c::cs) := do
-  which_cs_subsume_c ← @mapM tactic _ _ _ (λd, does_subsume d c) cs,
+  which_cs_subsume_c ← mapM (λd, does_subsume d c) cs,
   if list.bor which_cs_subsume_c = tt then
     subsumption_interreduction cs
   else do
-    cs_not_subsumed_by_c ← filterM (λd, do ss ← does_subsume c d, return (bool.bnot ss)) cs,
+    cs_not_subsumed_by_c ← filterM (λd, liftM bool.bnot (does_subsume c d)) cs,
     cs' ← subsumption_interreduction cs_not_subsumed_by_c,
     return (c::cs')
 | [] := return []
@@ -55,4 +55,4 @@ meta_definition backward_subsumption : inference := λgiven, do
 active ← get_active,
 ss ← resolution_prover_of_tactic $
   keys_where_tt active (λa, does_subsume (active_cls.c given) (active_cls.c a)),
-@forM' resolution_prover _ _ _ (list.filter (λid, id ≠ active_cls.id given) ss) remove_redundant
+sequence' $ do id ← ss, guard (id ≠ active_cls.id given), [remove_redundant id]

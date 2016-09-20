@@ -9,7 +9,7 @@ private meta_definition try_factor' (gt : expr → expr → bool) (c : cls) (i j
 qf ← cls.open_metan c (cls.num_quants c),
 unify_lit (cls.get_lit qf.1 i) (cls.get_lit qf.1 j),
 qfi ← cls.inst_mvars qf.1,
-@guard tactic _ (cls.is_maximal gt qfi i = tt) _,
+guard $ cls.is_maximal gt qfi i = tt,
 at_j ← cls.open_constn qf.1 j,
 hyp_i ← option.to_monad (list.nth at_j.2 i),
 cs ← sort_and_constify_metas qf.2,
@@ -28,8 +28,7 @@ f ← resolution_prover_of_tactic (try_factor gt c i j),
 add_inferred f
 
 meta_definition factor_inf : inference :=
-take given, do gt ← get_term_order, sequence' (do
+take given, do gt ← get_term_order, sequence' $ do
   i ← active_cls.selected given,
   j ← list.range (cls.num_lits (active_cls.c given)),
-  return $ @orelse resolution_prover _ _ (try_infer_factor gt (active_cls.c given) i j) (return ())
-)
+  return $ try_infer_factor gt (active_cls.c given) i j <|> return ()

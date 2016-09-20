@@ -148,7 +148,7 @@ opened  ← open_constn c (num_binders c),
 lconsts_in_types ← return $ contained_lconsts_list (list.map local_type opened.2),
 quants' ← return $ filter (λlc, rb_map.contains lconsts_in_types (local_uniq_name lc) = tt) opened.2,
 lits' ← return $ filter (λlc, rb_map.contains lconsts_in_types (local_uniq_name lc) = ff) opened.2,
-@return tactic tactic_is_monad _ $ close_constn opened.1 (quants' ++ lits')
+return $ close_constn opened.1 (quants' ++ lits')
 
 lemma fin_to_pos_helper {p} (Hp : p) : ¬p → false := take Hnp, Hnp Hp
 meta_definition fin_to_pos (c : cls) : tactic cls := do
@@ -159,7 +159,7 @@ type' ← return (imp (app (const ``not []) (type op.1)) (const ``false [])),
 return $ close_constn (mk 0 1 ff prf' type') op.2
 
 private meta_definition focus' (c : cls) (i : nat) : tactic cls := do
-@guard tactic _ (lit.is_pos (get_lit c i) = tt) _,
+guard $ lit.is_pos (get_lit c i) = tt,
 op ← open_constn c (num_lits c),
 hyp_i ← option.to_monad (list.nth op.2 i),
 prf' ← mk_mapp ``classical.by_contradiction [none, some (lambdas [hyp_i] (prf op.1))],
@@ -185,7 +185,7 @@ else
 -- FIXME: this is most definitely broken with meta-variables that were already in the goal
 meta_definition sort_and_constify_metas : list expr → tactic (list expr)
 | exprs_with_metas := do
-inst_exprs ← @mapM tactic _ _ _ instantiate_mvars exprs_with_metas,
+inst_exprs ← mapM instantiate_mvars exprs_with_metas,
 metas ← return $ inst_exprs >>= get_metas,
 match list.filter (λm, has_meta_var (get_meta_type m) = ff) metas with
 | [] :=
