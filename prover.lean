@@ -43,7 +43,7 @@ forward_subsumption_pre
 meta_definition default_inferences : list inference :=
 [
 forward_subsumption, backward_subsumption,
-clausification_inference,
+clausification_inf,
 resolution_inf, factor_inf
 ]
 

@@ -299,7 +299,12 @@ match one_step with
 | none := return none
 end
 
-meta_definition clausification_inference : inference := λgiven, do
+meta_definition clausification_pre : resolution_prover unit := preprocessing_rule $ λnew, do
+clausified ← resolution_prover_of_tactic $ sequence (do n ← new,
+           [do n' ← clausify_core n, return $ option.get_or_else n' [n]]),
+return (list.join clausified)
+
+meta_definition clausification_inf : inference := λgiven, do
 clausified ← resolution_prover_of_tactic $ clausify_core (active_cls.c given),
 match clausified with
 | some cs := do forM' cs add_inferred, remove_redundant (active_cls.id given)
