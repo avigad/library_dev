@@ -288,12 +288,20 @@ match maybe_clausified with
 | some clsfd := return $ some (do c' ← clsfd, [cls.close_constn c' opened.2])
 end
 
-meta_definition clausification_inference_core (c : cls) : tactic (option (list cls)) :=
-first_some $ do i ← range (cls.num_lits c), [clausify_at c i]
+meta_definition clausify_core : cls → tactic (option (list cls)) | c := do
+one_step ← first_some (do i ← range (cls.num_lits c), [clausify_at c i]),
+match one_step with
+| some next := do
+  next' ← sequence (do n ← next, [do
+        n' ← clausify_core n,
+        return $ option.get_or_else n' [n]]),
+  return (some $ list.join next')
+| none := return none
+end
 
 meta_definition clausification_inference : inference := λgiven, do
-one_step_clausified ← resolution_prover_of_tactic $ clausification_inference_core (active_cls.c given),
-match one_step_clausified with
-| some simpld := do forM' simpld add_inferred, remove_redundant (active_cls.id given)
+clausified ← resolution_prover_of_tactic $ clausify_core (active_cls.c given),
+match clausified with
+| some cs := do forM' cs add_inferred, remove_redundant (active_cls.id given)
 | none := return ()
 end
