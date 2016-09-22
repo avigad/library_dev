@@ -1,5 +1,9 @@
 open tactic expr list
 
+attribute [instance]
+meta_definition expr_has_ordering : has_ordering expr :=
+has_ordering.mk expr.cmp
+
 meta_definition imp (a b : expr) : expr :=
 pi (default name) binder_info.default a b
 
