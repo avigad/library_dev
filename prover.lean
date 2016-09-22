@@ -37,16 +37,19 @@ run_prover_loop (i+1)
 
 meta_definition default_preprocessing : list (resolution_prover unit) :=
 [
+remove_duplicates_pre,
 tautology_removal_pre,
 subsumption_interreduction_pre,
-forward_subsumption_pre
+forward_subsumption_pre,
+return ()
 ]
 
 meta_definition default_inferences : list inference :=
 [
 forward_subsumption, backward_subsumption,
 clausification_inf,
-resolution_inf, factor_inf
+resolution_inf, factor_inf,
+(λg, return ())
 ]
 
 meta_definition try_clausify (prf : expr) : tactic (list cls) :=

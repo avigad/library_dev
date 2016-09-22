@@ -17,3 +17,7 @@ to_expr `(trivial) >>= apply
 
 meta_definition tautology_removal_pre : resolution_prover unit :=
 preprocessing_rule $ λnew, resolution_prover_of_tactic (filterM (λc, liftM bool.bnot (is_taut c)) new)
+
+meta_definition remove_duplicates_pre : resolution_prover unit :=
+preprocessing_rule $ λnew,
+return (rb_map.values (rb_map.of_list (list.map (λc:cls, (c↣type, c)) new)))
