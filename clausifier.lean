@@ -8,7 +8,7 @@ meta_definition inf_false_f (l : cls.lit) (c : cls) : tactic (option (list cls))
 match l with
 | cls.lit.final (const false_name _) :=
   if false_name = ``false then
-    return (some [cls.mk 0 0 ff (cls.prf c) (cls.type c)])
+    return (some [{ c with has_fin := ff, num_lits := 0 }])
   else
     return none
 | _ := return none
@@ -28,7 +28,7 @@ meta_definition inf_not_f (l : cls.lit) (c : cls) : tactic (option (list cls)) :
 match l with
 | cls.lit.final (app (const not_name _) a) :=
   if not_name = ``not then do
-    return $ some [cls.mk 0 1 tt (cls.prf c) (imp a (const ``false []))]
+    return $ some [{ c with has_fin := ff, type := imp a (const ``false []) }]
   else
     return none
 | _ := return none
@@ -37,7 +37,7 @@ end
 meta_definition inf_imp_f (l : cls.lit) (c : cls) : tactic (option (list cls)) :=
 match l with
 | cls.lit.final (pi _ _ _ _) :=
-    return $ some [cls.mk 0 2 tt (cls.prf c) (cls.type c)]
+    return $ some [{ c with num_lits := 2 }]
 | _ := return none
 end
 
@@ -59,8 +59,8 @@ meta_definition inf_or_f (l : cls.lit) (c : cls) : tactic (option (list cls)) :=
 match l with
 | cls.lit.final (app (app (const or_name _) a) b) :=
   if or_name = ``or then do
-    prf' ← mk_mapp ``or_f [none, none, some (cls.prf c)],
-    return $ some [cls.mk 0 2 tt prf' (imp (app (const ``not []) a) b)]
+    prf' ← mk_mapp ``or_f [none, none, some c↣prf],
+    return $ some [{ c with num_lits := 2, prf := prf', type := imp (app (const ``not []) a) b }]
   else return none
 | _ := return none
 end
@@ -69,7 +69,7 @@ meta_definition inf_false_l (l : cls.lit) (c : cls) : tactic (option (list cls))
 match l with
 | cls.lit.left (const false_name _) :=
   if false_name = ``false then
-    return (some [])
+     return (some [])
    else
      return none
 | _ :=  return none
@@ -80,8 +80,8 @@ meta_definition inf_false_r (l : cls.lit) (c : cls) : tactic (option (list cls))
 match l with
 | cls.lit.right (const false_name _) :=
 if false_name = ``false then do
-  prf' ← mk_mapp ``false_r [none, some (cls.prf c)],
-  return $ some [cls.mk 0 (cls.num_lits c - 1) (cls.has_fin c) prf' (binding_body (cls.type c))]
+  prf' ← mk_mapp ``false_r [none, some c↣prf],
+  return $ some [{ c with num_lits := c↣num_lits - 1, prf := prf', type := binding_body c↣type }]
 else
   return none
 | _ := return none
@@ -92,8 +92,8 @@ meta_definition inf_true_l (l : cls.lit) (c : cls) : tactic (option (list cls)) 
 match l with
 | cls.lit.left (const true_name _) :=
 if true_name = ``true then do
-  prf' ← mk_mapp ``true_l [none, some (cls.prf c)],
-  return $ some [cls.mk 0 (cls.num_lits c - 1) (cls.has_fin c)prf' (binding_body (cls.type c))]
+  prf' ← mk_mapp ``true_l [none, some c↣prf],
+  return $ some [{ c with num_lits := c↣num_lits - 1, prf := prf', type := binding_body c↣type }]
 else
   return none
 | _ := return none
@@ -113,8 +113,8 @@ lemma not_r {a c} : (¬¬a → c) → (a → c) := λnnac a, nnac (λx, x a)
 meta_definition inf_not_r (l : cls.lit) (c : cls) : tactic (option (list cls)) :=
 match (l, is_not (cls.lit.formula l)) with
 | (cls.lit.right _, some a) := do
-  prf' ← mk_mapp ``not_r [none, none, some (cls.prf c)],
-  return $ some [cls.mk 0 (cls.num_lits c) (cls.has_fin c) prf' (imp a (binding_body (cls.type c)))]
+  prf' ← mk_mapp ``not_r [none, none, some c↣prf],
+  return $ some [{ c with prf := prf', type := imp a (binding_body c↣type) }]
 | _ := return none
 end
 
@@ -123,8 +123,8 @@ meta_definition inf_and_l (l : cls.lit) (c : cls) : tactic (option (list cls)) :
 match l with
 | cls.lit.left (app (app (const and_name _) a) b) :=
   if and_name = ``and then do
-    prf' ← mk_mapp ``and_l [none, none, none, some (cls.prf c)],
-    return $ some [cls.mk 0 (cls.num_lits c + 1) (cls.has_fin c)prf' (imp a (imp b (binding_body (cls.type c))))]
+    prf' ← mk_mapp ``and_l [none, none, none, some c↣prf],
+    return $ some [{ c with num_lits := c↣num_lits + 1, prf := prf', type := imp a (imp b (binding_body c↣type)) }]
   else return none
 | _ := return none
 end
@@ -135,13 +135,13 @@ meta_definition inf_and_r (l : cls.lit) (c : cls) : tactic (option (list cls)) :
 match l with
 | cls.lit.right (app (app (const and_name _) a) b) :=
   if and_name = ``and then do
-    prf₁ ← mk_mapp ``and_r1 [none, none, none, some (cls.prf c)],
-    prf₂ ← mk_mapp ``and_r2 [none, none, none, some (cls.prf c)],
+    prf₁ ← mk_mapp ``and_r1 [none, none, none, some c↣prf],
+    prf₂ ← mk_mapp ``and_r2 [none, none, none, some c↣prf],
     na ← mk_mapp ``not [some a],
     nb ← mk_mapp ``not [some b],
     return $ some [
-      cls.mk 0 (cls.num_lits c) (cls.has_fin c) prf₁ (imp na (binding_body (cls.type c))),
-      cls.mk 0 (cls.num_lits c) (cls.has_fin c) prf₂ (imp nb (binding_body (cls.type c)))
+      { c with prf := prf₁, type := imp na (binding_body c↣type) },
+      { c with prf := prf₂, type := imp nb (binding_body c↣type) }
     ]
   else return none
 | _ := return none
@@ -154,8 +154,8 @@ match l with
   if or_name = ``or then do
     na ← mk_mapp ``not [some a],
     nb ← mk_mapp ``not [some b],
-    prf' ← mk_mapp ``or_r [none, none, none, some (cls.prf c)],
-    return $ some [cls.mk 0 (cls.num_lits c + 1) (cls.has_fin c) prf' (imp na (imp nb (binding_body (cls.type c))))]
+    prf' ← mk_mapp ``or_r [none, none, none, some c↣prf],
+    return $ some [{ c with num_lits := c↣num_lits + 1, prf := prf', type := imp na (imp nb (binding_body c↣type)) }]
   else return none
 | _ := return none
 end
@@ -166,11 +166,11 @@ meta_definition inf_or_l (l : cls.lit) (c : cls) : tactic (option (list cls)) :=
 match l with
 | cls.lit.left (app (app (const or_name _) a) b) :=
   if or_name = ``or then do
-    prf₁ ← mk_mapp ``or_l1 [none, none, none, some (cls.prf c)],
-    prf₂ ← mk_mapp ``or_l2 [none, none, none, some (cls.prf c)],
+    prf₁ ← mk_mapp ``or_l1 [none, none, none, some c↣prf],
+    prf₂ ← mk_mapp ``or_l2 [none, none, none, some c↣prf],
     return $ some [
-      cls.mk 0 (cls.num_lits c) (cls.has_fin c) prf₁ (imp a (binding_body (cls.type c))),
-      cls.mk 0 (cls.num_lits c) (cls.has_fin c) prf₂ (imp b (binding_body (cls.type c)))
+      { c with prf := prf₁, type := imp a (binding_body c↣type) },
+      { c with prf := prf₂, type := imp b (binding_body c↣type) }
     ]
   else return none
 | _ := return none
@@ -181,8 +181,8 @@ meta_definition inf_all_r (l : cls.lit) (c : cls) : tactic (option (list cls)) :
 match l with
 | cls.lit.right (pi n bi a b) := do
     nb ← mk_mapp ``not [some b],
-    prf' ← mk_mapp ``all_r [none, none, none, some (cls.prf c)],
-    return $ some [cls.mk 1 (cls.num_lits c) (cls.has_fin c) prf' (pi n bi a (imp nb (binding_body (cls.type c))))]
+    prf' ← mk_mapp ``all_r [none, none, none, some c↣prf],
+    return $ some [{ c with num_quants := 1, prf := prf', type := pi n bi a (imp nb (binding_body c↣type)) }]
 | _ := return none
 end
 
@@ -192,12 +192,12 @@ meta_definition inf_imp_l (l : cls.lit) (c : cls) : tactic (option (list cls)) :
 match l with
 | cls.lit.left (pi _ _ a b) :=
   if ¬has_var b then do
-    prf₁ ← mk_mapp ``imp_l1 [none, none, none, some (cls.prf c)],
-    prf₂ ← mk_mapp ``imp_l2 [none, none, none, some (cls.prf c)],
+    prf₁ ← mk_mapp ``imp_l1 [none, none, none, some c↣prf],
+    prf₂ ← mk_mapp ``imp_l2 [none, none, none, some c↣prf],
     na ← mk_mapp ``not [some a],
     return $ some [
-      cls.mk 0 (cls.num_lits c) (cls.has_fin c) prf₁ (imp na (binding_body (cls.type c))),
-      cls.mk 0 (cls.num_lits c) (cls.has_fin c) prf₂ (imp b (binding_body (cls.type c)))
+      { c with prf := prf₁, type := imp na (binding_body c↣type) },
+      { c with prf := prf₂, type := imp b (binding_body c↣type) }
     ]
   else return none
 | _ := return none
@@ -208,12 +208,11 @@ meta_definition inf_ex_l (l : cls.lit) (c : cls) : tactic (option (list cls)) :=
 match l with
 | cls.lit.left (app (app (const ex_name _) d) p) :=
   if ex_name = ``Exists then do
-    prf' ← mk_mapp ``ex_l [none, none, none, some (cls.prf c)],
+    prf' ← mk_mapp ``ex_l [none, none, none, some c↣prf],
     n ← mk_fresh_name, -- FIXME: (binding_name p) produces ugly [anonymous] output
     px ← whnf $ app p (mk_var 0),
-    return $ some [cls.mk 1 (cls.num_lits c) (cls.has_fin c) prf'
-      (pi n binder_info.default d
-        (imp px (binding_body (cls.type c))))]
+    return $ some [{ c with num_quants := 1, prf := prf',
+      type := pi n binder_info.default d (imp px (binding_body c↣type)) }]
   else return none
 | _ := return none
 end
@@ -228,8 +227,8 @@ match l with
     nb ← mk_mapp ``not [some b],
     enb ← mk_mapp ``Exists [none, some $ lam n binder_info.default a nb],
     nenb ← mk_mapp ``not [some enb],
-    prf' ← mk_mapp ``all_l [none, none, none, some (cls.prf c)],
-    return $ some [cls.mk 0 (cls.num_lits c) (cls.has_fin c) prf' (imp nenb (binding_body (cls.type c)))]
+    prf' ← mk_mapp ``all_l [none, none, none, some c↣prf],
+    return $ some [{ c with prf := prf', type := imp nenb (binding_body c↣type) }]
 | _ := return none
 end
 
@@ -255,10 +254,9 @@ match l with
     sk_ax' ← get_local sk_ax_name, sk_sym' ← get_local sk_sym_name_pp,
     sk_p' ← whnf_core transparency.none $ app p (app_of_list sk_sym' (ctx ++ [inh_lc])),
     not_sk_p' ← mk_mapp ``not [some sk_p'],
-    prf' ← mk_mapp ``helper_r [none, none, none, some (app_of_list sk_ax' (ctx ++ [inh_lc])), some (cls.prf c)],
-    return $ some [cls.mk 1 (cls.num_lits c) (cls.has_fin c)
-      (lambdas [inh_lc] prf')
-      (pis [inh_lc] (imp not_sk_p' (binding_body (cls.type c))))]
+    prf' ← mk_mapp ``helper_r [none, none, none, some (app_of_list sk_ax' (ctx ++ [inh_lc])), some c↣prf],
+    return $ some [{ c with num_quants := 1, prf := lambdas [inh_lc] prf',
+      type := pis [inh_lc] (imp not_sk_p' (binding_body c↣type)) }]
 else return none
 | _ := return none
 end
@@ -278,10 +276,10 @@ meta_definition clausification_rules (ctx : list expr) : list head_lit_rule :=
   inf_all_l, inf_ex_r ctx ]
 
 meta_definition clausify_at (c : cls) (i : nat) : tactic (option (list cls)) := do
-opened ← cls.open_constn c (cls.num_quants c + i),
+opened ← cls.open_constn c (c↣num_quants + i),
 lit ← return $ cls.get_lit opened.1 0,
 maybe_clausified ← first_some (do
-  r ← clausification_rules (list.taken (cls.num_quants c) opened.2),
+  r ← clausification_rules (list.taken c↣num_quants opened.2),
   [r lit opened.1]),
 match maybe_clausified with
 | none := return none
@@ -289,7 +287,7 @@ match maybe_clausified with
 end
 
 meta_definition clausify_core : cls → tactic (option (list cls)) | c := do
-one_step ← first_some (do i ← range (cls.num_lits c), [clausify_at c i]),
+one_step ← first_some (do i ← range c↣num_lits, [clausify_at c i]),
 match one_step with
 | some next := do
   next' ← sequence (do n ← next, [do

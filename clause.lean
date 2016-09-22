@@ -19,7 +19,7 @@ return $ prf_fmt ++ to_fmt " : " ++ type_fmt ++ to_fmt " (" ++
 
 attribute [instance]
 meta_definition cls_has_to_tactic_format : has_to_tactic_format cls :=
-has_to_tactic_format.mk tactic_format
+⟨tactic_format⟩
 
 definition num_binders (c : cls) : ℕ :=
 if has_fin c then num_quants c + num_lits c - 1
@@ -64,10 +64,10 @@ match e with
     let type' := pi pp binder_info.default t (abstract_local (type c) uniq) in
     let prf' := lam pp binder_info.default t (abstract_local (prf c) uniq) in
     if num_quants c > 0 ∨ has_var abst_type' then
-      mk (num_quants c + 1) (num_lits c) (has_fin c) prf' type'
+      { c with num_quants := c↣num_quants + 1, prf := prf', type := type' }
     else
-      mk 0 (num_lits c + 1) (has_fin c) prf' type'
-| _ := mk 0 0 (has_fin c) (mk_var 0) (mk_var 0)
+      { c with num_lits := c↣num_lits + 1, prf := prf', type := type' }
+| _ := mk 0 0 tt (mk_var 0) (mk_var 0)
 end
 
 meta_definition open_constn : cls → ℕ → tactic (cls × list expr)
@@ -91,7 +91,7 @@ meta_definition close_constn : cls → list expr → cls
 meta_definition inst_mvars (c : cls) : tactic cls := do
 prf' ← instantiate_mvars (prf c),
 type' ← instantiate_mvars (type c),
-return $ mk (num_quants c) (num_lits c) (has_fin c) prf' type'
+return { c with prf := prf', type := type' }
 
 inductive lit
 | left : expr → lit
@@ -125,9 +125,9 @@ end lit
 
 attribute [instance]
 meta_definition lit_has_to_tactic_format : has_to_tactic_format lit :=
-has_to_tactic_format.mk (λl, do
+⟨λl, do
 pp_f ← pp (lit.formula l),
-return $ to_fmt (lit.type_str l) ++ " (" ++ pp_f ++ ")")
+return $ to_fmt (lit.type_str l) ++ " (" ++ pp_f ++ ")"⟩
 
 private meta_definition get_binding_body : expr → ℕ → expr
 | e 0 := e

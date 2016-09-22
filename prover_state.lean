@@ -12,7 +12,7 @@ return $ c_fmt ++ to_fmt " (selected: " ++ to_fmt (active_cls.selected c) ++ to_
 
 attribute [instance]
 meta_definition active_cls_has_to_tactic_format : has_to_tactic_format active_cls :=
-has_to_tactic_format.mk active_cls_tactic_format
+⟨active_cls_tactic_format⟩
 
 structure resolution_prover_state :=
 (active : rb_map name active_cls)
@@ -26,10 +26,10 @@ private meta_definition join_with_nl : list format → format :=
 list.foldl (λx y, x ++ format.line ++ y) format.nil
 
 private meta_definition resolution_prover_state_tactic_fmt (s : resolution_prover_state) : tactic format := do
-active_fmts ← mapM pp (rb_map.values (active s)),
-passive_fmts ← mapM pp (rb_map.values (passive s)),
-new_fmts ← mapM pp (newly_derived s),
-prec_fmts ← mapM pp (prec s),
+active_fmts ← mapM pp (rb_map.values s↣active),
+passive_fmts ← mapM pp (rb_map.values s↣passive),
+new_fmts ← mapM pp s↣newly_derived,
+prec_fmts ← mapM pp s↣prec,
 return (join_with_nl
   ([to_fmt "active:"] ++ map (append (to_fmt "  ")) active_fmts ++
   [to_fmt "passive:"] ++ map (append (to_fmt "  ")) passive_fmts ++
@@ -38,7 +38,7 @@ return (join_with_nl
 
 attribute [instance]
 meta_definition resolution_prover_state_has_to_tactic_format : has_to_tactic_format resolution_prover_state :=
-has_to_tactic_format.mk resolution_prover_state_tactic_fmt
+⟨resolution_prover_state_tactic_fmt⟩
 
 meta_definition resolution_prover :=
 stateT resolution_prover_state tactic
@@ -72,47 +72,44 @@ do state ← stateT.read, return (active state)
 
 meta_definition add_active (a : active_cls) : resolution_prover unit :=
 do state ← stateT.read,
-stateT.write $ mk (rb_map.insert (active state) (active_cls.id a) a)
-  (passive state) (newly_derived state) (prec state)
+stateT.write { state with active := rb_map.insert state↣active a↣id a }
 
 meta_definition get_passive : resolution_prover (rb_map name cls) :=
-do state ← stateT.read, return (passive state)
+liftM passive stateT.read
 
 private meta_definition add_passive (id : name) (c : cls) : resolution_prover unit :=
-do state ← stateT.read, stateT.write $ mk (active state)
-  (rb_map.insert (passive state) id c) (newly_derived state) (prec state)
+do state ← stateT.read, stateT.write { state with passive := rb_map.insert state↣passive id c }
 
 meta_definition register_as_passive (c : cls) : resolution_prover name := do
 id ← resolution_prover_of_tactic mk_fresh_name,
-resolution_prover_of_tactic (assertv id (cls.type c) (cls.prf c)),
+resolution_prover_of_tactic (assertv id c↣type c↣prf),
 prf' ← resolution_prover_of_tactic (get_local id),
 resolution_prover_of_tactic $ infer_type prf', -- FIXME: otherwise ""
-add_passive id (cls.mk (cls.num_quants c) (cls.num_lits c) (cls.has_fin c) prf' (cls.type c)),
+add_passive id { c with prf := prf' },
 return id
 
 meta_definition remove_passive (id : name) : resolution_prover unit :=
-do state ← stateT.read, stateT.write $ mk (active state)
-  (rb_map.erase (passive state) id) (newly_derived state) (prec state)
+do state ← stateT.read, stateT.write { state with passive := rb_map.erase state↣passive id }
 
 meta_definition take_newly_derived : resolution_prover (list cls) := do
 state ← stateT.read,
-stateT.write $ mk (active state) (passive state) [] (prec state),
-return (newly_derived state)
+stateT.write { state with newly_derived := [] },
+return state↣newly_derived
 
 meta_definition remove_redundant (id : name) : resolution_prover unit := do
 resolution_prover_of_tactic (get_local id >>= clear),
 state ← stateT.read,
-stateT.write $ mk (rb_map.erase (active state) id) (passive state) (newly_derived state) (prec state)
+stateT.write { state with active := rb_map.erase state↣active id }
 
 meta_definition get_precedence : resolution_prover (list expr) :=
-do state ← stateT.read, return (prec state)
+do state ← stateT.read, return state↣prec
 
 meta_definition get_term_order : resolution_prover (expr → expr → bool) := do
 state ← stateT.read,
-return (lpo (prec_gt_of_name_list (map name_of_funsym (prec state))))
+return $ lpo (prec_gt_of_name_list (map name_of_funsym state↣prec))
 
 private meta_definition set_precedence (new_prec : list expr) : resolution_prover unit :=
-do state ← stateT.read, stateT.write $ mk (active state) (passive state) (newly_derived state) new_prec
+do state ← stateT.read, stateT.write { state with prec := new_prec }
 
 meta_definition register_consts_in_precedence (consts : list expr) := do
 p ← get_precedence,
@@ -122,9 +119,11 @@ set_precedence $ list.nub_on name_of_funsym (new_syms ++ p)
 
 meta_definition add_inferred (c : cls) : resolution_prover unit := do
 c' ← resolution_prover_of_tactic (cls.normalize c),
-register_consts_in_precedence (rb_map.values (contained_funsyms (cls.type c'))),
+register_consts_in_precedence (rb_map.values (contained_funsyms c'↣type)),
+type' ← resolution_prover_of_tactic $ infer_type c'↣prf,
+resolution_prover_of_tactic $ unify type' c'↣type <|> trace "BAD",
 state ← stateT.read,
-stateT.write $ mk (active state) (passive state) (c' :: newly_derived state) (prec state)
+stateT.write { state with newly_derived := c' :: state↣newly_derived }
 
 meta_definition inference :=
 active_cls → resolution_prover unit
@@ -134,7 +133,7 @@ meta_definition seq_inferences : list inference → inference
 | (inf::infs) := λgiven, do
     inf given,
     now_active ← get_active,
-    if rb_map.contains now_active (active_cls.id given) then
+    if rb_map.contains now_active given↣id then
       seq_inferences infs given
     else
       return ()
@@ -142,12 +141,12 @@ meta_definition seq_inferences : list inference → inference
 meta_definition redundancy_inference (is_redundant : active_cls → resolution_prover bool) : inference :=
 λgiven, do
 is_red ← is_redundant given,
-if is_red then remove_redundant (active_cls.id given) else return ()
+if is_red then remove_redundant given↣id else return ()
 
 meta_definition simp_inference (simpl : active_cls → resolution_prover (option cls)) : inference :=
 λgiven, do maybe_simpld ← simpl given,
 match maybe_simpld with
-| some simpld := do add_inferred simpld, remove_redundant (active_cls.id given)
+| some simpld := do add_inferred simpld, remove_redundant given↣id
 | none := return ()
 end
 
@@ -155,7 +154,7 @@ meta_definition selection_strategy := cls → resolution_prover (list nat)
 
 meta_definition dumb_selection : selection_strategy :=
 λc, return $ match cls.lits_where c cls.lit.is_neg with
-| [] := list.range (cls.num_lits c)
+| [] := list.range c↣num_lits
 | neg_lit::_ := [neg_lit]
 end
 
@@ -183,9 +182,9 @@ else
 
 meta_definition preprocessing_rule (f : list cls → resolution_prover (list cls)) : resolution_prover unit := do
 state ← stateT.read,
-newly_derived' ← f (newly_derived state),
+newly_derived' ← f state↣newly_derived,
 state' ← stateT.read,
-stateT.write $ mk (active state') (passive state') newly_derived' (prec state')
+stateT.write { state' with newly_derived := newly_derived' }
 
 meta_definition clause_selection_strategy := resolution_prover name
 

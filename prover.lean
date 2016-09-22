@@ -18,7 +18,9 @@ meta_definition run_prover_loop
   : unit → resolution_prover (option expr) | () := do
 sequence' preprocessing_rules,
 new ← take_newly_derived, forM' new register_as_passive,
-passive : rb_map name cls ← get_passive,
+resolution_prover_of_tactic (when (is_trace_enabled_for `resolution) (forM' new (λn,
+  trace { n with prf := const `derived [] }))),
+passive ← get_passive,
 if rb_map.size passive = 0 then return none else do
 given_name ← clause_selection,
 given ← option.to_monad (rb_map.find passive given_name),
