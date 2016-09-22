@@ -19,7 +19,7 @@ meta_definition run_prover_loop
 sequence' preprocessing_rules,
 new ← take_newly_derived, forM' new register_as_passive,
 resolution_prover_of_tactic (when (is_trace_enabled_for `resolution) (forM' new (λn,
-  trace { n with prf := const `derived [] }))),
+  trace { n with prf := const (mk_simple_name " derived") [] }))),
 passive ← get_passive,
 if rb_map.size passive = 0 then return none else do
 given_name ← clause_selection i,
@@ -46,9 +46,10 @@ return ()
 
 meta_definition default_inferences : list inference :=
 [
-forward_subsumption, backward_subsumption,
 clausification_inf,
-resolution_inf, factor_inf,
+forward_subsumption, backward_subsumption,
+factor_inf,
+resolution_inf,
 (λg, return ())
 ]
 
@@ -62,7 +63,7 @@ mk_mapp ``classical.by_contradiction [some tgt] >>= apply, intro target_name,
 hyps ← local_context,
 initial_clauses ← mapM try_clausify hyps,
 initial_state ← resolution_prover_state.initial (join initial_clauses),
-res ← run_prover_loop dumb_selection (age_weight_clause_selection 2 3)
+res ← run_prover_loop selection21 (age_weight_clause_selection 6 7)
   default_preprocessing default_inferences
   0 initial_state,
 match res with
