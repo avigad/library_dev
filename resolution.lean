@@ -18,9 +18,8 @@ guard $ cls.is_maximal gt qf1i i1,
 focused_qf1 ← cls.focus qf1.1 i1,
 op1 ← cls.open_constn focused_qf1 (cls.num_binders focused_qf1),
 op2 ← cls.open_constn qf2.1 i2,
-bs ← sort_and_constify_metas (qf1.2 ++ qf2.2),
-qf' ← cls.inst_mvars $ cls.close_constn (cls.inst op2.1 (cls.prf op1.1)) (op1.2 ++ op2.2),
-cls.inst_mvars $ cls.close_constn qf' bs
+cls.meta_closure (qf1.2 ++ qf2.2) $
+  cls.close_constn (cls.inst op2.1 (cls.prf op1.1)) (op1.2 ++ op2.2)
 
 meta_definition try_add_resolvent : resolution_prover unit := do
 c' ← resolution_prover_of_tactic $ try_resolve gt c1 c2 i1 i2,

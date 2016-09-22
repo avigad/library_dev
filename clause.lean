@@ -213,3 +213,12 @@ match list.filter (λm, ¬has_meta_var (get_meta_type m)) metas with
   return (rest ++ [c])
 | _ := failed
 end
+
+namespace cls
+
+meta_definition meta_closure (metas : list expr) (qf : cls) : tactic cls := do
+bs ← sort_and_constify_metas metas,
+qf' ← cls.inst_mvars qf,
+cls.inst_mvars $ cls.close_constn qf' bs
+
+end cls
