@@ -1,3 +1,5 @@
 + *.lean
 - flycheck*.lean
 - .#*.lean
+- examples.lean
+- todo.lean
