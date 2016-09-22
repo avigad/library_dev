@@ -122,13 +122,11 @@ meta_definition register_consts_in_precedence (consts : list expr) := do
 p ← get_precedence,
 p_set ← return (rb_map.set_of_list (map name_of_funsym p)),
 new_syms ← return $ list.filter (λc, ¬rb_map.contains p_set (name_of_funsym c)) consts,
-set_precedence $ list.nub_on name_of_funsym (new_syms ++ p)
+set_precedence (new_syms ++ p)
 
 meta_definition add_inferred (c : cls) : resolution_prover unit := do
 c' ← resolution_prover_of_tactic (cls.normalize c),
 register_consts_in_precedence (rb_map.values (contained_funsyms c'↣type)),
-type' ← resolution_prover_of_tactic $ infer_type c'↣prf,
-resolution_prover_of_tactic $ unify type' c'↣type <|> trace "BAD",
 state ← stateT.read,
 stateT.write { state with newly_derived := c' :: state↣newly_derived }
 
