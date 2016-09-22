@@ -23,6 +23,10 @@ meta_definition any_tt (active : rb_map name active_cls) (pred : active_cls → 
 rb_map.fold active (return ff) $ λk a cont, do
   v ← pred a, if v then return tt else cont
 
+meta_definition any_tt_list {A} (pred : A → tactic bool) : list A → tactic bool
+| [] := return ff
+| (x::xs) := do v ← pred x, if v then return tt else any_tt_list xs
+
 meta_definition forward_subsumption : inference := redundancy_inference $ λgiven, do
 active ← get_active,
 resolution_prover_of_tactic $ any_tt active (λa, do
@@ -35,8 +39,8 @@ active ← get_active, resolution_prover_of_tactic $ filterM (λn,
 
 meta_definition subsumption_interreduction : list cls → tactic (list cls)
 | (c::cs) := do
-  which_cs_subsume_c ← mapM (λd, does_subsume d c) cs,
-  if list.bor which_cs_subsume_c then
+  c_subsumed_by_cs ← any_tt_list (λd, does_subsume d c) cs,
+  if c_subsumed_by_cs then
     subsumption_interreduction cs
   else do
     cs_not_subsumed_by_c ← filterM (λd, liftM bool.bnot (does_subsume c d)) cs,
