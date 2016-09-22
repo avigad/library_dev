@@ -135,7 +135,7 @@ private meta_definition contained_funsyms' : expr → rb_map name expr → rb_ma
 | (sort _) m := m
 | (const n ls) m := rb_map.insert m n (const n ls)
 | (meta _ t) m := contained_funsyms' t m
-| (local_const uniq pp bi t) m := contained_funsyms' t (rb_map.insert m uniq (local_const uniq pp bi t))
+| (local_const uniq pp bi t) m := rb_map.insert m uniq (local_const uniq pp bi t)
 | (app a b) m := contained_funsyms' a (contained_funsyms' b m)
 | (lam _ _ d b) m := contained_funsyms' d (contained_funsyms' b m)
 | (pi _ _ d b) m := contained_funsyms' d (contained_funsyms' b m)
