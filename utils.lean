@@ -123,6 +123,11 @@ definition range : ℕ → list ℕ
 | (n+1) := n :: range n
 | 0 := []
 
+definition update {A} (new_elem : A) : ℕ → list A → list A
+| 0     (x::xs) := new_elem :: xs
+| (i+1) (x::xs) := x :: update i xs
+| _     []      := []
+
 end list
 
 meta_definition name_of_funsym : expr → name

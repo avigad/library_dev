@@ -9,7 +9,6 @@ example (i : Type) (c : i) (p : i → Prop) (f : i → i) :
 
 example (i : Type) (p : i → Prop) : ∀x, p x → ∃x, p x := by prover_tactic
 
--- set_option pp.all true
 example (i : Type) (c : i) (p : i → i → Prop) : (∀x y, p x y) → (∀x,∃z, ¬p x z) → false := by prover_tactic
 
 example (i : Type) (c : i) (p : i → Prop) : (∀x, p x) → ¬¬∀x, p x := by prover_tactic
@@ -17,6 +16,19 @@ example (i : Type) (c : i) (p : i → Prop) : (∀x, p x) → ¬¬∀x, p x := b
 -- Requires non-empty domain.
 example {i : Type} (c : i) (p : i → Prop) :
   (∀x y, p x ∨ p y) → (∀x y, ¬p x ∨ ¬p y) → false := by prover_tactic
+
+example (i : Type) (a b : i) (p : i → Prop) (H : a = b) : p b → p a :=
+by prover_tactic
+
+example (i : Type) (a b : i) (p : i → Prop) (H : a = b) : p a → p b :=
+by prover_tactic
+
+example (i : Type) (a b : i) (p : i → Prop) (H : a = b) : p b = p a :=
+by prover_tactic
+
+example (i : Type) (c : i) (p : i → Prop) (f g : i → i) :
+p c → (∀x, p x → p (f x)) → (∀x, p x → f x = g x) → f (f c) = g (g c) :=
+by prover_tactic
 
 example (i : Type) (p q : i → i → Prop) (a b c d : i) :
   (∀x y z, p x y ∧ p y z → p x z) →

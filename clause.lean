@@ -133,7 +133,7 @@ private meta_definition get_binding_body : expr → ℕ → expr
 | e 0 := e
 | e (i+1) := get_binding_body (binding_body e) i
 
-private meta_definition get_binder (e : expr) (i : nat) :=
+meta_definition get_binder (e : expr) (i : nat) :=
 binding_domain (get_binding_body e i)
 
 meta_definition get_lit (c : cls) (i : nat) : lit :=
@@ -183,6 +183,15 @@ else if has_fin c then
   do c' ← fin_to_pos c, focus' c' i
 else
   focus' c i
+
+meta_definition whnf_head_lit (c : cls) : tactic cls := do
+atom' ← whnf (lit.formula $ get_lit c 0),
+return $ if c↣has_fin ∧ c↣num_lits = 1 ∧ c↣num_quants = 0 then
+  { c with type := atom' }
+else if lit.is_neg (get_lit c 0) then
+  { c with type := imp atom' (binding_body c↣type) }
+else
+  { c with type := imp (app (const ``not []) atom') (binding_body c↣type) }
 
 end cls
 

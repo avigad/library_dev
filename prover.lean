@@ -1,6 +1,6 @@
 import clause prover_state
 import subsumption misc_preprocessing
-import resolution factoring clausifier
+import resolution factoring clausifier superposition equality
 open monad tactic expr
 
 declare_trace resolution
@@ -38,6 +38,7 @@ run_prover_loop (i+1)
 meta_definition default_preprocessing : list (resolution_prover unit) :=
 [
 remove_duplicates_pre,
+refl_r_pre,
 tautology_removal_pre,
 subsumption_interreduction_pre,
 forward_subsumption_pre,
@@ -50,6 +51,8 @@ clausification_inf,
 forward_subsumption, backward_subsumption,
 factor_inf,
 resolution_inf,
+superposition_inf,
+unify_eq_inf,
 (λg, return ())
 ]
 
