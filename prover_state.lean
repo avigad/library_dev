@@ -19,6 +19,7 @@ structure resolution_prover_state :=
 (passive : rb_map name cls)
 (newly_derived : list cls)
 (prec : list expr)
+(age : nat)
 
 open resolution_prover_state
 
@@ -80,8 +81,14 @@ liftM passive stateT.read
 private meta_definition add_passive (id : name) (c : cls) : resolution_prover unit :=
 do state ← stateT.read, stateT.write { state with passive := rb_map.insert state↣passive id c }
 
+private meta_definition get_new_cls_id : resolution_prover name := do
+state ← stateT.read,
+stateT.write { state with age := state↣age + 1 },
+cls_prefix ← resolution_prover_of_tactic $ get_unused_name `cls none,
+return $ mk_num_name cls_prefix state↣age
+
 meta_definition register_as_passive (c : cls) : resolution_prover name := do
-id ← resolution_prover_of_tactic mk_fresh_name,
+id ← get_new_cls_id,
 resolution_prover_of_tactic (assertv id c↣type c↣prf),
 prf' ← resolution_prover_of_tactic (get_local id),
 resolution_prover_of_tactic $ infer_type prf', -- FIXME: otherwise ""
@@ -186,31 +193,51 @@ newly_derived' ← f state↣newly_derived,
 state' ← stateT.read,
 stateT.write { state' with newly_derived := newly_derived' }
 
-meta_definition clause_selection_strategy := resolution_prover name
+meta_definition clause_selection_strategy := ℕ → resolution_prover name
 
 meta_definition clause_weight (c : cls) : nat :=
-10 * cls.num_lits c + expr_size (cls.type c)
+40 * cls.num_lits c + expr_size (cls.type c)
 
-meta_definition find_minimal_weight (passive : rb_map name cls) : name :=
+meta_definition find_minimal_by (passive : rb_map name cls) (f : name → cls → ℕ) : name :=
 match @rb_map.fold _ _ (option (name × ℕ)) passive none (λk c acc, match acc with
-| none := some (k, clause_weight c)
+| none := some (k, f k c)
 | (some (n,s)) :=
-    if clause_weight c < s then
-      some (k, clause_weight c)
-    else
-      acc
+if f k c < s then
+some (k, f k c)
+else
+acc
 end) with
 | none := name.anonymous
 | some (n,_) := n
 end
 
+meta_definition age_of_clause_id : name → ℕ
+| (name.mk_numeral i _) := unsigned.to_nat i
+| _ := 0
+
+meta_definition find_minimal_weight (passive : rb_map name cls) : name :=
+find_minimal_by passive (λn c, 100 * clause_weight c + age_of_clause_id n)
+
+meta_definition find_minimal_age (passive : rb_map name cls) : name :=
+find_minimal_by passive (λn c, age_of_clause_id n)
+
 meta_definition weight_clause_selection : clause_selection_strategy :=
-do state ← stateT.read, return $ find_minimal_weight (passive state)
+take iter, do state ← stateT.read, return $ find_minimal_weight (passive state)
+
+meta_definition oldest_clause_selection : clause_selection_strategy :=
+take iter, do state ← stateT.read, return $ find_minimal_age state↣passive
+
+meta_definition age_weight_clause_selection (thr mod : ℕ) : clause_selection_strategy :=
+take iter, if iter % mod < thr then
+              weight_clause_selection iter
+           else
+              oldest_clause_selection iter
 
 namespace resolution_prover_state
 
 meta_definition empty : resolution_prover_state :=
-mk (rb_map.mk name active_cls) (rb_map.mk name cls) [] []
+{ active := rb_map.mk _ _, passive := rb_map.mk _ _,
+  newly_derived := [], prec := [], age := 0 }
 
 meta_definition initial (clauses : list cls) : tactic resolution_prover_state := do
 after_setup ← forM' clauses add_inferred empty,
