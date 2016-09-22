@@ -1,11 +1,13 @@
-import clause prover_state
+import clause prover_state subsumption
 open tactic expr monad
+
+variable gt : expr → expr → bool
 
 meta_definition inst_lit (c : cls) (i : nat) (e : expr) : tactic cls := do
 opened ← cls.open_constn c i,
 return $ cls.close_constn (cls.inst opened.1 e) opened.2
 
-private meta_definition try_factor' (gt : expr → expr → bool) (c : cls) (i j : nat) : tactic cls := do
+private meta_definition try_factor' (c : cls) (i j : nat) : tactic cls := do
 qf ← cls.open_metan c (cls.num_quants c),
 unify_lit (cls.get_lit qf.1 i) (cls.get_lit qf.1 j),
 qfi ← cls.inst_mvars qf.1,
@@ -20,15 +22,17 @@ qf' ← cls.inst_mvars $
     cls.close_constn (cls.inst at_j.1 hyp_i) at_j.2,
 return $ cls.close_constn qf' cs
 
-meta_definition try_factor (gt : expr → expr → bool) (c : cls) (i j : nat) : tactic cls :=
+meta_definition try_factor (c : cls) (i j : nat) : tactic cls :=
 if i > j then try_factor' gt c j i else try_factor' gt c i j
 
-meta_definition try_infer_factor (gt : expr → expr → bool) (c : cls) (i j : nat) : resolution_prover unit := do
-f ← resolution_prover_of_tactic (try_factor gt c i j),
-add_inferred f
+meta_definition try_infer_factor (c : active_cls) (i j : nat) : resolution_prover unit := do
+f ← resolution_prover_of_tactic (try_factor gt c↣c i j),
+ss ← resolution_prover_of_tactic $ does_subsume f c↣c,
+add_inferred f,
+if ss then remove_redundant c↣id else return ()
 
 meta_definition factor_inf : inference :=
 take given, do gt ← get_term_order, sequence' $ do
   i ← active_cls.selected given,
-  j ← list.range (cls.num_lits (active_cls.c given)),
-  return $ try_infer_factor gt (active_cls.c given) i j <|> return ()
+  j ← list.range (cls.num_lits given↣c),
+  return $ try_infer_factor gt given i j <|> return ()
