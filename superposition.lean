@@ -28,16 +28,14 @@ end
 | e _ := e
 
 variable gt : expr → expr → bool
-variable c1 : cls
-variable c2 : cls
-variable i1 : nat
-variable i2 : nat
+variables (c1 c2 : cls)
+variables (i1 i2 : nat)
 variable pos : list ℕ
 variable ltr : bool
 variable congr_ax : name
 
 lemma sup_f_ltr {A} {a1 a2} (f : A → Prop) (H : a1 = a2) : f a1 → f a2 := take Hfa1, H ▸ Hfa1
-lemma sup_f_rtl {A} {a1 a2} (f : A → Prop) (H : a2 = a1) : f a1 → f a2 := sup_f_ltr f (eq.symm H)
+lemma sup_f_rtl {A} {a1 a2} (f : A → Prop) (H : a2 = a1) : f a1 → f a2 := sup_f_ltr f H↣symm
 
 meta_definition is_eq_dir (e : expr) (ltr : bool) : option (expr × expr) :=
 match is_eq e with
@@ -84,7 +82,7 @@ try_sup_pos (λx y, ff) Hcls Hpacls 0 0 [0] tt ``sup_f_ltr,
 to_expr `(trivial) >>= apply
 
 lemma sup_l_ltr {A C} {a1 a2} (f : A → Prop) (H : a1 = a2) : (f a1 → C) → (f a2 → C) := take Hfa1C, H ▸ Hfa1C
-lemma sup_l_rtl {A C} {a1 a2} (f : A → Prop) (H : a2 = a1) : (f a1 → C) → (f a2 → C) := sup_l_ltr f (eq.symm H)
+lemma sup_l_rtl {A C} {a1 a2} (f : A → Prop) (H : a2 = a1) : (f a1 → C) → (f a2 → C) := sup_l_ltr f H↣symm
 
 meta_definition try_sup_neg : tactic cls := do
 guard $ cls.lit.is_pos (cls.get_lit c1 i1) ∧ cls.lit.is_neg (cls.get_lit c2 i2),

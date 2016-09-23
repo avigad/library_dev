@@ -3,11 +3,11 @@
 import utils
 open expr decidable monad
 
-definition lex {T} [decidable_eq T] (gt : T → T → bool) : list T → list T → bool
+def lex {T} [decidable_eq T] (gt : T → T → bool) : list T → list T → bool
 | (s::ss) (t::ts) := if s = t then lex ss ts else gt s t
 | _ _ := ff
 
-definition majo {T} (gt : T → T → bool) (s : T) : list T → bool
+def majo {T} (gt : T → T → bool) (s : T) : list T → bool
 | [] := tt
 | (t::ts) := gt s t && majo ts
 

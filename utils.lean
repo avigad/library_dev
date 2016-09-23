@@ -37,11 +37,11 @@ meta_definition expr_size : expr → nat
 
 namespace option
 
-definition to_monad {m : Type → Type} [monad m] [alternative m] {A} : option A → m A
+def to_monad {m : Type → Type} [monad m] [alternative m] {A} : option A → m A
 | none := failure
 | (some a) := return a
 
-definition get_or_else {B} : option B → B → B
+def get_or_else {B} : option B → B → B
 | (some x) _   := x
 | none default := default
 
@@ -49,7 +49,7 @@ end option
 
 namespace ordering
 
-definition is_lt {A} [has_ordering A] (x y : A) : bool :=
+def is_lt {A} [has_ordering A] (x y : A) : bool :=
 match has_ordering.cmp x y with ordering.lt := tt | _ := ff end
 
 end ordering
@@ -76,66 +76,66 @@ rb_map.keys (rb_map.set_of_list l)
 meta_definition nub_on {A B} [has_ordering B] (f : A → B) (l : list A) : list A :=
 rb_map.values (rb_map.of_list (map (λx, (f x, x)) l))
 
-definition nub_on' {A B} [decidable_eq B] (f : A → B) : list A → list A
+def nub_on' {A B} [decidable_eq B] (f : A → B) : list A → list A
 | [] := []
 | (x::xs) := x :: filter (λy, f x ≠ f y) (nub_on' xs)
 
-definition foldr {A B} (f : A → B → B) (b : B) : list A → B
+def foldr {A B} (f : A → B → B) (b : B) : list A → B
 | [] := b
 | (a::ass) := f a (foldr ass)
 
-definition foldl {A B} (f : B → A → B) : B → list A → B
+def foldl {A B} (f : B → A → B) : B → list A → B
 | b [] := b
 | b (a::ass) := foldl (f b a) ass
 
-definition for_all {A} (p : A → Prop) [decidable_pred p] : list A → bool
+def for_all {A} (p : A → Prop) [decidable_pred p] : list A → bool
 | (x::xs) := if ¬p x then ff else for_all xs
 | [] := tt
 
-definition filter_maximal {A} (gt : A → A → bool) (l : list A) : list A :=
+def filter_maximal {A} (gt : A → A → bool) (l : list A) : list A :=
 filter (λx, for_all (λy, ¬gt y x) l) l
 
-definition taken {A} : ℕ → list A → list A
+def taken {A} : ℕ → list A → list A
 | (n+1) (x::xs) := x :: taken n xs
 | _ _ := []
 
-definition empty {A} (l : list A) : bool :=
+def empty {A} (l : list A) : bool :=
 match l with
 | [] := tt
 | _::_ := ff
 end
 
-private definition zip_with_index' {A} : ℕ → list A → list (A × ℕ)
+private def zip_with_index' {A} : ℕ → list A → list (A × ℕ)
 | _ nil := nil
 | i (x::xs) := (x,i) :: zip_with_index' (i+1) xs
 
-definition zip_with_index {A} : list A → list (A × ℕ) :=
+def zip_with_index {A} : list A → list (A × ℕ) :=
 zip_with_index' 0
 
-definition remove {A} : list A → ℕ → list A
+def remove {A} : list A → ℕ → list A
 | []      _     := []
 | (x::xs) 0     := xs
 | (x::xs) (i+1) := x :: remove xs i
 
-definition bor : list bool → bool
+def bor : list bool → bool
 | (tt::xs) := tt
 | (ff::xs) := bor xs
 | [] := ff
 
-definition contains {a} [decidable_eq a] (elem : a) : list a → bool
+def contains {a} [decidable_eq a] (elem : a) : list a → bool
 | (x::xs) := if x = elem then tt else contains xs
 | [] := ff
 
-definition range : ℕ → list ℕ
+def range : ℕ → list ℕ
 | (n+1) := n :: range n
 | 0 := []
 
-definition update {A} (new_elem : A) : ℕ → list A → list A
+def update {A} (new_elem : A) : ℕ → list A → list A
 | 0     (x::xs) := new_elem :: xs
 | (i+1) (x::xs) := x :: update i xs
 | _     []      := []
 
-definition partition {A} (pred : A → Prop) [decidable_pred pred] : list A → list A × list A
+def partition {A} (pred : A → Prop) [decidable_pred pred] : list A → list A × list A
 | (x::xs) := match partition xs with (ts,fs) := if pred x then (x::ts, fs) else (ts, x::fs) end
 | [] := ([],[])
 
@@ -143,7 +143,7 @@ meta_definition merge_sorted {A} [has_ordering A] : list A → list A → list A
 | [] ys := ys
 | xs [] := xs
 | (x::xs) (y::ys) :=
-  if ordering.is_lt x y = tt then
+  if ordering.is_lt x y then
     x :: merge_sorted xs (y::ys)
   else
     y :: merge_sorted (x::xs) ys

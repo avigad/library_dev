@@ -21,7 +21,7 @@ attribute [instance]
 meta_definition cls_has_to_tactic_format : has_to_tactic_format cls :=
 ⟨tactic_format⟩
 
-definition num_binders (c : cls) : ℕ :=
+def num_binders (c : cls) : ℕ :=
 if has_fin c then num_quants c + num_lits c - 1
 else num_quants c + num_lits c
 
@@ -100,17 +100,17 @@ inductive lit
 
 namespace lit
 
-definition formula : lit → expr
+def formula : lit → expr
 | (left f) := f
 | (right f) := f
 | (final f) := f
 
-definition is_neg : lit → bool
+def is_neg : lit → bool
 | (left _) := tt
 | (right _) := ff
 | (final _) := ff
 
-definition is_pos (l : lit) : bool := bool.bnot (is_neg l)
+def is_pos (l : lit) : bool := bool.bnot (is_neg l)
 
 meta_definition to_formula (l : lit) : tactic expr :=
 if is_neg l then mk_mapp ``not [some (formula l)]
