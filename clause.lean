@@ -197,7 +197,7 @@ end cls
 
 meta_definition unify_lit (l1 l2 : cls.lit) : tactic unit :=
 if cls.lit.is_pos l1 = cls.lit.is_pos l2 then
-  unify (cls.lit.formula l1) (cls.lit.formula l2)
+  unify_core transparency.none (cls.lit.formula l1) (cls.lit.formula l2)
 else
   fail "cannot unify literals"
 
