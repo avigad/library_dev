@@ -50,7 +50,9 @@ meta_definition subsumption_interreduction : list cls → tactic (list cls)
 | [] := return []
 
 meta_definition subsumption_interreduction_pre : resolution_prover unit :=
-preprocessing_rule $ λnew, resolution_prover_of_tactic (subsumption_interreduction new)
+preprocessing_rule $ λnew,
+let new' := list.sort_on cls.num_lits new in
+resolution_prover_of_tactic $ subsumption_interreduction new'
 
 meta_definition keys_where_tt (active : rb_map name active_cls) (pred : active_cls → tactic bool) : tactic (list name) :=
 @rb_map.fold _ _ (tactic (list name)) active (return []) $ λk a cont, do

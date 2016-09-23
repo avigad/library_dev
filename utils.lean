@@ -47,6 +47,13 @@ definition get_or_else {B} : option B → B → B
 
 end option
 
+namespace ordering
+
+definition is_lt {A} [has_ordering A] (x y : A) : bool :=
+match has_ordering.cmp x y with ordering.lt := tt | _ := ff end
+
+end ordering
+
 namespace rb_map
 
 meta_definition keys {K V} (m : rb_map K V) : list K :=
@@ -127,6 +134,29 @@ definition update {A} (new_elem : A) : ℕ → list A → list A
 | 0     (x::xs) := new_elem :: xs
 | (i+1) (x::xs) := x :: update i xs
 | _     []      := []
+
+definition partition {A} (pred : A → Prop) [decidable_pred pred] : list A → list A × list A
+| (x::xs) := match partition xs with (ts,fs) := if pred x then (x::ts, fs) else (ts, x::fs) end
+| [] := ([],[])
+
+meta_definition merge_sorted {A} [has_ordering A] : list A → list A → list A
+| [] ys := ys
+| xs [] := xs
+| (x::xs) (y::ys) :=
+  if ordering.is_lt x y = tt then
+    x :: merge_sorted xs (y::ys)
+  else
+    y :: merge_sorted (x::xs) ys
+
+meta_definition sort {A} [has_ordering A] : list A → list A
+| (x::xs) :=
+  match partition (λy, ordering.is_lt y x) xs with
+  | (smaller, greater_eq) := merge_sorted (sort smaller) (x :: sort greater_eq)
+  end
+| [] := []
+
+meta_definition sort_on {A B} (f : A → B) [has_ordering B] : list A → list A :=
+@sort _ ⟨λx y, has_ordering.cmp (f x) (f y)⟩
 
 end list
 
