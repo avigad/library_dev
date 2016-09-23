@@ -42,6 +42,11 @@ meta_definition of_proof (prf : expr) : tactic cls := do
 type ← infer_type prf,
 return $ of_proof_and_type prf type
 
+meta_definition validate (c : cls) : tactic unit := do
+type' ← infer_type c↣prf,
+unify c↣type type' <|> (do pp_ty ← pp c↣type, pp_ty' ← pp type',
+                           fail (to_fmt "wrong type: " ++ pp_ty ++ " =!= " ++ pp_ty'))
+
 meta_definition inst (c : cls) (e : expr) : cls :=
 (if num_quants c > 0
   then mk (num_quants c - 1) (num_lits c)
@@ -161,8 +166,8 @@ lits' ← return $ filter (λlc, ¬rb_map.contains lconsts_in_types (local_uniq_
 return $ close_constn opened.1 (quants' ++ lits')
 
 lemma fin_to_pos_helper {p} (Hp : p) : ¬p → false := take Hnp, Hnp Hp
-meta_definition fin_to_pos (c : cls) : tactic cls := do
-guard $ has_fin c,
+meta_definition fin_to_pos (c : cls) : tactic cls :=
+if ¬has_fin c then return c else do
 op ← open_constn c (num_binders c),
 prf' ← mk_mapp ``fin_to_pos_helper [some (type op.1), some (prf op.1)],
 type' ← return (imp (app (const ``not []) (type op.1)) (const ``false [])),

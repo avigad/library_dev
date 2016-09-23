@@ -1,11 +1,18 @@
 open tactic expr list
 
+namespace expr
+
 attribute [instance]
 meta_definition expr_has_ordering : has_ordering expr :=
 has_ordering.mk expr.cmp
 
 meta_definition imp (a b : expr) : expr :=
 pi (default name) binder_info.default a b
+
+meta_definition enot (a : expr) : expr :=
+app (const ``not []) a
+
+end expr
 
 meta_definition get_metas : expr → list expr
 | (var _) := []
@@ -45,6 +52,10 @@ def get_or_else {B} : option B → B → B
 | (some x) _   := x
 | none default := default
 
+def is_some {B} : option B → bool
+| (some _) := tt
+| none := ff
+
 end option
 
 namespace ordering
@@ -62,9 +73,15 @@ meta_definition keys {K V} (m : rb_map K V) : list K :=
 meta_definition values {K V} (m : rb_map K V) : list V :=
 @fold _ V (list V) m [] (λk v vs, v::vs)
 
+meta_definition to_list {K V} (m : rb_map K V) : list (K × V) :=
+@fold K V (list (K × V)) m [] (λk v res, (k,v)::res)
+
 meta_definition set_of_list {A} [has_ordering A] : list A → rb_map A unit
 | []      := mk _ _
 | (x::xs) := insert (set_of_list xs) x ()
+
+meta_definition map {A B C} [has_ordering A] (f : B → C) (m : rb_map A B) : rb_map A C :=
+fold m (mk _ _) (λk v res, insert res k (f v))
 
 end rb_map
 
@@ -211,3 +228,10 @@ meta_definition pis : list expr → expr → expr
 | (local_const uniq pp info t :: es) f :=
                pi pp info t (abstract_local (pis es f) uniq)
 | _ f := f
+
+meta_definition collect_successes {A} : list (tactic A) → tactic (list A)
+| (t::ts) := do
+  x_opt ← (do x ← t, return [x]) <|> return [],
+  xs ← collect_successes ts,
+  return (x_opt ++ xs)
+| [] := return []

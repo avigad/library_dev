@@ -297,6 +297,9 @@ match one_step with
 | none := return none
 end
 
+meta_definition clausify (cs : list cls) : tactic (list cls) :=
+liftM join $ sequence (do c ← cs, [do cs' ← clausify_core c, return (option.get_or_else cs' [c])])
+
 meta_definition clausification_pre : resolution_prover unit := preprocessing_rule $ λnew, do
 clausified ← resolution_prover_of_tactic $ sequence (do n ← new,
            [do n' ← clausify_core n, return $ option.get_or_else n' [n]]),
