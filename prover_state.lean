@@ -46,7 +46,7 @@ stateT resolution_prover_state tactic
 
 attribute [instance]
 meta_definition resolution_prover_is_monad : monad resolution_prover :=
-stateT_is_monad _ _
+⟨@stateT_fmap _ _ _, @stateT_return _ _ _, @stateT_bind _ _ _⟩
 
 meta_definition resolution_prover_of_tactic {a} (tac : tactic a) : resolution_prover a :=
 λs, do res ← tac, return (res, s)
