@@ -14,6 +14,7 @@ private meta_definition try_subsume_core : list cls.lit → list cls.lit → tac
 meta_definition try_subsume (small large : cls) : tactic unit := do
 small_open ← cls.open_metan small (cls.num_quants small),
 large_open ← cls.open_constn large (cls.num_quants large),
+guard $ small↣num_lits ≤ large↣num_lits,
 try_subsume_core (cls.get_lits small_open.1) (cls.get_lits large_open.1)
 
 meta_definition does_subsume (small large : cls) : tactic bool :=
