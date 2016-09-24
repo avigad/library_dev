@@ -69,11 +69,11 @@ alternative.mk (@monad.map _ resolution_prover_is_monad)
   @resolution_prover.orelse
 
 meta_definition get_active : resolution_prover (rb_map name active_cls) :=
-do state ← stateT.read, return (active state)
+do state ← stateT.read, return state↣active
 
 meta_definition add_active (a : active_cls) : resolution_prover unit :=
 do state ← stateT.read,
-stateT.write { state with active := rb_map.insert state↣active a↣id a }
+stateT.write { state with active := state↣active↣insert a↣id a }
 
 meta_definition get_passive : resolution_prover (rb_map name cls) :=
 liftM passive stateT.read
@@ -96,7 +96,7 @@ add_passive id { c with prf := prf' },
 return id
 
 meta_definition remove_passive (id : name) : resolution_prover unit :=
-do state ← stateT.read, stateT.write { state with passive := rb_map.erase state↣passive id }
+do state ← stateT.read, stateT.write { state with passive := state↣passive↣erase id }
 
 meta_definition take_newly_derived : resolution_prover (list cls) := do
 state ← stateT.read,
@@ -106,7 +106,7 @@ return state↣newly_derived
 meta_definition remove_redundant (id : name) : resolution_prover unit := do
 resolution_prover_of_tactic (get_local id >>= clear),
 state ← stateT.read,
-stateT.write { state with active := rb_map.erase state↣active id }
+stateT.write { state with active := state↣active↣erase id }
 
 meta_definition get_precedence : resolution_prover (list expr) :=
 do state ← stateT.read, return state↣prec
@@ -121,12 +121,12 @@ do state ← stateT.read, stateT.write { state with prec := new_prec }
 meta_definition register_consts_in_precedence (consts : list expr) := do
 p ← get_precedence,
 p_set ← return (rb_map.set_of_list (map name_of_funsym p)),
-new_syms ← return $ list.filter (λc, ¬rb_map.contains p_set (name_of_funsym c)) consts,
+new_syms ← return $ list.filter (λc, ¬p_set↣contains (name_of_funsym c)) consts,
 set_precedence (new_syms ++ p)
 
 meta_definition add_inferred (c : cls) : resolution_prover unit := do
-c' ← resolution_prover_of_tactic (cls.normalize c),
-register_consts_in_precedence (rb_map.values (contained_funsyms c'↣type)),
+c' ← resolution_prover_of_tactic c↣normalize,
+register_consts_in_precedence (contained_funsyms c'↣type)↣values,
 state ← stateT.read,
 stateT.write { state with newly_derived := c' :: state↣newly_derived }
 

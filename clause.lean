@@ -115,7 +115,7 @@ def is_neg : lit → bool
 | (right _) := ff
 | (final _) := ff
 
-def is_pos (l : lit) : bool := bool.bnot (is_neg l)
+def is_pos (l : lit) : bool := bool.bnot l↣is_neg
 
 meta_definition to_formula (l : lit) : tactic expr :=
 if is_neg l then mk_mapp ``not [some (formula l)]
@@ -131,12 +131,12 @@ end lit
 attribute [instance]
 meta_definition lit_has_to_tactic_format : has_to_tactic_format lit :=
 ⟨λl, do
-pp_f ← pp (lit.formula l),
-return $ to_fmt (lit.type_str l) ++ " (" ++ pp_f ++ ")"⟩
+pp_f ← pp l↣formula,
+return $ to_fmt l↣type_str ++ " (" ++ pp_f ++ ")"⟩
 
 private meta_definition get_binding_body : expr → ℕ → expr
 | e 0 := e
-| e (i+1) := get_binding_body (binding_body e) i
+| e (i+1) := get_binding_body e↣binding_body i
 
 meta_definition get_binder (e : expr) (i : nat) :=
 binding_domain (get_binding_body e i)
@@ -153,10 +153,10 @@ meta_definition lits_where (c : cls) (p : lit → bool) : list nat :=
 list.filter (λl, p (get_lit c l)) (range (num_lits c))
 
 meta_definition get_lits (c : cls) : list lit :=
-list.map (get_lit c) (range (num_lits c))
+list.map (get_lit c) (range c↣num_lits)
 
 meta_definition is_maximal (gt : expr → expr → bool) (c : cls) (i : nat) : bool :=
-list.empty (filter (λj, gt (lit.formula $ get_lit c j) (lit.formula $ get_lit c i)) (range $ num_lits c))
+list.empty (filter (λj, gt (get_lit c j)↣formula (get_lit c i)↣formula) (range c↣num_lits))
 
 meta_definition normalize (c : cls) : tactic cls := do
 opened  ← open_constn c (num_binders c),
@@ -168,7 +168,7 @@ return $ close_constn opened.1 (quants' ++ lits')
 lemma fin_to_pos_helper {p} (Hp : p) : ¬p → false := take Hnp, Hnp Hp
 meta_definition fin_to_pos (c : cls) : tactic cls :=
 if ¬has_fin c then return c else do
-op ← open_constn c (num_binders c),
+op ← open_constn c c↣num_binders,
 prf' ← mk_mapp ``fin_to_pos_helper [some (type op.1), some (prf op.1)],
 type' ← return (imp (app (const ``not []) (type op.1)) (const ``false [])),
 return $ close_constn (mk 0 1 ff prf' type') op.2
@@ -177,7 +177,7 @@ private meta_definition focus' (c : cls) (i : nat) : tactic cls := do
 guard $ lit.is_pos (get_lit c i),
 op ← open_constn c (num_lits c),
 hyp_i ← option.to_monad (list.nth op.2 i),
-prf' ← mk_mapp ``classical.by_contradiction [none, some (lambdas [hyp_i] (prf op.1))],
+prf' ← mk_mapp ``classical.by_contradiction [none, some (lambdas [hyp_i] op↣1↣prf)],
 type' ← return (lit.formula (get_lit c i)),
 return $ close_constn (mk 0 1 tt prf' type') (list.remove op.2 i)
 
@@ -196,7 +196,7 @@ return $ if c↣has_fin ∧ c↣num_lits = 1 ∧ c↣num_quants = 0 then
 else if lit.is_neg (get_lit c 0) then
   { c with type := imp atom' (binding_body c↣type) }
 else
-  { c with type := imp (app (const ``not []) atom') (binding_body c↣type) }
+  { c with type := imp (app (const ``not []) atom') c↣type↣binding_body }
 
 end cls
 

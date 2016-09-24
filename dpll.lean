@@ -14,7 +14,7 @@ structure state :=
 
 meta_definition state.initial (clauses : list cls) : state :=
 { assg := rb_map.mk _ _,
-  unassg := rb_map.set_of_list (do c ← clauses, l ← cls.get_lits c, [cls.lit.formula l]),
+  unassg := rb_map.set_of_list (do c ← clauses, l ← c↣get_lits, [l↣formula]),
   clauses := clauses }
 
 inductive res A : Type
@@ -53,16 +53,16 @@ take s, return (res.conflict _ prf)
 
 meta_definition assign (v : expr) (phase : bool) (prf : expr) : st unit :=
 take s, return $ res.running { s with
-     unassg := rb_map.erase s↣unassg v,
-     assg := rb_map.insert s↣assg v (phase, prf) } ()
+     unassg := s↣unassg↣erase v,
+     assg := s↣assg↣insert v (phase, prf) } ()
 
 meta_definition set_clauses (clauses : list cls) : st unit :=
 take s, return $ res.running { s with clauses := clauses } ()
 
 meta_definition get_lit_state (l : cls.lit) : st (option (bool × expr)) :=
 do s ← get_state, return $
-match rb_map.find s↣assg (cls.lit.formula l) with
-| some (phase, expr) := some (decidable.to_bool (cls.lit.is_pos l = phase), expr)
+match rb_map.find s↣assg l↣formula with
+| some (phase, expr) := some (decidable.to_bool (l↣is_pos = phase), expr)
 | none := none
 end
 
@@ -74,31 +74,31 @@ match s with
 end
 
 meta_definition is_cls_true (c : cls) : st bool :=
-liftM list.bor $ mapM is_lit_true (cls.get_lits c)
+liftM list.bor $ mapM is_lit_true c↣get_lits
 
 private meta_definition unit_propg1' : cls → st (option expr) | c :=
 if c↣num_lits = 0 then return (some c↣prf)
-else let hd := cls.get_lit c 0 in
+else let hd := c↣get_lit 0 in
 do isf ← get_lit_state hd, match isf with
-| some (ff, isf_prf) := unit_propg1' (cls.inst c isf_prf)
+| some (ff, isf_prf) := unit_propg1' (c↣inst isf_prf)
 | _                  := return none
 end
 
 meta_definition unit_propg1 : cls → st (option expr) | c :=
 if c↣num_lits = 0 then conflict c↣prf
-else let hd := cls.get_lit c 0 in
+else let hd := c↣get_lit 0 in
 do isf ← get_lit_state hd, match isf with
-| some (ff, isf_prf) := unit_propg1 (cls.inst c isf_prf)
+| some (ff, isf_prf) := unit_propg1 (c↣inst isf_prf)
 | some (tt, _) := return none
-| none := do fls_prf_opt ← unit_propg1' (cls.inst c (mk_var 0)),
+| none := do fls_prf_opt ← unit_propg1' (c↣inst (mk_var 0)),
 match fls_prf_opt with
 | some fls_prf := do
-  fls_prf' ← return $ lam `H binder_info.default (binding_domain c↣type) fls_prf,
-  prf ← return (if cls.lit.is_pos hd then
-      app_of_list (const ``classical.by_contradiction []) [cls.lit.formula hd, fls_prf']
+  fls_prf' ← return $ lam `H binder_info.default c↣type↣binding_domain fls_prf,
+  prf ← return (if hd↣is_pos then
+      app_of_list (const ``classical.by_contradiction []) [hd↣formula, fls_prf']
     else fls_prf'),
-  assign (cls.lit.formula hd) (cls.lit.is_pos hd) prf,
-  return (some $ cls.lit.formula hd)
+  assign hd↣formula hd↣is_pos prf,
+  return (some hd↣formula)
 | none := return none
 end
 end
@@ -197,7 +197,7 @@ res ← dpll.solve (theory_solver_of_tactic theory_solver) no_fin_clauses,
 match res with
 | (dpll.result.unsat prf) := exact prf
 | (dpll.result.sat interp) :=
-  let interp' := map (λe : expr × bool, if e↣2 = tt then e↣1 else enot e↣1) (rb_map.to_list interp) in
+  let interp' := do e ← interp↣to_list, [if e↣2 = tt then e↣1 else enot e↣1] in
   do pp_interp ← pp interp',
      fail (to_fmt "satisfying assignment: " ++ pp_interp)
 end
