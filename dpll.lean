@@ -29,8 +29,7 @@ end res
 
 meta def st A := state → tactic (res A)
 
-attribute [instance]
-meta def st_is_monad : monad st :=
+meta instance : monad st :=
 { map := λ{A B} f g s, do { a ← g s, return (res.map f a) },
   ret := λ{A} x s, return (res.running s x),
   bind := λ{A B} g f s, do { ra ← g s,

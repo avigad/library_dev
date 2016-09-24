@@ -17,9 +17,7 @@ fin_fmt ← return $ to_fmt (if has_fin c then ", has final" else ""),
 return $ prf_fmt ++ to_fmt " : " ++ type_fmt ++ to_fmt " (" ++
   to_fmt (num_quants c) ++ to_fmt " quants, " ++ to_fmt (num_lits c) ++ to_fmt " lits" ++ fin_fmt ++ to_fmt ")"
 
-attribute [instance]
-meta def cls_has_to_tactic_format : has_to_tactic_format cls :=
-⟨tactic_format⟩
+meta instance : has_to_tactic_format cls := ⟨tactic_format⟩
 
 def num_binders (c : cls) : ℕ :=
 if has_fin c then num_quants c + num_lits c - 1
@@ -126,13 +124,12 @@ meta def type_str : lit → string
 | (lit.right _) := "right"
 | (lit.final _) := "final"
 
-end lit
-
-attribute [instance]
-meta def lit_has_to_tactic_format : has_to_tactic_format lit :=
+meta instance : has_to_tactic_format lit :=
 ⟨λl, do
 pp_f ← pp l↣formula,
 return $ to_fmt l↣type_str ++ " (" ++ pp_f ++ ")"⟩
+
+end lit
 
 private meta def get_binding_body : expr → ℕ → expr
 | e 0 := e

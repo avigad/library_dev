@@ -2,8 +2,7 @@ open tactic expr list
 
 namespace expr
 
-attribute [instance]
-meta def expr_has_ordering : has_ordering expr :=
+meta instance : has_ordering expr :=
 has_ordering.mk expr.cmp
 
 meta def imp (a b : expr) : expr :=

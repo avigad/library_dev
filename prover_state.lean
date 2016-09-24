@@ -10,8 +10,7 @@ private meta def active_cls_tactic_format (c : active_cls) : tactic format := do
 c_fmt ← pp (active_cls.c c),
 return $ c_fmt ++ to_fmt " (selected: " ++ to_fmt (active_cls.selected c) ++ to_fmt ")"
 
-attribute [instance]
-meta def active_cls_has_to_tactic_format : has_to_tactic_format active_cls :=
+meta instance : has_to_tactic_format active_cls :=
 ⟨active_cls_tactic_format⟩
 
 structure resolution_prover_state :=
@@ -37,15 +36,13 @@ return (join_with_nl
   [to_fmt "new:"] ++ map (append (to_fmt "  ")) new_fmts ++
   [to_fmt "precedence order: " ++ to_fmt prec_fmts]))
 
-attribute [instance]
-meta def resolution_prover_state_has_to_tactic_format : has_to_tactic_format resolution_prover_state :=
+meta instance : has_to_tactic_format resolution_prover_state :=
 ⟨resolution_prover_state_tactic_fmt⟩
 
 meta def resolution_prover :=
 stateT resolution_prover_state tactic
 
-attribute [instance]
-meta def resolution_prover_is_monad : monad resolution_prover :=
+meta instance : monad resolution_prover :=
 ⟨@stateT_fmap _ _ _, @stateT_return _ _ _, @stateT_bind _ _ _⟩
 
 meta def resolution_prover_of_tactic {a} (tac : tactic a) : resolution_prover a :=
@@ -60,9 +57,8 @@ resolution_prover.fail "failed"
 meta def resolution_prover.orelse {A : Type} (p1 p2 : resolution_prover A) : resolution_prover A :=
 take state, p1 state <|> p2 state
 
-attribute [instance]
-meta def resolution_prover_is_alternative : alternative resolution_prover :=
-alternative.mk (@monad.map _ resolution_prover_is_monad)
+meta instance : alternative resolution_prover :=
+alternative.mk (@monad.map _ _)
   (@applicative.pure _ (monad_is_applicative resolution_prover))
   (@applicative.seq _ (monad_is_applicative resolution_prover))
   @resolution_prover.failed
