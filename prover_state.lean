@@ -42,8 +42,7 @@ meta instance : has_to_tactic_format resolution_prover_state :=
 meta def resolution_prover :=
 stateT resolution_prover_state tactic
 
-meta instance : monad resolution_prover :=
-⟨@stateT_fmap _ _ _, @stateT_return _ _ _, @stateT_bind _ _ _⟩
+meta instance : monad resolution_prover := stateT.monad _ _
 
 meta def resolution_prover_of_tactic {a} (tac : tactic a) : resolution_prover a :=
 λs, do res ← tac, return (res, s)
