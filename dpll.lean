@@ -12,7 +12,7 @@ structure state :=
 (unassg : rb_map expr unit)
 (clauses : list cls)
 
-meta_definition state.initial (clauses : list cls) : state :=
+meta def state.initial (clauses : list cls) : state :=
 { assg := rb_map.mk _ _,
   unassg := rb_map.set_of_list (do c ← clauses, l ← c↣get_lits, [l↣formula]),
   clauses := clauses }
@@ -27,10 +27,10 @@ def map {A B : Type} (f : A → B) : res A → res B
 | (conflict .A res) := conflict B res
 end res
 
-meta_definition st A := state → tactic (res A)
+meta def st A := state → tactic (res A)
 
 attribute [instance]
-meta_definition st_is_monad : monad st :=
+meta def st_is_monad : monad st :=
 { map := λ{A B} f g s, do { a ← g s, return (res.map f a) },
   ret := λ{A} x s, return (res.running s x),
   bind := λ{A B} g f s, do { ra ← g s,
@@ -39,44 +39,44 @@ meta_definition st_is_monad : monad st :=
        | res.conflict .A res := return $ res.conflict B res
        end } }
 
-meta_definition st_of_tactic {A} (tac : tactic A) : st A :=
+meta def st_of_tactic {A} (tac : tactic A) : st A :=
 take s, liftM (res.running s) tac
 
-meta_definition get_state : st state :=
+meta def get_state : st state :=
 take s, return (res.running s s)
 
-meta_definition get_clauses : st (list cls) :=
+meta def get_clauses : st (list cls) :=
 do s ← get_state, return s↣clauses
 
-meta_definition conflict {A} (prf : expr) : st A :=
+meta def conflict {A} (prf : expr) : st A :=
 take s, return (res.conflict _ prf)
 
-meta_definition assign (v : expr) (phase : bool) (prf : expr) : st unit :=
+meta def assign (v : expr) (phase : bool) (prf : expr) : st unit :=
 take s, return $ res.running { s with
      unassg := s↣unassg↣erase v,
      assg := s↣assg↣insert v (phase, prf) } ()
 
-meta_definition set_clauses (clauses : list cls) : st unit :=
+meta def set_clauses (clauses : list cls) : st unit :=
 take s, return $ res.running { s with clauses := clauses } ()
 
-meta_definition get_lit_state (l : cls.lit) : st (option (bool × expr)) :=
+meta def get_lit_state (l : cls.lit) : st (option (bool × expr)) :=
 do s ← get_state, return $
 match rb_map.find s↣assg l↣formula with
 | some (phase, expr) := some (decidable.to_bool (l↣is_pos = phase), expr)
 | none := none
 end
 
-meta_definition is_lit_true (l : cls.lit) : st bool :=
+meta def is_lit_true (l : cls.lit) : st bool :=
 do s ← get_lit_state l, return $
 match s with
 | some (val, _) := val
 | none := ff
 end
 
-meta_definition is_cls_true (c : cls) : st bool :=
+meta def is_cls_true (c : cls) : st bool :=
 liftM list.bor $ mapM is_lit_true c↣get_lits
 
-private meta_definition unit_propg1' : cls → st (option expr) | c :=
+private meta def unit_propg1' : cls → st (option expr) | c :=
 if c↣num_lits = 0 then return (some c↣prf)
 else let hd := c↣get_lit 0 in
 do isf ← get_lit_state hd, match isf with
@@ -84,7 +84,7 @@ do isf ← get_lit_state hd, match isf with
 | _                  := return none
 end
 
-meta_definition unit_propg1 : cls → st (option expr) | c :=
+meta def unit_propg1 : cls → st (option expr) | c :=
 if c↣num_lits = 0 then conflict c↣prf
 else let hd := c↣get_lit 0 in
 do isf ← get_lit_state hd, match isf with
@@ -103,30 +103,30 @@ match fls_prf_opt with
 end
 end
 
-meta_definition unit_propg : unit → st unit | () := do
+meta def unit_propg : unit → st unit | () := do
 propagated ← get_clauses >>= mapM unit_propg1,
 if list.bor (list.map option.is_some propagated) then
   unit_propg ()
 else
   return ()
 
-meta_definition remove_satisfied : st unit := do
+meta def remove_satisfied : st unit := do
 get_clauses >>= filterM (λc, liftM bool.bnot (is_cls_true c)) >>= set_clauses
 
-meta_definition pick_unassg : st (option expr) :=
+meta def pick_unassg : st (option expr) :=
 do s ← get_state, return $
 match rb_map.keys s↣unassg with
 | (v::_) := some v
 | [] := none
 end
 
-meta_definition catch_conflict {A} (g : st A) : st (sum expr A) :=
+meta def catch_conflict {A} (g : st A) : st (sum expr A) :=
 take s, do r ← g s, match r with
 | (res.conflict .A prf) := return (res.running s (sum.inl prf))
 | (res.running s a) := return (res.running s (sum.inr a))
 end
 
-private meta_definition find_model' (theory_solver : st unit) : unit → st (rb_map expr bool) | () := do
+private meta def find_model' (theory_solver : st unit) : unit → st (rb_map expr bool) | () := do
 unit_propg (),
 remove_satisfied,
 v_opt ← pick_unassg,
@@ -156,7 +156,7 @@ match v_opt with
   end
 end
 
-meta_definition solve (theory_solver : st unit) (clauses : list cls) : tactic result := do
+meta def solve (theory_solver : st unit) (clauses : list cls) : tactic result := do
 res ← find_model' theory_solver () (state.initial clauses),
 match res with
 | (res.conflict .(rb_map expr bool) prf) := return (result.unsat prf)
@@ -165,10 +165,10 @@ end
 
 end dpll
 
-meta_definition add_goal (metavar : expr) : tactic unit :=
+meta def add_goal (metavar : expr) : tactic unit :=
 do gs ← get_goals, set_goals (metavar :: gs)
 
-private meta_definition theory_solver_of_tactic (thslvr : tactic unit) : dpll.st unit := do
+private meta def theory_solver_of_tactic (thslvr : tactic unit) : dpll.st unit := do
 s ← dpll.get_state, vs ← return $ rb_map.to_list s↣assg,
 subgoal ← dpll.st_of_tactic $ mk_meta_var (const ``false []),
 goals ← dpll.st_of_tactic get_goals,
@@ -185,7 +185,7 @@ if solved then do
 else
   return ()
 
-meta_definition dpll_t (theory_solver : tactic unit) : tactic unit := do
+meta def dpll_t (theory_solver : tactic unit) : tactic unit := do
 intros,
 target_name ← get_unused_name `target none, tgt ← target,
 mk_mapp ``classical.by_contradiction [some tgt] >>= apply, intro target_name,
@@ -202,7 +202,7 @@ match res with
      fail (to_fmt "satisfying assignment: " ++ pp_interp)
 end
 
-meta_definition dpll : tactic unit := dpll_t skip
+meta def dpll : tactic unit := dpll_t skip
 
 -- FIXME: using example here hid some type-checking errors???
 namespace dpll
@@ -211,7 +211,7 @@ lemma example1 {a} : a ∨ ¬a := by dpll
 lemma example2 {a b : Prop} : a → (a → b) → b := by dpll
 lemma example3 {a b c : Prop} : (a → b) → (¬a → b) → (b → c) → b ∧ c := by dpll
 
-meta_definition lit_unification : tactic unit :=
+meta def lit_unification : tactic unit :=
 do ls ← local_context, first $ do l ← ls, [do apply l, assumption]
 lemma example4 {p : ℕ → Prop} : p 2 ∨ p 4 → (p (2*2) → p (2+0)) → p (1+1) :=
 by dpll_t lit_unification

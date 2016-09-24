@@ -2,9 +2,9 @@ import clause
 import prover_state
 open expr list tactic monad decidable
 
-meta_definition head_lit_rule := cls.lit → cls → tactic (option (list cls))
+meta def head_lit_rule := cls.lit → cls → tactic (option (list cls))
 
-meta_definition inf_false_f (l : cls.lit) (c : cls) : tactic (option (list cls)) :=
+meta def inf_false_f (l : cls.lit) (c : cls) : tactic (option (list cls)) :=
 match l with
 | cls.lit.final (const false_name _) :=
   if false_name = ``false then
@@ -14,7 +14,7 @@ match l with
 | _ := return none
 end
 
-meta_definition inf_true_f (l : cls.lit) (c : cls) : tactic (option (list cls)) :=
+meta def inf_true_f (l : cls.lit) (c : cls) : tactic (option (list cls)) :=
 match l with
 | cls.lit.final (const true_name _) :=
   if true_name = ``true then
@@ -24,7 +24,7 @@ match l with
 | _ := return none
 end
 
-meta_definition inf_not_f (l : cls.lit) (c : cls) : tactic (option (list cls)) :=
+meta def inf_not_f (l : cls.lit) (c : cls) : tactic (option (list cls)) :=
 match l with
 | cls.lit.final (app (const not_name _) a) :=
   if not_name = ``not then do
@@ -34,7 +34,7 @@ match l with
 | _ := return none
 end
 
-meta_definition inf_imp_f (l : cls.lit) (c : cls) : tactic (option (list cls)) :=
+meta def inf_imp_f (l : cls.lit) (c : cls) : tactic (option (list cls)) :=
 match l with
 | cls.lit.final (pi _ _ _ _) :=
     return $ some [{ c with num_lits := 2 }]
@@ -43,7 +43,7 @@ end
 
 set_option eqn_compiler.max_steps 500
 
-meta_definition inf_ex_f (l : cls.lit) (c : cls) : tactic (option (list cls)) :=
+meta def inf_ex_f (l : cls.lit) (c : cls) : tactic (option (list cls)) :=
 match l with
 | cls.lit.final (app (app (const exists_name _) d) p) :=
   if exists_name = ``Exists then do
@@ -55,7 +55,7 @@ match l with
 end
 
 lemma or_f {a b} : a ∨ b → (¬a → b) := or.resolve_left
-meta_definition inf_or_f (l : cls.lit) (c : cls) : tactic (option (list cls)) :=
+meta def inf_or_f (l : cls.lit) (c : cls) : tactic (option (list cls)) :=
 match l with
 | cls.lit.final (app (app (const or_name _) a) b) :=
   if or_name = ``or then do
@@ -65,7 +65,7 @@ match l with
 | _ := return none
 end
 
-meta_definition inf_false_l (l : cls.lit) (c : cls) : tactic (option (list cls)) :=
+meta def inf_false_l (l : cls.lit) (c : cls) : tactic (option (list cls)) :=
 match l with
 | cls.lit.left (const false_name _) :=
   if false_name = ``false then
@@ -76,7 +76,7 @@ match l with
 end
 
 lemma false_r {c} : (¬false → c) → c := λnfc, nfc (λx, x)
-meta_definition inf_false_r (l : cls.lit) (c : cls) : tactic (option (list cls)) :=
+meta def inf_false_r (l : cls.lit) (c : cls) : tactic (option (list cls)) :=
 match l with
 | cls.lit.right (const false_name _) :=
 if false_name = ``false then do
@@ -88,7 +88,7 @@ else
 end
 
 lemma true_l {c} : (true → c) → c := λtc, tc true.intro
-meta_definition inf_true_l (l : cls.lit) (c : cls) : tactic (option (list cls)) :=
+meta def inf_true_l (l : cls.lit) (c : cls) : tactic (option (list cls)) :=
 match l with
 | cls.lit.left (const true_name _) :=
 if true_name = ``true then do
@@ -99,7 +99,7 @@ else
 | _ := return none
 end
 
-meta_definition inf_true_r (l : cls.lit) (c : cls) : tactic (option (list cls)) :=
+meta def inf_true_r (l : cls.lit) (c : cls) : tactic (option (list cls)) :=
 match l with
 | cls.lit.right (const true_name _) :=
 if true_name = ``true then do
@@ -110,7 +110,7 @@ else
 end
 
 lemma not_r {a c} : (¬¬a → c) → (a → c) := λnnac a, nnac (λx, x a)
-meta_definition inf_not_r (l : cls.lit) (c : cls) : tactic (option (list cls)) :=
+meta def inf_not_r (l : cls.lit) (c : cls) : tactic (option (list cls)) :=
 match (l, is_not (cls.lit.formula l)) with
 | (cls.lit.right _, some a) := do
   prf' ← mk_mapp ``not_r [none, none, some c↣prf],
@@ -119,7 +119,7 @@ match (l, is_not (cls.lit.formula l)) with
 end
 
 lemma and_l {a b c} : ((a ∧ b) → c) → (a → b → c) := λabc a b, abc (and.intro a b)
-meta_definition inf_and_l (l : cls.lit) (c : cls) : tactic (option (list cls)) :=
+meta def inf_and_l (l : cls.lit) (c : cls) : tactic (option (list cls)) :=
 match l with
 | cls.lit.left (app (app (const and_name _) a) b) :=
   if and_name = ``and then do
@@ -131,7 +131,7 @@ end
 
 lemma and_r1 {a b c} : (¬(a ∧ b) → c) → (¬a → c) := λnabc na, nabc (λab, na (and.left ab))
 lemma and_r2 {a b c} : (¬(a ∧ b) → c) → (¬b → c) := λnabc na, nabc (λab, na (and.right ab))
-meta_definition inf_and_r (l : cls.lit) (c : cls) : tactic (option (list cls)) :=
+meta def inf_and_r (l : cls.lit) (c : cls) : tactic (option (list cls)) :=
 match l with
 | cls.lit.right (app (app (const and_name _) a) b) :=
   if and_name = ``and then do
@@ -148,7 +148,7 @@ match l with
 end
 
 lemma or_r {a b c} : (¬(a ∨ b) → c) → (¬a → ¬b → c) := λnabc na nb, nabc (λab, or.elim ab na nb)
-meta_definition inf_or_r (l : cls.lit) (c : cls) : tactic (option (list cls)) :=
+meta def inf_or_r (l : cls.lit) (c : cls) : tactic (option (list cls)) :=
 match l with
 | cls.lit.right (app (app (const or_name _) a) b) :=
   if or_name = ``or then do
@@ -162,7 +162,7 @@ end
 
 lemma or_l1 {a b c} : ((a ∨ b) → c) → (a → c) := λabc a, abc (or.inl a)
 lemma or_l2 {a b c} : ((a ∨ b) → c) → (b → c) := λabc b, abc (or.inr b)
-meta_definition inf_or_l (l : cls.lit) (c : cls) : tactic (option (list cls)) :=
+meta def inf_or_l (l : cls.lit) (c : cls) : tactic (option (list cls)) :=
 match l with
 | cls.lit.left (app (app (const or_name _) a) b) :=
   if or_name = ``or then do
@@ -177,7 +177,7 @@ match l with
 end
 
 lemma all_r {a} {b : a → Prop} {c} : (¬(∀x:a, b x) → c) → (∀x:a, ¬b x → c) := λnabc a nb, nabc (λab, absurd (ab a) nb)
-meta_definition inf_all_r (l : cls.lit) (c : cls) : tactic (option (list cls)) :=
+meta def inf_all_r (l : cls.lit) (c : cls) : tactic (option (list cls)) :=
 match l with
 | cls.lit.right (pi n bi a b) := do
     nb ← mk_mapp ``not [some b],
@@ -188,7 +188,7 @@ end
 
 lemma imp_l1 {a b c} : ((a → b) → c) → (¬a → c) := λabc na, abc (λa, absurd a na)
 lemma imp_l2 {a b c} : ((a → b) → c) → (b → c) := λabc b, abc (λa, b)
-meta_definition inf_imp_l (l : cls.lit) (c : cls) : tactic (option (list cls)) :=
+meta def inf_imp_l (l : cls.lit) (c : cls) : tactic (option (list cls)) :=
 match l with
 | cls.lit.left (pi _ _ a b) :=
   if ¬has_var b then do
@@ -204,7 +204,7 @@ match l with
 end
 
 lemma ex_l {a} {b : a → Prop} {c} : ((∃x:a, b x) → c) → (∀x:a, b x → c) := λeabc a b, eabc (exists.intro a b)
-meta_definition inf_ex_l (l : cls.lit) (c : cls) : tactic (option (list cls)) :=
+meta def inf_ex_l (l : cls.lit) (c : cls) : tactic (option (list cls)) :=
 match l with
 | cls.lit.left (app (app (const ex_name _) d) p) :=
   if ex_name = ``Exists then do
@@ -221,7 +221,7 @@ lemma demorgan {a} {b : a → Prop} : (¬∃x:a, ¬b x) → ∀x, b x :=
 take nenb x, classical.by_contradiction (take nbx, nenb (exists.intro x nbx))
 lemma all_l {a} {b : a → Prop} {c} : ((∀x:a, b x) → c) → ((¬∃x:a, ¬b x) → c) :=
 λabc nanb, abc (demorgan nanb)
-meta_definition inf_all_l (l : cls.lit) (c : cls) : tactic (option (list cls)) :=
+meta def inf_all_l (l : cls.lit) (c : cls) : tactic (option (list cls)) :=
 match l with
 | cls.lit.left (pi n bi a b) := do
     nb ← mk_mapp ``not [some b],
@@ -233,7 +233,7 @@ match l with
 end
 
 lemma helper_r {a b c} : (a → b) → (¬a → c) → (¬b → c) := λab nac nb, nac (λa, nb (ab a))
-meta_definition inf_ex_r (ctx : list expr) (l : cls.lit) (c : cls) : tactic (option (list cls)) :=
+meta def inf_ex_r (ctx : list expr) (l : cls.lit) (c : cls) : tactic (option (list cls)) :=
 match l with
 | cls.lit.right (app (app (const ex_name _) d) p) :=
   if ex_name = ``Exists then do
@@ -261,11 +261,11 @@ else return none
 | _ := return none
 end
 
-meta_definition first_some {a : Type} : list (tactic (option a)) → tactic (option a)
+meta def first_some {a : Type} : list (tactic (option a)) → tactic (option a)
 | [] := return none
 | (x::xs) := do xres ← x, match xres with some y := return (some y) | none := first_some xs end
 
-meta_definition clausification_rules (ctx : list expr) : list head_lit_rule :=
+meta def clausification_rules (ctx : list expr) : list head_lit_rule :=
 [ inf_false_f, inf_true_f, inf_not_f, inf_imp_f, inf_or_f, inf_ex_f,
   inf_false_l, inf_false_r, inf_true_l, inf_true_r,
   inf_not_r,
@@ -275,7 +275,7 @@ meta_definition clausification_rules (ctx : list expr) : list head_lit_rule :=
   inf_ex_l,
   inf_all_l, inf_ex_r ctx ]
 
-meta_definition clausify_at (c : cls) (i : nat) : tactic (option (list cls)) := do
+meta def clausify_at (c : cls) (i : nat) : tactic (option (list cls)) := do
 opened ← cls.open_constn c (c↣num_quants + i),
 lit ← return $ cls.get_lit opened.1 0,
 maybe_clausified ← first_some (do
@@ -286,7 +286,7 @@ match maybe_clausified with
 | some clsfd := return $ some (do c' ← clsfd, [cls.close_constn c' opened.2])
 end
 
-meta_definition clausify_core : cls → tactic (option (list cls)) | c := do
+meta def clausify_core : cls → tactic (option (list cls)) | c := do
 one_step ← first_some (do i ← range c↣num_lits, [clausify_at c i]),
 match one_step with
 | some next := do
@@ -297,15 +297,15 @@ match one_step with
 | none := return none
 end
 
-meta_definition clausify (cs : list cls) : tactic (list cls) :=
+meta def clausify (cs : list cls) : tactic (list cls) :=
 liftM join $ sequence (do c ← cs, [do cs' ← clausify_core c, return (option.get_or_else cs' [c])])
 
-meta_definition clausification_pre : resolution_prover unit := preprocessing_rule $ λnew, do
+meta def clausification_pre : resolution_prover unit := preprocessing_rule $ λnew, do
 clausified ← resolution_prover_of_tactic $ sequence (do n ← new,
            [do n' ← clausify_core n, return $ option.get_or_else n' [n]]),
 return (list.join clausified)
 
-meta_definition clausification_inf : inference := λgiven, do
+meta def clausification_inf : inference := λgiven, do
 clausified ← resolution_prover_of_tactic $ clausify_core (active_cls.c given),
 match clausified with
 | some cs := do forM' cs add_inferred, remove_redundant (active_cls.id given)

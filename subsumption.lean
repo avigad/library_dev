@@ -1,7 +1,7 @@
 import clause prover_state
 open tactic monad
 
-private meta_definition try_subsume_core : list cls.lit → list cls.lit → tactic unit
+private meta def try_subsume_core : list cls.lit → list cls.lit → tactic unit
 | [] _ := skip
 | small large := first $ do
   i ← small↣zip_with_index, j ← large↣zip_with_index,
@@ -10,34 +10,34 @@ private meta_definition try_subsume_core : list cls.lit → list cls.lit → tac
     try_subsume_core (small↣remove i.2) (large↣remove j.2)
 
 -- FIXME: this is incorrect if a quantifier is unused
-meta_definition try_subsume (small large : cls) : tactic unit := do
+meta def try_subsume (small large : cls) : tactic unit := do
 small_open ← cls.open_metan small (cls.num_quants small),
 large_open ← cls.open_constn large (cls.num_quants large),
 guard $ small↣num_lits ≤ large↣num_lits,
 try_subsume_core small_open↣1↣get_lits large_open↣1↣get_lits
 
-meta_definition does_subsume (small large : cls) : tactic bool :=
+meta def does_subsume (small large : cls) : tactic bool :=
 (try_subsume small large >> return tt) <|> return ff
 
-meta_definition any_tt (active : rb_map name active_cls) (pred : active_cls → tactic bool) : tactic bool :=
+meta def any_tt (active : rb_map name active_cls) (pred : active_cls → tactic bool) : tactic bool :=
 active↣fold (return ff) $ λk a cont, do
   v ← pred a, if v then return tt else cont
 
-meta_definition any_tt_list {A} (pred : A → tactic bool) : list A → tactic bool
+meta def any_tt_list {A} (pred : A → tactic bool) : list A → tactic bool
 | [] := return ff
 | (x::xs) := do v ← pred x, if v then return tt else any_tt_list xs
 
-meta_definition forward_subsumption : inference := redundancy_inference $ λgiven, do
+meta def forward_subsumption : inference := redundancy_inference $ λgiven, do
 active ← get_active,
 resolution_prover_of_tactic $ any_tt active (λa, do
   ss ← does_subsume (active_cls.c a) (active_cls.c given),
   return (decidable.to_bool (ss ∧ given↣id ≠ a↣id)))
 
-meta_definition forward_subsumption_pre : resolution_prover unit := preprocessing_rule $ λnew, do
+meta def forward_subsumption_pre : resolution_prover unit := preprocessing_rule $ λnew, do
 active ← get_active, resolution_prover_of_tactic $ filterM (λn,
   do ss ← any_tt active (λa, does_subsume a↣c n), return (bool.bnot ss)) new
 
-meta_definition subsumption_interreduction : list cls → tactic (list cls)
+meta def subsumption_interreduction : list cls → tactic (list cls)
 | (c::cs) := do
   c_subsumed_by_cs ← any_tt_list (λd, does_subsume d c) cs,
   if c_subsumed_by_cs then
@@ -48,16 +48,16 @@ meta_definition subsumption_interreduction : list cls → tactic (list cls)
     return (c::cs')
 | [] := return []
 
-meta_definition subsumption_interreduction_pre : resolution_prover unit :=
+meta def subsumption_interreduction_pre : resolution_prover unit :=
 preprocessing_rule $ λnew,
 let new' := list.sort_on cls.num_lits new in
 resolution_prover_of_tactic $ subsumption_interreduction new'
 
-meta_definition keys_where_tt (active : rb_map name active_cls) (pred : active_cls → tactic bool) : tactic (list name) :=
+meta def keys_where_tt (active : rb_map name active_cls) (pred : active_cls → tactic bool) : tactic (list name) :=
 @rb_map.fold _ _ (tactic (list name)) active (return []) $ λk a cont, do
   v ← pred a, rest ← cont, return $ if v then k::rest else rest
 
-meta_definition backward_subsumption : inference := λgiven, do
+meta def backward_subsumption : inference := λgiven, do
 active ← get_active,
 ss ← resolution_prover_of_tactic $
   keys_where_tt active (λa, does_subsume given↣c a↣c),

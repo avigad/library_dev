@@ -6,11 +6,11 @@ open monad tactic expr
 declare_trace resolution
 set_option trace.resolution false
 
-meta_definition trace_clauses : resolution_prover unit := do
+meta def trace_clauses : resolution_prover unit := do
 state ← stateT.read,
 resolution_prover_of_tactic (tactic.trace state)
 
-meta_definition run_prover_loop
+meta def run_prover_loop
   (literal_selection : selection_strategy)
   (clause_selection : clause_selection_strategy)
   (preprocessing_rules : list (resolution_prover unit))
@@ -35,7 +35,7 @@ add_active activated_given,
 seq_inferences inference_rules activated_given,
 run_prover_loop (i+1)
 
-meta_definition default_preprocessing : list (resolution_prover unit) :=
+meta def default_preprocessing : list (resolution_prover unit) :=
 [
 remove_duplicates_pre,
 refl_r_pre,
@@ -45,7 +45,7 @@ forward_subsumption_pre,
 return ()
 ]
 
-meta_definition default_inferences : list inference :=
+meta def default_inferences : list inference :=
 [
 clausification_inf,
 forward_subsumption, backward_subsumption,
@@ -56,7 +56,7 @@ unify_eq_inf,
 (λg, return ())
 ]
 
-meta_definition prover_tactic : tactic unit := do
+meta def prover_tactic : tactic unit := do
 intros,
 target_name ← get_unused_name `target none, tgt ← target,
 mk_mapp ``classical.by_contradiction [some tgt] >>= apply, intro target_name,

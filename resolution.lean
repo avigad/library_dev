@@ -9,7 +9,7 @@ variable i2 : nat
 
 -- c1 : ... → a
 -- c2 : ... → a → ...
-meta_definition try_resolve : tactic cls := do
+meta def try_resolve : tactic cls := do
 qf1 ← cls.open_metan c1 c1↣num_quants,
 qf2 ← cls.open_metan c2 c2↣num_quants,
 unify (cls.lit.formula (cls.get_lit qf1.1 i1)) (cls.lit.formula (cls.get_lit qf2.1 i2)),
@@ -21,14 +21,14 @@ op2 ← cls.open_constn qf2.1 i2,
 cls.meta_closure (qf1.2 ++ qf2.2) $
   cls.close_constn (cls.inst op2.1 op1↣1↣prf) (op1.2 ++ op2.2)
 
-meta_definition try_add_resolvent : resolution_prover unit := do
+meta def try_add_resolvent : resolution_prover unit := do
 c' ← resolution_prover_of_tactic $ try_resolve gt c1 c2 i1 i2,
 add_inferred c'
 
-meta_definition maybe_add_resolvent : resolution_prover unit :=
+meta def maybe_add_resolvent : resolution_prover unit :=
 try_add_resolvent gt c1 c2 i1 i2 <|> return ()
 
-meta_definition resolution_left_inf : inference :=
+meta def resolution_left_inf : inference :=
 take given, do active : rb_map name active_cls ← get_active, sequence' $ do
   given_i ← given↣selected,
   guard $ cls.lit.is_neg (given↣c↣get_lit given_i),
@@ -37,7 +37,7 @@ take given, do active : rb_map name active_cls ← get_active, sequence' $ do
   guard $ cls.lit.is_pos (other↣c↣get_lit other_i),
   [maybe_add_resolvent gt other↣c given↣c other_i given_i]
 
-meta_definition resolution_right_inf : inference :=
+meta def resolution_right_inf : inference :=
 take given, do active : rb_map name active_cls ← get_active, sequence' $ do
   given_i ← given↣selected,
   guard $ cls.lit.is_pos (given↣c↣get_lit given_i),
@@ -46,5 +46,5 @@ take given, do active : rb_map name active_cls ← get_active, sequence' $ do
   guard $ cls.lit.is_neg (other↣c↣get_lit other_i),
   [maybe_add_resolvent gt given↣c other↣c given_i other_i]
 
-meta_definition resolution_inf : inference :=
+meta def resolution_inf : inference :=
 take given, do gt ← get_term_order, resolution_left_inf gt given >> resolution_right_inf gt given

@@ -1,15 +1,15 @@
 import clause prover_state utils
 open tactic monad expr
 
-meta_definition get_rwr_positions : expr → list (list ℕ)
+meta def get_rwr_positions : expr → list (list ℕ)
 | (app a b) := [[]] ++
   do arg ← list.zip_with_index (get_app_args (app a b)),
      pos ← get_rwr_positions arg↣1,
      [arg↣2 :: pos]
-| (meta _ _) := []
+| (mvar _ _) := []
 | e := [[]]
 
-meta_definition get_position : expr → list ℕ → expr
+meta def get_position : expr → list ℕ → expr
 | (app a b) (p::ps) :=
 match list.nth (get_app_args (app a b)) p with
 | some arg := get_position arg ps
@@ -17,7 +17,7 @@ match list.nth (get_app_args (app a b)) p with
 end
 | e _ := e
 
-meta_definition replace_position (v : expr) : expr → list ℕ → expr
+meta def replace_position (v : expr) : expr → list ℕ → expr
 | (app a b) (p::ps) :=
 let args := get_app_args (app a b) in
 match list.nth args p with
@@ -37,13 +37,13 @@ variable congr_ax : name
 lemma sup_f_ltr {A} {a1 a2} (f : A → Prop) (H : a1 = a2) : f a1 → f a2 := take Hfa1, H ▸ Hfa1
 lemma sup_f_rtl {A} {a1 a2} (f : A → Prop) (H : a2 = a1) : f a1 → f a2 := sup_f_ltr f H↣symm
 
-meta_definition is_eq_dir (e : expr) (ltr : bool) : option (expr × expr) :=
+meta def is_eq_dir (e : expr) (ltr : bool) : option (expr × expr) :=
 match is_eq e with
 | some (lhs, rhs) := if ltr then some (lhs, rhs) else some (rhs, lhs)
 | none := none
 end
 
-meta_definition try_sup_pos : tactic cls := do
+meta def try_sup_pos : tactic cls := do
 guard $ cls.lit.is_pos (cls.get_lit c1 i1) ∧ cls.lit.is_pos (cls.get_lit c2 i2),
 qf1 ← cls.open_metan c1 (cls.num_quants c1),
 qf2 ← cls.open_metan c2 (cls.num_quants c2),
@@ -84,7 +84,7 @@ to_expr `(trivial) >>= apply
 lemma sup_l_ltr {A C} {a1 a2} (f : A → Prop) (H : a1 = a2) : (f a1 → C) → (f a2 → C) := take Hfa1C, H ▸ Hfa1C
 lemma sup_l_rtl {A C} {a1 a2} (f : A → Prop) (H : a2 = a1) : (f a1 → C) → (f a2 → C) := sup_l_ltr f H↣symm
 
-meta_definition try_sup_neg : tactic cls := do
+meta def try_sup_neg : tactic cls := do
 guard $ cls.lit.is_pos (cls.get_lit c1 i1) ∧ cls.lit.is_neg (cls.get_lit c2 i2),
 qf1 ← cls.open_metan c1 (cls.num_quants c1),
 qf2 ← cls.open_metan c2 (cls.num_quants c2),
@@ -123,18 +123,18 @@ try_sup_neg (λx y, ff) Hcls Hpacls 0 0 [0] tt ``sup_l_ltr,
 try_sup_neg (λx y, ff) Hcls Hpbcls 0 0 [0] ff ``sup_l_rtl,
 to_expr `(trivial) >>= apply
 
-meta_definition rwr_positions (c : cls) (i : nat) : list (list ℕ) :=
+meta def rwr_positions (c : cls) (i : nat) : list (list ℕ) :=
 get_rwr_positions (cls.lit.formula (cls.get_lit c i))
 
-meta_definition try_add_sup_pos : resolution_prover unit :=
+meta def try_add_sup_pos : resolution_prover unit :=
 (do c' ← resolution_prover_of_tactic $ try_sup_pos gt c1 c2 i1 i2 pos ltr congr_ax, add_inferred c')
     <|> return ()
 
-meta_definition try_add_sup_neg : resolution_prover unit :=
+meta def try_add_sup_neg : resolution_prover unit :=
 (do c' ← resolution_prover_of_tactic $ try_sup_neg gt c1 c2 i1 i2 pos ltr congr_ax, add_inferred c')
     <|> return ()
 
-meta_definition superposition_pos_back_inf : inference :=
+meta def superposition_pos_back_inf : inference :=
 take given, do active ← get_active, sequence' $ do
   given_i ← given↣selected,
   guard $ cls.lit.is_pos (cls.get_lit given↣c given_i),
@@ -146,7 +146,7 @@ take given, do active ← get_active, sequence' $ do
   [do try_add_sup_pos gt given↣c other↣c given_i other_i pos tt ``sup_f_ltr,
       try_add_sup_pos gt given↣c other↣c given_i other_i pos ff ``sup_f_rtl]
 
-meta_definition superposition_pos_fwd_inf : inference :=
+meta def superposition_pos_fwd_inf : inference :=
 take given, do active ← get_active, sequence' $ do
   given_i ← given↣selected,
   guard $ cls.lit.is_pos (cls.get_lit given↣c given_i),
@@ -158,7 +158,7 @@ take given, do active ← get_active, sequence' $ do
   [do try_add_sup_pos gt other↣c given↣c other_i given_i pos tt ``sup_f_ltr,
       try_add_sup_pos gt other↣c given↣c other_i given_i pos ff ``sup_f_rtl]
 
-meta_definition superposition_neg_back_inf : inference :=
+meta def superposition_neg_back_inf : inference :=
 take given, do active ← get_active, sequence' $ do
   given_i ← given↣selected,
   guard $ cls.lit.is_pos (cls.get_lit given↣c given_i),
@@ -170,7 +170,7 @@ take given, do active ← get_active, sequence' $ do
   [do try_add_sup_neg gt given↣c other↣c given_i other_i pos tt ``sup_l_ltr,
       try_add_sup_neg gt given↣c other↣c given_i other_i pos ff ``sup_l_rtl]
 
-meta_definition superposition_neg_fwd_inf : inference :=
+meta def superposition_neg_fwd_inf : inference :=
 take given, do active ← get_active, sequence' $ do
   given_i ← given↣selected,
   guard $ cls.lit.is_neg (cls.get_lit given↣c given_i),
@@ -182,7 +182,7 @@ take given, do active ← get_active, sequence' $ do
   [do try_add_sup_neg gt other↣c given↣c other_i given_i pos tt ``sup_l_ltr,
       try_add_sup_neg gt other↣c given↣c other_i given_i pos ff ``sup_l_rtl]
 
-meta_definition superposition_inf : inference :=
+meta def superposition_inf : inference :=
 take given, do gt ← get_term_order,
 superposition_pos_fwd_inf gt given,
 superposition_pos_back_inf gt given,

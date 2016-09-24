@@ -1,7 +1,7 @@
 import clause prover_state
 open expr list monad
 
-meta_definition is_taut (c : cls) : tactic bool := do
+meta def is_taut (c : cls) : tactic bool := do
 qf ← cls.open_constn c c↣num_quants,
 return $ list.bor (do
   l1 ← cls.get_lits qf.1, guard $ cls.lit.is_neg l1,
@@ -15,9 +15,9 @@ taut ← is_taut hcls,
 when (¬taut) failed,
 to_expr `(trivial) >>= apply
 
-meta_definition tautology_removal_pre : resolution_prover unit :=
+meta def tautology_removal_pre : resolution_prover unit :=
 preprocessing_rule $ λnew, resolution_prover_of_tactic (filterM (λc, liftM bool.bnot (is_taut c)) new)
 
-meta_definition remove_duplicates_pre : resolution_prover unit :=
+meta def remove_duplicates_pre : resolution_prover unit :=
 preprocessing_rule $ λnew,
 return (rb_map.values (rb_map.of_list (list.map (λc:cls, (c↣type, c)) new)))

@@ -1,7 +1,7 @@
 import clause prover_state utils
 open tactic monad expr list
 
-meta_definition try_unify_eq_l (c : cls) (i : nat) : tactic cls := do
+meta def try_unify_eq_l (c : cls) (i : nat) : tactic cls := do
 guard $ cls.lit.is_neg (cls.get_lit c i),
 qf ← cls.open_metan c c↣num_quants,
 match is_eq (qf↣1↣get_lit i)↣formula with
@@ -15,11 +15,11 @@ opened ← cls.open_constn qf↣1 i,
 cls.meta_closure qf↣2 $ cls.close_constn (opened↣1↣inst refl) opened↣2
 end
 
-meta_definition unify_eq_inf : inference := take given, sequence' $ do
+meta def unify_eq_inf : inference := take given, sequence' $ do
 i ← given↣selected,
 [(do u ← resolution_prover_of_tactic $ try_unify_eq_l given↣c i, add_inferred u) <|> return ()]
 
-meta_definition has_refl_r (c : cls) : bool :=
+meta def has_refl_r (c : cls) : bool :=
 list.bor $ do
 lit ← c↣get_lits,
 guard lit↣is_pos,
@@ -28,5 +28,5 @@ match is_eq lit↣formula with
 | none := []
 end
 
-meta_definition refl_r_pre : resolution_prover unit :=
+meta def refl_r_pre : resolution_prover unit :=
 preprocessing_rule $ take new, return (filter (λc, ¬has_refl_r c) new)
