@@ -138,7 +138,8 @@ match st↣trail with
 | elem :: rest := do
   stateT.write { st with trail := rest,
     vars := st↣vars↣insert elem↣var ⟨elem↣phase, none⟩,
-    unassigned := st↣unassigned↣insert elem↣var elem↣var },
+    unassigned := st↣unassigned↣insert elem↣var elem↣var,
+    unitp_queue := [] },
   return $ some elem
 | [] := return none
 end
@@ -432,3 +433,7 @@ private meta def lit_unification : tactic unit :=
 do ls ← local_context, first $ do l ← ls, [do apply l, assumption]
 private lemma example5 {p : ℕ → Prop} : p 2 ∨ p 4 → (p (2*2) → p (2+0)) → p (1+1) :=
 by cdcl_t lit_unification
+
+private lemma example6 {p : ℕ → Prop} :
+        list.foldl (λf v, f ∧ (v ∨ ¬v)) true (map p (list.range 5)) :=
+by cdcl
