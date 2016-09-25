@@ -242,3 +242,10 @@ meta def collect_successes {A} : list (tactic A) → tactic (list A)
   xs ← collect_successes ts,
   return (x_opt ++ xs)
 | [] := return []
+
+namespace stateT
+
+def modify {S} {M : Type → Type} [monad M] (f : S → S) : stateT S M unit :=
+do s ← read, write (f s)
+
+end stateT
