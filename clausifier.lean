@@ -4,6 +4,15 @@ open expr list tactic monad decidable
 
 meta def head_lit_rule := cls.lit → cls → tactic (option (list cls))
 
+meta def inf_whnf (l : cls.lit) (c : cls) : tactic (option (list cls)) := do
+normalized ← whnf l↣formula,
+if normalized = l↣formula then return none else
+match l with
+| cls.lit.final _ := return $ some [{ c with type := normalized }]
+| cls.lit.left _ := return $ some [{ c with type := imp normalized c↣type↣binding_body }]
+| cls.lit.right _ := return $ some [{ c with type := imp normalized↣enot c↣type↣binding_body }]
+end
+
 meta def inf_false_f (l : cls.lit) (c : cls) : tactic (option (list cls)) :=
 match l with
 | cls.lit.final (const false_name _) :=
@@ -273,7 +282,8 @@ meta def clausification_rules (ctx : list expr) : list head_lit_rule :=
   inf_or_l, inf_or_r,
   inf_imp_l, inf_all_r,
   inf_ex_l,
-  inf_all_l, inf_ex_r ctx ]
+  inf_all_l, inf_ex_r ctx,
+  inf_whnf ]
 
 meta def clausify_at (c : cls) (i : nat) : tactic (option (list cls)) := do
 opened ← cls.open_constn c (c↣num_quants + i),
