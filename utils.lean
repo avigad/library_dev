@@ -11,6 +11,10 @@ pi (default name) binder_info.default a b
 meta def enot (a : expr) : expr :=
 app (const ``not []) a
 
+meta def local_type : expr → expr
+| (local_const _ _ _ t) := t
+| e := e
+
 end expr
 
 meta def get_metas : expr → list expr
@@ -82,6 +86,9 @@ meta def set_of_list {A} [has_ordering A] : list A → rb_map A unit
 meta def map {A B C} [has_ordering A] (f : B → C) (m : rb_map A B) : rb_map A C :=
 fold m (mk _ _) (λk v res, insert res k (f v))
 
+meta def for {A B C} [has_ordering A] (m : rb_map A B) (f : B → C) : rb_map A C :=
+map f m
+
 end rb_map
 
 namespace list
@@ -137,6 +144,11 @@ def bor : list bool → bool
 | (tt::xs) := tt
 | (ff::xs) := bor xs
 | [] := ff
+
+def band : list bool → bool
+| (tt::xs) := band xs
+| (ff::xs) := ff
+| [] := tt
 
 def contains {a} [decidable_eq a] (elem : a) : list a → bool
 | (x::xs) := if x = elem then tt else contains xs
@@ -213,10 +225,6 @@ contained_lconsts' e (rb_map.mk name expr)
 
 meta def contained_lconsts_list (es : list expr) : rb_map name expr :=
 list.foldl (λlcs e, contained_lconsts' e lcs) (rb_map.mk name expr) es
-
-meta def local_type : expr → expr
-| (local_const _ _ _ t) := t
-| e := e
 
 meta def lambdas : list expr → expr → expr
 | (local_const uniq pp info t :: es) f :=
