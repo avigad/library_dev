@@ -113,7 +113,7 @@ def is_neg : lit → bool
 | (right _) := ff
 | (final _) := ff
 
-def is_pos (l : lit) : bool := bool.bnot l↣is_neg
+def is_pos (l : lit) : bool := bnot l↣is_neg
 
 meta def to_formula (l : lit) : tactic expr :=
 if is_neg l then mk_mapp ``not [some (formula l)]

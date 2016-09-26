@@ -35,7 +35,7 @@ resolution_prover_of_tactic $ any_tt active (λa, do
 
 meta def forward_subsumption_pre : resolution_prover unit := preprocessing_rule $ λnew, do
 active ← get_active, resolution_prover_of_tactic $ filterM (λn,
-  do ss ← any_tt active (λa, does_subsume a↣c n), return (bool.bnot ss)) new
+  do ss ← any_tt active (λa, does_subsume a↣c n), return (bnot ss)) new
 
 meta def subsumption_interreduction : list cls → tactic (list cls)
 | (c::cs) := do
@@ -43,7 +43,7 @@ meta def subsumption_interreduction : list cls → tactic (list cls)
   if c_subsumed_by_cs then
     subsumption_interreduction cs
   else do
-    cs_not_subsumed_by_c ← filterM (λd, liftM bool.bnot (does_subsume c d)) cs,
+    cs_not_subsumed_by_c ← filterM (λd, liftM bnot (does_subsume c d)) cs,
     cs' ← subsumption_interreduction cs_not_subsumed_by_c,
     return (c::cs')
 | [] := return []

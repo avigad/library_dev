@@ -16,7 +16,7 @@ when (¬taut) failed,
 to_expr `(trivial) >>= apply
 
 meta def tautology_removal_pre : resolution_prover unit :=
-preprocessing_rule $ λnew, resolution_prover_of_tactic (filterM (λc, liftM bool.bnot (is_taut c)) new)
+preprocessing_rule $ λnew, resolution_prover_of_tactic (filterM (λc, liftM bnot (is_taut c)) new)
 
 meta def remove_duplicates_pre : resolution_prover unit :=
 preprocessing_rule $ λnew,

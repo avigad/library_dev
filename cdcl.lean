@@ -145,7 +145,7 @@ match st↣trail with
 end
 
 meta def is_decision_level_zero : solver bool :=
-do st ← stateT.read, return (list.band $ st↣trail↣for (λelem, bool.bnot elem↣is_decision))
+do st ← stateT.read, return (list.band $ st↣trail↣for (λelem, bnot elem↣is_decision))
 
 meta def revert_to_decision_level_zero : unit → solver unit | () := do
 is_dl0 ← is_decision_level_zero,
@@ -184,7 +184,7 @@ do var_st_opt ← lookup_var l↣formula, match var_st_opt with
 | none := return none
 | some ⟨ph, none⟩ := return none
 | some ⟨ph, some prf⟩ :=
-  return $ some (if l↣is_neg then bool.bnot ph else ph, prf)
+  return $ some (if l↣is_neg then bnot ph else ph, prf)
 end
 
 meta def lit_is_false (l : cls.lit) : solver bool :=
@@ -194,7 +194,7 @@ do s ← lookup_lit l, return $ match s with
 end
 
 meta def lit_is_not_false (l : cls.lit) : solver bool :=
-do isf ← lit_is_false l, return isf↣bnot
+do isf ← lit_is_false l, return $ bnot isf
 
 meta def cls_is_false (c : cls) : solver bool :=
 liftM list.band $ mapM lit_is_false c↣get_lits
@@ -282,7 +282,7 @@ match st↣vars↣find v with
 | some ⟨ph, none⟩ := solver_of_tactic $ fail ("propagating unassigned variable: " ++ v↣to_string)
 | none := solver_of_tactic $ fail ("unknown variable: " ++ v↣to_string)
 | some ⟨ph, some _⟩ :=
-  let watches := st↣watches_for $ prop_lit.of_var_and_phase v ph↣bnot in
+  let watches := st↣watches_for $ prop_lit.of_var_and_phase v (bnot ph) in
   forM' watches↣to_list $ λw, update_watches w↣1 w↣2↣2↣2 w↣2↣1 w↣2↣2↣1
 end
 
