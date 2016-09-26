@@ -115,6 +115,10 @@ def is_neg : lit → bool
 
 def is_pos (l : lit) : bool := bnot l↣is_neg
 
+def is_final : lit → bool
+| (final _) := tt
+| _ := ff
+
 meta def to_formula (l : lit) : tactic expr :=
 if is_neg l then mk_mapp ``not [some (formula l)]
 else return (formula l)
@@ -167,7 +171,7 @@ meta def fin_to_pos (c : cls) : tactic cls :=
 if ¬has_fin c then return c else do
 op ← open_constn c c↣num_binders,
 prf' ← mk_mapp ``fin_to_pos_helper [some (type op.1), some (prf op.1)],
-type' ← return (imp (app (const ``not []) (type op.1)) (const ``false [])),
+type' ← return $ imp (imp op↣1↣type false_) false_,
 return $ close_constn (mk 0 1 ff prf' type') op.2
 
 private meta def focus' (c : cls) (i : nat) : tactic cls := do

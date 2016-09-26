@@ -8,8 +8,10 @@ has_ordering.mk expr.cmp
 meta def imp (a b : expr) : expr :=
 pi (default name) binder_info.default a b
 
-meta def enot (a : expr) : expr :=
+meta def not_ (a : expr) : expr :=
 app (const ``not []) a
+
+meta def false_ : expr := const ``false []
 
 meta def local_type : expr → expr
 | (local_const _ _ _ t) := t

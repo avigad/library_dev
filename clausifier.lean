@@ -10,7 +10,7 @@ if normalized = l↣formula then return none else
 match l with
 | cls.lit.final _ := return $ some [{ c with type := normalized }]
 | cls.lit.left _ := return $ some [{ c with type := imp normalized c↣type↣binding_body }]
-| cls.lit.right _ := return $ some [{ c with type := imp normalized↣enot c↣type↣binding_body }]
+| cls.lit.right _ := return $ some [{ c with type := imp normalized↣not_ c↣type↣binding_body }]
 end
 
 meta def inf_false_f (l : cls.lit) (c : cls) : tactic (option (list cls)) :=

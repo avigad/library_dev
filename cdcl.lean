@@ -102,11 +102,12 @@ meta def solver_of_tactic {A} (tac : tactic A) : solver A :=
 take st, do res ← tac, return (res, st)
 
 meta def mk_var_core (v : prop_var) (ph : bool) : solver unit := do
+univ ← solver_of_tactic $ infer_type v,
 stateT.modify $ λst, match st↣vars↣find v with
 | (some _) := st
 | none := { st with
     vars := st↣vars↣insert v ⟨ph, none⟩,
-    unassigned := st↣unassigned↣insert v v
+    unassigned := if univ = prop then st↣unassigned↣insert v v else st↣unassigned
   }
 end
 
@@ -136,9 +137,10 @@ meta def pop_trail_core : solver (option trail_elem) := do
 st ← stateT.read,
 match st↣trail with
 | elem :: rest := do
+  univ ← solver_of_tactic $ infer_type elem↣var,
   stateT.write { st with trail := rest,
     vars := st↣vars↣insert elem↣var ⟨elem↣phase, none⟩,
-    unassigned := st↣unassigned↣insert elem↣var elem↣var,
+    unassigned := if univ = prop then st↣unassigned↣insert elem↣var elem↣var else st↣unassigned,
     unitp_queue := [] },
   return $ some elem
 | [] := return none
@@ -153,7 +155,7 @@ if is_dl0 then return ()
 else do pop_trail_core, revert_to_decision_level_zero ()
 
 meta def formula_of_lit (v : prop_var) (ph : bool) :=
-if ph then v else enot v
+if ph then v else not_ v
 
 meta def lookup_var (v : prop_var) : solver (option var_state) :=
 do st ← stateT.read, return $ st↣vars↣find v
@@ -203,7 +205,11 @@ private meta def unit_propg_cls' : cls → solver (option prop_var) | c :=
 if c↣num_lits = 0 then return (some c↣prf)
 else let hd := c↣get_lit 0 in
 do lit_st ← lookup_lit hd, match lit_st with
-| some (ff, isf_prf) := unit_propg_cls' (c↣inst isf_prf)
+| some (ff, isf_prf) :=
+  if hd↣is_final then
+    return (some $ app isf_prf c↣prf)
+  else
+    unit_propg_cls' (c↣inst isf_prf)
 | _                  := return none
 end
 
@@ -213,16 +219,21 @@ if has_confl then return () else
 if c↣num_lits = 0 then do set_conflict c↣prf
 else let hd := c↣get_lit 0 in
 do lit_st ← lookup_lit hd, match lit_st with
-| some (ff, isf_prf) := unit_propg_cls (c↣inst isf_prf)
+| some (ff, isf_prf) :=
+  if hd↣is_final then
+    set_conflict (app isf_prf c↣prf)
+  else
+    unit_propg_cls (c↣inst isf_prf)
 | some (tt, _) := return ()
 | none :=
-do fls_prf_opt ← unit_propg_cls' (c↣inst (expr.mk_var 0)),
+if c↣num_lits = 1 ∧ c↣has_fin then
+  add_propagation c↣type tt c↣prf
+else do fls_prf_opt ← unit_propg_cls' (c↣inst (expr.mk_var 0)),
 match fls_prf_opt with
 | some fls_prf := do
 fls_prf' ← return $ lam `H binder_info.default c↣type↣binding_domain fls_prf,
-prf ← return (if hd↣is_pos then
-app_of_list (const ``classical.by_contradiction []) [hd↣formula, fls_prf']
-else fls_prf'),
+prf ← return (if hd↣is_neg then fls_prf' else
+  app_of_list (const ``classical.by_contradiction []) [hd↣formula, fls_prf']),
 add_propagation hd↣formula hd↣is_pos prf
 | none := return ()
 end
@@ -269,10 +280,9 @@ remove_watch n c i₂,
 set_watches n c
 
 meta def mk_clause (c : cls) : solver unit := do
-c' ← solver_of_tactic c↣fin_to_pos,
-forM c'↣get_lits $ λl, mk_var l↣formula,
+forM c↣get_lits (λl, mk_var l↣formula),
 revert_to_decision_level_zero (),
-stateT.modify $ λst, { st with given := c' :: st↣given },
+stateT.modify $ λst, { st with given := c :: st↣given },
 c_name ← solver_of_tactic mk_fresh_name,
 set_watches c_name c
 
@@ -411,12 +421,11 @@ mk_mapp ``classical.by_contradiction [some tgt] >>= apply, intro target_name,
 hyps ← local_context,
 gen_clauses ← mapM cls.of_proof hyps,
 clauses ← clausify gen_clauses,
-no_fin_clauses ← collect_successes $ map cls.fin_to_pos clauses,
-res ← cdcl.solve (theory_solver_of_tactic th_solver) no_fin_clauses,
+res ← cdcl.solve (theory_solver_of_tactic th_solver) clauses,
 match res with
 | (cdcl.result.unsat prf) := exact prf
 | (cdcl.result.sat interp) :=
-  let interp' := do e ← interp↣to_list, [if e↣2 = tt then e↣1 else enot e↣1] in
+  let interp' := do e ← interp↣to_list, [cdcl.formula_of_lit e↣1 e↣2] in
   do pp_interp ← pp interp',
      fail (to_fmt "satisfying assignment: " ++ pp_interp)
 end
@@ -426,8 +435,8 @@ meta def cdcl : tactic unit := cdcl_t skip
 -- FIXME: using example here hides "contains local constants" errors
 private lemma example1 {a} : a → ¬a → false := by cdcl
 private lemma example2 {a} : a ∨ ¬a := by cdcl
-private lemma example3 {a b : Prop} : a → (a → b) → b := by cdcl
-private lemma example4 {a b c : Prop} : (a → b) → (¬a → b) → (b → c) → b ∧ c := by cdcl
+private lemma example3 {a} {b : Prop} : a → (a → b) → b := by cdcl
+private lemma example4 {a b c} : (a → b) → (¬a → b) → (b → c) → b ∧ c := by cdcl
 
 private meta def lit_unification : tactic unit :=
 do ls ← local_context, first $ do l ← ls, [do apply l, assumption]
