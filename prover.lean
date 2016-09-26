@@ -1,6 +1,7 @@
 import clause prover_state
 import subsumption misc_preprocessing
 import resolution factoring clausifier superposition equality
+import selection
 open monad tactic expr
 
 declare_trace resolution
