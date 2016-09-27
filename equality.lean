@@ -9,7 +9,7 @@ match is_eq (qf↣1↣get_lit i)↣formula with
 | some (lhs, rhs) := do
 unify lhs rhs,
 ty ← infer_type lhs,
-univ ← mk_meta_univ,
+univ ← infer_univ ty,
 refl ← return $ app_of_list (const ``eq.refl [univ]) [ty, lhs],
 opened ← cls.open_constn qf↣1 i,
 cls.meta_closure qf↣2 $ cls.close_constn (opened↣1↣inst refl) opened↣2

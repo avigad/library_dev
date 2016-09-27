@@ -63,7 +63,7 @@ unify rwr_from (get_position atom pos),
 rwr_ctx_varn ← mk_fresh_name,
 abs_rwr_ctx ← return $
   lam rwr_ctx_varn binder_info.default eq_type (replace_position (mk_var 0) atom pos),
-univ ← mk_meta_univ,
+univ ← infer_univ eq_type,
 new_fin_prf ←
   return $ app_of_list (const congr_ax [univ]) [eq_type, rwr_from, rwr_to,
             abs_rwr_ctx, opened1↣1↣prf, opened2↣1↣prf],
@@ -103,7 +103,7 @@ unify rwr_from (get_position atom pos),
 rwr_ctx_varn ← mk_fresh_name,
 abs_rwr_ctx ← return $
   lam rwr_ctx_varn binder_info.default eq_type (replace_position (mk_var 0) atom pos),
-univ ← mk_meta_univ,
+univ ← infer_univ eq_type,
 new_fin_prf ← return $ app_of_list (const congr_ax [univ])
   [eq_type, binding_body opened2↣1↣type, rwr_from, rwr_to,
    abs_rwr_ctx, opened1↣1↣prf, opened2↣1↣prf],

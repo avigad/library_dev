@@ -260,3 +260,15 @@ def modify {S} {M : Type → Type} [monad M] (f : S → S) : stateT S M unit :=
 do s ← read, write (f s)
 
 end stateT
+
+namespace tactic
+
+meta def infer_univ (type : expr) : tactic level :=
+do sort_of_type ← infer_type type >>= whnf,
+match sort_of_type with
+| sort lvl := return lvl
+| not_sort := do fmt ← pp not_sort,
+                 fail $ to_fmt "cannot get universe level of sort: " ++ fmt
+end
+
+end tactic
