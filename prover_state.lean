@@ -121,6 +121,9 @@ meta def mk_sat_var (v : expr) (suggested_ph : bool) : resolution_prover unit :=
 in_sat_solver $ cdcl.mk_var_core v suggested_ph
 
 meta def add_sat_clause (c : cls) : resolution_prover unit := do
+already_added ← flip liftM stateT.read (λst, decidable.to_bool $
+                     c↣type ∈ st↣sat_solver↣given↣for (λd, d↣type)),
+if already_added then return () else do
 in_sat_solver $ cdcl.mk_clause c,
 stateT.modify $ λst, { st with needs_sat_run := tt }
 

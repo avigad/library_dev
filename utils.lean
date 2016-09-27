@@ -123,6 +123,9 @@ private def for_all' {A} (p : A → Prop) [decidable_pred p] : list A → bool
 def for_all {A} (l : list A) (p : A → Prop) [decidable_pred p] :=
 for_all' p l
 
+def exists_ {A} (l : list A) (p : A → Prop) [decidable_pred p] : bool :=
+bnot $ for_all l (λx, ¬p x)
+
 def subset_of {A} [decidable_eq A] (xs ys : list A) :=
 xs↣for_all (λx, x ∈ ys)
 

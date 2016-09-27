@@ -150,7 +150,7 @@ match st↣trail with
 end
 
 meta def is_decision_level_zero : solver bool :=
-do st ← stateT.read, return (list.band $ st↣trail↣for (λelem, bnot elem↣is_decision))
+do st ← stateT.read, return $ st↣trail↣for_all (λelem, ¬elem↣is_decision)
 
 meta def revert_to_decision_level_zero : unit → solver unit | () := do
 is_dl0 ← is_decision_level_zero,
