@@ -150,10 +150,10 @@ binding_domain (get_binding_body e i)
 meta def get_lit (c : cls) (i : nat) : lit :=
 if has_fin c ∧ num_lits c = i + 1 then lit.final (get_binding_body (type c) (num_quants c + i))
 else let bind := get_binder (type c) (num_quants c + i) in
-if is_app_of bind ``not ∧ get_app_num_args bind = 1 then
-  lit.right (app_arg bind)
-else
-  lit.left bind
+match is_not bind with
+| some formula := lit.right formula
+| none := lit.left bind
+end
 
 meta def lits_where (c : cls) (p : lit → bool) : list nat :=
 list.filter (λl, p (get_lit c l)) (range (num_lits c))

@@ -10,24 +10,29 @@ namespace cdcl
 inductive trail_elem
 | dec : prop_var → bool → proof_hyp → trail_elem
 | propg : prop_var → bool → proof_term → proof_hyp → trail_elem
+| dbl_neg_propg : prop_var → bool → proof_term → proof_hyp → trail_elem
 
 namespace trail_elem
 
 def var : trail_elem → prop_var
 | (dec v _ _) := v
 | (propg v _ _ _) := v
+| (dbl_neg_propg v _ _ _) := v
 
 def phase : trail_elem → bool
 | (dec _ ph _) := ph
 | (propg _ ph _ _) := ph
+| (dbl_neg_propg _ ph _ _) := ph
 
 def hyp : trail_elem → proof_hyp
 | (dec _ _ h) := h
 | (propg _ _ _ h) := h
+| (dbl_neg_propg _ _ _ h) := h
 
 def is_decision : trail_elem → bool
 | (dec _ _ _) := tt
 | (propg _ _ _ _) := ff
+| (dbl_neg_propg _ _ _ _) := ff
 
 end trail_elem
 
@@ -102,12 +107,11 @@ meta def solver_of_tactic {A} (tac : tactic A) : solver A :=
 take st, do res ← tac, return (res, st)
 
 meta def mk_var_core (v : prop_var) (ph : bool) : solver unit := do
-univ ← solver_of_tactic $ infer_type v,
 stateT.modify $ λst, match st↣vars↣find v with
 | (some _) := st
 | none := { st with
     vars := st↣vars↣insert v ⟨ph, none⟩,
-    unassigned := if univ = prop then st↣unassigned↣insert v v else st↣unassigned
+    unassigned := st↣unassigned↣insert v v
   }
 end
 
@@ -137,10 +141,9 @@ meta def pop_trail_core : solver (option trail_elem) := do
 st ← stateT.read,
 match st↣trail with
 | elem :: rest := do
-  univ ← solver_of_tactic $ infer_type elem↣var,
   stateT.write { st with trail := rest,
     vars := st↣vars↣insert elem↣var ⟨elem↣phase, none⟩,
-    unassigned := if univ = prop then st↣unassigned↣insert elem↣var elem↣var else st↣unassigned,
+    unassigned := st↣unassigned↣insert elem↣var elem↣var,
     unitp_queue := [] },
   return $ some elem
 | [] := return none
@@ -155,25 +158,28 @@ if is_dl0 then return ()
 else do pop_trail_core, revert_to_decision_level_zero ()
 
 meta def formula_of_lit (v : prop_var) (ph : bool) :=
-if ph then v else not_ v
+if ph then v else imp v false_
 
 meta def lookup_var (v : prop_var) : solver (option var_state) :=
 do st ← stateT.read, return $ st↣vars↣find v
 
-meta def add_propagation (v : prop_var) (ph : bool) (just : proof_term) : solver unit :=
+meta def add_propagation (v : prop_var) (ph : bool) (just : proof_term) (just_is_dn : bool) : solver unit :=
 do v_st ← lookup_var v, match v_st with
 | none := solver_of_tactic (fail $ "propagating unknown variable: " ++ v↣to_string)
 | some ⟨assg_ph, some prf⟩ :=
     if ph = assg_ph then
       return ()
-    else if assg_ph then
+    else if assg_ph ∧ ¬just_is_dn then
       set_conflict (app just prf)
     else
       set_conflict (app prf just)
 | some ⟨_, none⟩ := do
     hyp_name ← solver_of_tactic mk_fresh_name,
     hyp ← return $ local_const hyp_name hyp_name binder_info.default (formula_of_lit v ph),
-    push_trail $ trail_elem.propg v ph just hyp
+    if just_is_dn then do
+      push_trail $ trail_elem.dbl_neg_propg v ph just hyp
+    else do
+      push_trail $ trail_elem.propg v ph just hyp
 end
 
 meta def add_decision (v : prop_var) (ph : bool) := do
@@ -227,14 +233,15 @@ do lit_st ← lookup_lit hd, match lit_st with
 | some (tt, _) := return ()
 | none :=
 if c↣num_lits = 1 ∧ c↣has_fin then
-  add_propagation c↣type tt c↣prf
+  add_propagation c↣type tt c↣prf ff
 else do fls_prf_opt ← unit_propg_cls' (c↣inst (expr.mk_var 0)),
 match fls_prf_opt with
 | some fls_prf := do
 fls_prf' ← return $ lam `H binder_info.default c↣type↣binding_domain fls_prf,
-prf ← return (if hd↣is_neg then fls_prf' else
-  app_of_list (const ``classical.by_contradiction []) [hd↣formula, fls_prf']),
-add_propagation hd↣formula hd↣is_pos prf
+if hd↣is_neg then
+  add_propagation hd↣formula ff fls_prf' ff
+else
+  add_propagation hd↣formula tt fls_prf' tt
 | none := return ()
 end
 end
@@ -307,6 +314,12 @@ meta def analyze_conflict' : proof_term → list trail_elem → cls
   let abs_prf := abstract_local prf hyp↣local_uniq_name in
   if has_var abs_prf then
     analyze_conflict' (elet hyp↣local_pp_name (formula_of_lit v ph) l_prf abs_prf) es
+  else
+    analyze_conflict' prf es
+| prf (trail_elem.dbl_neg_propg v ph l_prf hyp :: es) :=
+  let abs_prf := abstract_local prf hyp↣local_uniq_name in
+  if has_var abs_prf then
+    analyze_conflict' (app l_prf (lambdas [hyp] prf)) es
   else
     analyze_conflict' prf es
 | prf [] := ⟨0, 0, ff, prf, const ``false []⟩
