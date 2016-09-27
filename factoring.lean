@@ -28,11 +28,12 @@ if i > j then try_factor' gt c j i else try_factor' gt c i j
 meta def try_infer_factor (c : active_cls) (i j : nat) : resolution_prover unit := do
 f ← resolution_prover_of_tactic (try_factor gt c↣c i j),
 ss ← resolution_prover_of_tactic $ does_subsume f c↣c,
-add_inferred f,
-if ss then remove_redundant c↣id else return ()
+add_inferred f [c],
+if ss then remove_redundant c↣id [] else return ()
 
 meta def factor_inf : inference :=
 take given, do gt ← get_term_order, sequence' $ do
   i ← active_cls.selected given,
   j ← list.range given↣c↣num_lits,
+  guard $ j ∉ given↣assertions,
   return $ try_infer_factor gt given i j <|> return ()

@@ -19,7 +19,7 @@ try_subsume_core small_open↣1↣get_lits large_open↣1↣get_lits
 meta def does_subsume (small large : cls) : tactic bool :=
 (try_subsume small large >> return tt) <|> return ff
 
-meta def any_tt (active : rb_map name active_cls) (pred : active_cls → tactic bool) : tactic bool :=
+meta def any_tt {m : Type → Type} [monad m] (active : rb_map name active_cls) (pred : active_cls → m bool) : m bool :=
 active↣fold (return ff) $ λk a cont, do
   v ← pred a, if v then return tt else cont
 
@@ -27,11 +27,17 @@ meta def any_tt_list {A} (pred : A → tactic bool) : list A → tactic bool
 | [] := return ff
 | (x::xs) := do v ← pred x, if v then return tt else any_tt_list xs
 
-meta def forward_subsumption : inference := redundancy_inference $ λgiven, do
+meta def forward_subsumption : inference := take given, do
 active ← get_active,
-resolution_prover_of_tactic $ any_tt active (λa, do
-  ss ← does_subsume (active_cls.c a) (active_cls.c given),
-  return (decidable.to_bool (ss ∧ given↣id ≠ a↣id)))
+any_tt active (λa,
+  if a↣id = given↣id then return ff else do
+  ss ← resolution_prover_of_tactic $ does_subsume a↣c given↣c,
+  if ss then do
+    remove_redundant given↣id [a],
+    return tt
+  else
+    return ff),
+return ()
 
 meta def forward_subsumption_pre : resolution_prover unit := preprocessing_rule $ λnew, do
 active ← get_active, resolution_prover_of_tactic $ filterM (λn,
@@ -61,4 +67,4 @@ meta def backward_subsumption : inference := λgiven, do
 active ← get_active,
 ss ← resolution_prover_of_tactic $
   keys_where_tt active (λa, does_subsume given↣c a↣c),
-sequence' $ do id ← ss, guard (id ≠ given↣id), [remove_redundant id]
+sequence' $ do id ← ss, guard (id ≠ given↣id), [remove_redundant id [given]]

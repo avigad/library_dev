@@ -29,6 +29,7 @@ end
 
 variable gt : expr → expr → bool
 variables (c1 c2 : cls)
+variables (ac1 ac2 : active_cls)
 variables (i1 i2 : nat)
 variable pos : list ℕ
 variable ltr : bool
@@ -127,11 +128,11 @@ meta def rwr_positions (c : cls) (i : nat) : list (list ℕ) :=
 get_rwr_positions (cls.lit.formula (cls.get_lit c i))
 
 meta def try_add_sup_pos : resolution_prover unit :=
-(do c' ← resolution_prover_of_tactic $ try_sup_pos gt c1 c2 i1 i2 pos ltr congr_ax, add_inferred c')
+(do c' ← resolution_prover_of_tactic $ try_sup_pos gt ac1↣c ac2↣c i1 i2 pos ltr congr_ax, add_inferred c' [ac1,ac2])
     <|> return ()
 
 meta def try_add_sup_neg : resolution_prover unit :=
-(do c' ← resolution_prover_of_tactic $ try_sup_neg gt c1 c2 i1 i2 pos ltr congr_ax, add_inferred c')
+(do c' ← resolution_prover_of_tactic $ try_sup_neg gt ac1↣c ac2↣c i1 i2 pos ltr congr_ax, add_inferred c' [ac1,ac2])
     <|> return ()
 
 meta def superposition_pos_back_inf : inference :=
@@ -143,8 +144,8 @@ take given, do active ← get_active, sequence' $ do
   other_i ← other↣selected,
   guard $ cls.lit.is_pos (cls.get_lit other↣c other_i),
   pos ← rwr_positions other↣c other_i,
-  [do try_add_sup_pos gt given↣c other↣c given_i other_i pos tt ``sup_f_ltr,
-      try_add_sup_pos gt given↣c other↣c given_i other_i pos ff ``sup_f_rtl]
+  [do try_add_sup_pos gt given other given_i other_i pos tt ``sup_f_ltr,
+      try_add_sup_pos gt given other given_i other_i pos ff ``sup_f_rtl]
 
 meta def superposition_pos_fwd_inf : inference :=
 take given, do active ← get_active, sequence' $ do
@@ -155,8 +156,8 @@ take given, do active ← get_active, sequence' $ do
   guard $ cls.lit.is_pos (cls.get_lit other↣c other_i),
   option.to_monad $ is_eq (cls.lit.formula $ cls.get_lit other↣c other_i),
   pos ← rwr_positions given↣c given_i,
-  [do try_add_sup_pos gt other↣c given↣c other_i given_i pos tt ``sup_f_ltr,
-      try_add_sup_pos gt other↣c given↣c other_i given_i pos ff ``sup_f_rtl]
+  [do try_add_sup_pos gt other given other_i given_i pos tt ``sup_f_ltr,
+      try_add_sup_pos gt other given other_i given_i pos ff ``sup_f_rtl]
 
 meta def superposition_neg_back_inf : inference :=
 take given, do active ← get_active, sequence' $ do
@@ -167,8 +168,8 @@ take given, do active ← get_active, sequence' $ do
   other_i ← other↣selected,
   guard $ cls.lit.is_neg (cls.get_lit other↣c other_i),
   pos ← rwr_positions other↣c other_i,
-  [do try_add_sup_neg gt given↣c other↣c given_i other_i pos tt ``sup_l_ltr,
-      try_add_sup_neg gt given↣c other↣c given_i other_i pos ff ``sup_l_rtl]
+  [do try_add_sup_neg gt given other given_i other_i pos tt ``sup_l_ltr,
+      try_add_sup_neg gt given other given_i other_i pos ff ``sup_l_rtl]
 
 meta def superposition_neg_fwd_inf : inference :=
 take given, do active ← get_active, sequence' $ do
@@ -179,8 +180,8 @@ take given, do active ← get_active, sequence' $ do
   guard $ cls.lit.is_pos (cls.get_lit other↣c other_i),
   option.to_monad $ is_eq (cls.lit.formula $ cls.get_lit other↣c other_i),
   pos ← rwr_positions given↣c given_i,
-  [do try_add_sup_neg gt other↣c given↣c other_i given_i pos tt ``sup_l_ltr,
-      try_add_sup_neg gt other↣c given↣c other_i given_i pos ff ``sup_l_rtl]
+  [do try_add_sup_neg gt other given other_i given_i pos tt ``sup_l_ltr,
+      try_add_sup_neg gt other given other_i given_i pos ff ``sup_l_rtl]
 
 meta def superposition_inf : inference :=
 take given, do gt ← get_term_order,

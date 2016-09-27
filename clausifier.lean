@@ -316,8 +316,8 @@ clausified ← resolution_prover_of_tactic $ sequence (do n ← new,
 return (list.join clausified)
 
 meta def clausification_inf : inference := λgiven, do
-clausified ← resolution_prover_of_tactic $ clausify_core (active_cls.c given),
+clausified ← resolution_prover_of_tactic $ clausify_core given↣c,
 match clausified with
-| some cs := do forM' cs add_inferred, remove_redundant (active_cls.id given)
+| some cs := do forM' cs (λc, add_inferred c [given]), remove_redundant given↣id []
 | none := return ()
 end

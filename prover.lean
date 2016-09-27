@@ -1,6 +1,6 @@
 import clause prover_state
 import subsumption misc_preprocessing
-import resolution factoring clausifier superposition equality
+import resolution factoring clausifier superposition equality splitting
 import selection
 open monad tactic expr
 
@@ -21,15 +21,27 @@ sequence' preprocessing_rules,
 new ← take_newly_derived, forM' new register_as_passive,
 resolution_prover_of_tactic (when (is_trace_enabled_for `resolution) (forM' new (λn,
   trace { n with prf := const (mk_simple_name " derived") [] }))),
+needs_sat_run ← flip liftM stateT.read (λst, st↣needs_sat_run),
+if needs_sat_run then do
+  res ← do_sat_run,
+  match res with
+  | some prf := return (some prf)
+  | none := do
+    model ← flip liftM stateT.read (λst, st↣current_model),
+    resolution_prover_of_tactic (when (is_trace_enabled_for `resolution) $ do
+      pp_model ← pp (model↣to_list↣for (λlit, if lit↣2 = tt then lit↣1 else not_ lit↣1)),
+      trace $ to_fmt "sat model: " ++ pp_model),
+    run_prover_loop i
+  end
+else do
 passive ← get_passive,
 if rb_map.size passive = 0 then return none else do
 given_name ← clause_selection i,
 given ← option.to_monad (rb_map.find passive given_name),
 -- trace_clauses,
 remove_passive given_name,
-if is_false (cls.type given) then return (some (cls.prf given)) else do
 selected_lits ← literal_selection given,
-activated_given ← return $ active_cls.mk given_name selected_lits given,
+activated_given ← return $ active_cls.mk given_name selected_lits given↣c given↣assertions given↣from_model,
 resolution_prover_of_tactic (when (is_trace_enabled_for `resolution) (do
   fmt ← pp activated_given, trace (to_fmt "given: " ++ fmt))),
 add_active activated_given,
@@ -50,6 +62,7 @@ meta def default_inferences : list inference :=
 [
 clausification_inf,
 forward_subsumption, backward_subsumption,
+splitting_inf,
 factor_inf,
 resolution_inf,
 superposition_inf,
@@ -68,6 +81,6 @@ res ← run_prover_loop selection21 (age_weight_clause_selection 6 7)
   default_preprocessing default_inferences
   0 initial_state,
 match res with
-| (some empty_clause, _) := apply empty_clause
+| (some empty_clause, st) := apply empty_clause
 | (none, saturation) := trace "saturation" >> trace saturation >> skip
 end

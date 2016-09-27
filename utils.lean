@@ -91,6 +91,9 @@ fold m (mk _ _) (λk v res, insert res k (f v))
 meta def for {A B C} [has_ordering A] (m : rb_map A B) (f : B → C) : rb_map A C :=
 map f m
 
+meta def filter {A B} [has_ordering A] (m : rb_map A B) (f : B → Prop) [decidable_pred f] :=
+@fold A B (rb_map A B) m (mk _ _) $ λa b m', if f b then insert m' a b else m'
+
 end rb_map
 
 namespace list
@@ -113,12 +116,18 @@ def foldl {A B} (f : B → A → B) : B → list A → B
 | b [] := b
 | b (a::ass) := foldl (f b a) ass
 
-def for_all {A} (p : A → Prop) [decidable_pred p] : list A → bool
-| (x::xs) := if ¬p x then ff else for_all xs
+private def for_all' {A} (p : A → Prop) [decidable_pred p] : list A → bool
+| (x::xs) := if ¬p x then ff else for_all' xs
 | [] := tt
 
+def for_all {A} (l : list A) (p : A → Prop) [decidable_pred p] :=
+for_all' p l
+
+def subset_of {A} [decidable_eq A] (xs ys : list A) :=
+xs↣for_all (λx, x ∈ ys)
+
 def filter_maximal {A} (gt : A → A → bool) (l : list A) : list A :=
-filter (λx, for_all (λy, ¬gt y x) l) l
+filter (λx, l↣for_all (λy, ¬gt y x)) l
 
 def taken {A} : ℕ → list A → list A
 | (n+1) (x::xs) := x :: taken n xs

@@ -51,6 +51,9 @@ meta def inst (c : cls) (e : expr) : cls :=
   else mk 0 (num_lits c - 1)) (has_fin c)
 (app (prf c) e) (instantiate_var (binding_body (type c)) e)
 
+meta def instn (c : cls) (es : list expr) : cls :=
+foldr (λe c', inst c' e) c es
+
 meta def open_const (c : cls) : tactic (cls × expr) := do
 n ← mk_fresh_name,
 b ← return $ local_const n (binding_name (type c)) (binding_info (type c)) (binding_domain (type c)),
@@ -102,6 +105,8 @@ inductive lit
 | final : expr → lit
 
 namespace lit
+
+meta instance : decidable_eq lit := by mk_dec_eq_instance
 
 def formula : lit → expr
 | (left f) := f
