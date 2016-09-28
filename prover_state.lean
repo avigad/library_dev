@@ -225,12 +225,6 @@ else do
 meta def remove_passive (id : name) : resolution_prover unit :=
 do state ← stateT.read, stateT.write { state with passive := state↣passive↣erase id }
 
-meta def remove_from_model_clauses : resolution_prover unit :=
-stateT.modify $ λst, { st with
-  active := st↣active↣filter (λac, ¬ac↣from_model),
-  passive := st↣passive↣filter (λpc, ¬pc↣from_model)
-}
-
 meta def move_locked_to_passive : resolution_prover unit := do
 locked ← flip liftM stateT.read (λst, st↣locked),
 new_locked ← flip filterM locked (λlc, do
@@ -245,10 +239,11 @@ new_locked ← flip filterM locked (λlc, do
 stateT.modify $ λst, { st with locked := new_locked }
 
 meta def move_active_to_locked : resolution_prover unit :=
--- FIXME: update assertions field in remaining active clauses
 do active ← get_active, forM' active↣values $ λac, do
   c_val ← sat_eval_assertions ac↣assertions,
-  if ¬c_val then do
+  if ¬c_val ∧ ac↣from_model then do
+     stateT.modify $ λst, { st with active := st↣active↣erase ac↣id }
+  else if ¬c_val ∧ ¬ac↣from_model then do
      stateT.modify $ λst, { st with
        active := st↣active↣erase ac↣id,
        locked := ⟨ ac↣id, ac↣c, ac↣assertions, [] ⟩ :: st↣locked
@@ -257,10 +252,11 @@ do active ← get_active, forM' active↣values $ λac, do
     return ()
 
 meta def move_passive_to_locked : resolution_prover unit :=
--- FIXME: update assertions field in remaining passive clauses
 do passive ← flip liftM stateT.read (λst, st↣passive), forM' passive↣to_list $ λpc, do
   c_val ← sat_eval_assertions pc↣2↣assertions,
-  if ¬c_val then do
+  if ¬c_val ∧ pc↣2↣from_model then do
+     stateT.modify $ λst, { st with passive := st↣passive↣erase pc↣1 }
+  else if ¬c_val ∧ ¬pc↣2↣from_model then do
     stateT.modify $ λst, { st with
       passive := st↣passive↣erase pc↣1,
       locked := ⟨ pc↣1, pc↣2↣c, pc↣2↣assertions, [] ⟩ :: st↣locked
@@ -268,11 +264,12 @@ do passive ← flip liftM stateT.read (λst, st↣passive), forM' passive↣to_l
   else
     return ()
 
-meta def add_from_model_clauses : resolution_prover unit := do
+meta def add_new_from_model_clauses (old_model : rb_map expr bool) : resolution_prover unit := do
 model ← flip liftM stateT.read (λst, st↣current_model),
 forM' model↣to_list $ λassg, do
   name ← resolution_prover_of_tactic mk_fresh_name,
   hyp ← get_sat_hyp assg↣1 assg↣2,
+  if old_model↣find assg↣1 = some assg↣2 then return () else do
   stateT.modify $ λst, { st with
     passive := st↣passive↣insert name $
       if assg↣2 = tt then
@@ -289,11 +286,10 @@ match sat_result with
 | (cdcl.result.unsat prf) := return (some prf)
 | (cdcl.result.sat new_model) := do
     stateT.modify $ λst, { st with current_model := new_model },
-    remove_from_model_clauses,
     move_locked_to_passive,
     move_active_to_locked,
     move_passive_to_locked,
-    add_from_model_clauses,
+    add_new_from_model_clauses old_model,
     return none
 end
 
