@@ -1,7 +1,7 @@
 import clause prover_state
 open tactic monad
 
-private meta def try_subsume_core : list cls.lit → list cls.lit → tactic unit
+private meta def try_subsume_core : list clause.literal → list clause.literal → tactic unit
 | [] _ := skip
 | small large := first $ do
   i ← small↣zip_with_index, j ← large↣zip_with_index,
@@ -10,16 +10,16 @@ private meta def try_subsume_core : list cls.lit → list cls.lit → tactic uni
     try_subsume_core (small↣remove i.2) (large↣remove j.2)
 
 -- FIXME: this is incorrect if a quantifier is unused
-meta def try_subsume (small large : cls) : tactic unit := do
-small_open ← cls.open_metan small (cls.num_quants small),
-large_open ← cls.open_constn large (cls.num_quants large),
+meta def try_subsume (small large : clause) : tactic unit := do
+small_open ← clause.open_metan small (clause.num_quants small),
+large_open ← clause.open_constn large (clause.num_quants large),
 guard $ small↣num_lits ≤ large↣num_lits,
 try_subsume_core small_open↣1↣get_lits large_open↣1↣get_lits
 
-meta def does_subsume (small large : cls) : tactic bool :=
+meta def does_subsume (small large : clause) : tactic bool :=
 (try_subsume small large >> return tt) <|> return ff
 
-meta def does_subsume_with_assertions (small large : cls) : resolution_prover bool := do
+meta def does_subsume_with_assertions (small large : clause) : resolution_prover bool := do
 small_ass ← collect_ass_hyps small,
 large_ass ← collect_ass_hyps large,
 if small_ass↣subset_of large_ass then do
@@ -57,7 +57,7 @@ active ← get_active, filterM (λn, do
           return ff),
      return (bnot ss)) new
 
-meta def subsumption_interreduction : list cls → resolution_prover (list cls)
+meta def subsumption_interreduction : list clause → resolution_prover (list clause)
 | (c::cs) := do
   c_subsumed_by_cs ← any_tt_list (λd, does_subsume_with_assertions d c) cs,
   if c_subsumed_by_cs then
@@ -70,7 +70,7 @@ meta def subsumption_interreduction : list cls → resolution_prover (list cls)
 
 meta def subsumption_interreduction_pre : resolution_prover unit :=
 preprocessing_rule $ λnew,
-let new' := list.sort_on cls.num_lits new in
+let new' := list.sort_on clause.num_lits new in
 subsumption_interreduction new'
 
 meta def keys_where_tt (active : rb_map name active_cls) (pred : active_cls → tactic bool) : tactic (list name) :=

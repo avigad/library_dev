@@ -22,7 +22,7 @@ intros,
 target_name ← get_unused_name `target none, tgt ← target,
 mk_mapp ``classical.by_contradiction [some tgt] >>= apply, intro target_name,
 hyps ← local_context,
-gen_clauses ← mapM cls.of_proof hyps,
+gen_clauses ← mapM clause.of_proof hyps,
 clauses ← clausify gen_clauses,
 res ← cdcl.solve (theory_solver_of_tactic th_solver) clauses,
 match res with

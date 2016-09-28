@@ -1,7 +1,7 @@
 import prover_state
 open monad
 
-meta def extract_assertions : cls → resolution_prover (cls × list expr) | c :=
+meta def extract_assertions : clause → resolution_prover (clause × list expr) | c :=
 if c↣num_lits = 0 then return (c, [])
 else if c↣num_quants ≠ 0 then do
   qf ← resolution_prover_of_tactic $ c↣open_constn c↣num_quants,

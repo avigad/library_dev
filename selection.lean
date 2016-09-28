@@ -1,7 +1,7 @@
 import prover_state
 
 meta def dumb_selection : selection_strategy :=
-λc, return $ match c↣c↣lits_where cls.lit.is_neg with
+λc, return $ match c↣c↣lits_where clause.literal.is_neg with
 | [] := list.range c↣c↣num_lits
 | neg_lit::_ := [neg_lit]
 end

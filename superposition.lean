@@ -28,7 +28,7 @@ end
 | e _ := e
 
 variable gt : expr → expr → bool
-variables (c1 c2 : cls)
+variables (c1 c2 : clause)
 variables (ac1 ac2 : active_cls)
 variables (i1 i2 : nat)
 variable pos : list ℕ
@@ -44,14 +44,14 @@ match is_eq e with
 | none := none
 end
 
-meta def try_sup_pos : tactic cls := do
-guard $ cls.lit.is_pos (cls.get_lit c1 i1) ∧ cls.lit.is_pos (cls.get_lit c2 i2),
-qf1 ← cls.open_metan c1 (cls.num_quants c1),
-qf2 ← cls.open_metan c2 (cls.num_quants c2),
-focused1 ← cls.focus qf1↣1 i1,
-focused2 ← cls.focus qf2↣1 i2,
-opened1 ← cls.open_constn focused1 (focused1↣num_lits - 1),
-opened2 ← cls.open_constn focused2 (focused2↣num_lits - 1),
+meta def try_sup_pos : tactic clause := do
+guard $ clause.literal.is_pos (clause.get_lit c1 i1) ∧ clause.literal.is_pos (clause.get_lit c2 i2),
+qf1 ← clause.open_metan c1 (clause.num_quants c1),
+qf2 ← clause.open_metan c2 (clause.num_quants c2),
+focused1 ← clause.focus qf1↣1 i1,
+focused2 ← clause.focus qf2↣1 i2,
+opened1 ← clause.open_constn focused1 (focused1↣num_lits - 1),
+opened2 ← clause.open_constn focused2 (focused2↣num_lits - 1),
 match is_eq_dir opened1↣1↣type ltr with
 | none := failed
 | (some (rwr_from, rwr_to)) := do
@@ -71,13 +71,13 @@ rwr_from' ← instantiate_mvars rwr_from,
 rwr_to' ← instantiate_mvars rwr_to,
 guard $ ¬gt rwr_to' rwr_from',
 new_fin_type ← infer_type new_fin_prf >>= whnf,
-cls.meta_closure (qf1.2 ++ qf2.2) $
-  cls.close_constn (cls.mk 0 1 tt new_fin_prf new_fin_type) (opened1.2 ++ opened2.2)
+clause.meta_closure (qf1.2 ++ qf2.2) $
+  clause.close_constn (clause.mk 0 1 tt new_fin_prf new_fin_type) (opened1.2 ++ opened2.2)
 end
 
 example (i : Type) (a b : i) (p : i → Prop) (H : a = b) (Hpa : p a) : true := by do
-H ← get_local `H, Hcls ← liftM (cls.mk 0 1 tt H) (infer_type H),
-Hpa ← get_local `Hpa, Hpacls ← liftM (cls.mk 0 1 tt Hpa) (infer_type Hpa),
+H ← get_local `H, Hcls ← liftM (clause.mk 0 1 tt H) (infer_type H),
+Hpa ← get_local `Hpa, Hpacls ← liftM (clause.mk 0 1 tt Hpa) (infer_type Hpa),
 a ← get_local `a,
 try_sup_pos (λx y, ff) Hcls Hpacls 0 0 [0] tt ``sup_f_ltr,
 to_expr `(trivial) >>= apply
@@ -85,13 +85,13 @@ to_expr `(trivial) >>= apply
 lemma sup_l_ltr {A C} {a1 a2} (f : A → Prop) (H : a1 = a2) : (f a1 → C) → (f a2 → C) := take Hfa1C, H ▸ Hfa1C
 lemma sup_l_rtl {A C} {a1 a2} (f : A → Prop) (H : a2 = a1) : (f a1 → C) → (f a2 → C) := sup_l_ltr f H↣symm
 
-meta def try_sup_neg : tactic cls := do
-guard $ cls.lit.is_pos (cls.get_lit c1 i1) ∧ cls.lit.is_neg (cls.get_lit c2 i2),
-qf1 ← cls.open_metan c1 (cls.num_quants c1),
-qf2 ← cls.open_metan c2 (cls.num_quants c2),
-focused1 ← cls.focus qf1↣1 i1,
-opened1 ← cls.open_constn focused1 (focused1↣num_lits - 1),
-opened2 ← cls.open_constn qf2↣1 i2,
+meta def try_sup_neg : tactic clause := do
+guard $ clause.literal.is_pos (clause.get_lit c1 i1) ∧ clause.literal.is_neg (clause.get_lit c2 i2),
+qf1 ← clause.open_metan c1 (clause.num_quants c1),
+qf2 ← clause.open_metan c2 (clause.num_quants c2),
+focused1 ← clause.focus qf1↣1 i1,
+opened1 ← clause.open_constn focused1 (focused1↣num_lits - 1),
+opened2 ← clause.open_constn qf2↣1 i2,
 match is_eq_dir opened1↣1↣type ltr with
 | none := failed
 | (some (rwr_from, rwr_to)) := do
@@ -111,21 +111,21 @@ rwr_from' ← instantiate_mvars rwr_from,
 rwr_to' ← instantiate_mvars rwr_to,
 guard $ ¬gt rwr_to' rwr_from',
 new_fin_type ← infer_type new_fin_prf,
-new_fin_c ← cls.whnf_head_lit { (opened2↣1) with type := new_fin_type, prf := new_fin_prf },
-cls.meta_closure (qf1.2 ++ qf2.2) $
-  cls.close_constn new_fin_c (opened1.2 ++ opened2.2)
+new_fin_c ← clause.whnf_head_lit { (opened2↣1) with type := new_fin_type, prf := new_fin_prf },
+clause.meta_closure (qf1.2 ++ qf2.2) $
+  clause.close_constn new_fin_c (opened1.2 ++ opened2.2)
 end
 
 example (i : Type) (a b : i) (p : i → Prop) (H : a = b) (Hpa : p a → false) (Hpb : p b → false) : true := by do
-H ← get_local `H, Hcls ← liftM (cls.mk 0 1 tt H) (infer_type H),
-Hpa ← get_local `Hpa, Hpacls ← liftM (cls.mk 0 1 ff Hpa) (infer_type Hpa),
-Hpb ← get_local `Hpb, Hpbcls ← liftM (cls.mk 0 1 ff Hpb) (infer_type Hpb),
+H ← get_local `H, Hcls ← liftM (clause.mk 0 1 tt H) (infer_type H),
+Hpa ← get_local `Hpa, Hpacls ← liftM (clause.mk 0 1 ff Hpa) (infer_type Hpa),
+Hpb ← get_local `Hpb, Hpbcls ← liftM (clause.mk 0 1 ff Hpb) (infer_type Hpb),
 try_sup_neg (λx y, ff) Hcls Hpacls 0 0 [0] tt ``sup_l_ltr,
 try_sup_neg (λx y, ff) Hcls Hpbcls 0 0 [0] ff ``sup_l_rtl,
 to_expr `(trivial) >>= apply
 
-meta def rwr_positions (c : cls) (i : nat) : list (list ℕ) :=
-get_rwr_positions (cls.lit.formula (cls.get_lit c i))
+meta def rwr_positions (c : clause) (i : nat) : list (list ℕ) :=
+get_rwr_positions (clause.literal.formula (clause.get_lit c i))
 
 meta def try_add_sup_pos : resolution_prover unit :=
 (do c' ← resolution_prover_of_tactic $ try_sup_pos gt ac1↣c ac2↣c i1 i2 pos ltr congr_ax, add_inferred c' [ac1,ac2])
@@ -138,11 +138,11 @@ meta def try_add_sup_neg : resolution_prover unit :=
 meta def superposition_pos_back_inf : inference :=
 take given, do active ← get_active, sequence' $ do
   given_i ← given↣selected,
-  guard $ cls.lit.is_pos (cls.get_lit given↣c given_i),
-  option.to_monad $ is_eq (cls.lit.formula $ cls.get_lit given↣c given_i),
+  guard $ clause.literal.is_pos (clause.get_lit given↣c given_i),
+  option.to_monad $ is_eq (clause.literal.formula $ clause.get_lit given↣c given_i),
   other ← rb_map.values active,
   other_i ← other↣selected,
-  guard $ cls.lit.is_pos (cls.get_lit other↣c other_i),
+  guard $ clause.literal.is_pos (clause.get_lit other↣c other_i),
   pos ← rwr_positions other↣c other_i,
   [do try_add_sup_pos gt given other given_i other_i pos tt ``sup_f_ltr,
       try_add_sup_pos gt given other given_i other_i pos ff ``sup_f_rtl]
@@ -150,11 +150,11 @@ take given, do active ← get_active, sequence' $ do
 meta def superposition_pos_fwd_inf : inference :=
 take given, do active ← get_active, sequence' $ do
   given_i ← given↣selected,
-  guard $ cls.lit.is_pos (cls.get_lit given↣c given_i),
+  guard $ clause.literal.is_pos (clause.get_lit given↣c given_i),
   other ← rb_map.values active,
   other_i ← other↣selected,
-  guard $ cls.lit.is_pos (cls.get_lit other↣c other_i),
-  option.to_monad $ is_eq (cls.lit.formula $ cls.get_lit other↣c other_i),
+  guard $ clause.literal.is_pos (clause.get_lit other↣c other_i),
+  option.to_monad $ is_eq (clause.literal.formula $ clause.get_lit other↣c other_i),
   pos ← rwr_positions given↣c given_i,
   [do try_add_sup_pos gt other given other_i given_i pos tt ``sup_f_ltr,
       try_add_sup_pos gt other given other_i given_i pos ff ``sup_f_rtl]
@@ -162,11 +162,11 @@ take given, do active ← get_active, sequence' $ do
 meta def superposition_neg_back_inf : inference :=
 take given, do active ← get_active, sequence' $ do
   given_i ← given↣selected,
-  guard $ cls.lit.is_pos (cls.get_lit given↣c given_i),
-  option.to_monad $ is_eq (cls.lit.formula $ cls.get_lit given↣c given_i),
+  guard $ clause.literal.is_pos (clause.get_lit given↣c given_i),
+  option.to_monad $ is_eq (clause.literal.formula $ clause.get_lit given↣c given_i),
   other ← rb_map.values active,
   other_i ← other↣selected,
-  guard $ cls.lit.is_neg (cls.get_lit other↣c other_i),
+  guard $ clause.literal.is_neg (clause.get_lit other↣c other_i),
   pos ← rwr_positions other↣c other_i,
   [do try_add_sup_neg gt given other given_i other_i pos tt ``sup_l_ltr,
       try_add_sup_neg gt given other given_i other_i pos ff ``sup_l_rtl]
@@ -174,11 +174,11 @@ take given, do active ← get_active, sequence' $ do
 meta def superposition_neg_fwd_inf : inference :=
 take given, do active ← get_active, sequence' $ do
   given_i ← given↣selected,
-  guard $ cls.lit.is_neg (cls.get_lit given↣c given_i),
+  guard $ clause.literal.is_neg (clause.get_lit given↣c given_i),
   other ← rb_map.values active,
   other_i ← other↣selected,
-  guard $ cls.lit.is_pos (cls.get_lit other↣c other_i),
-  option.to_monad $ is_eq (cls.lit.formula $ cls.get_lit other↣c other_i),
+  guard $ clause.literal.is_pos (clause.get_lit other↣c other_i),
+  option.to_monad $ is_eq (clause.literal.formula $ clause.get_lit other↣c other_i),
   pos ← rwr_positions given↣c given_i,
   [do try_add_sup_neg gt other given other_i given_i pos tt ``sup_l_ltr,
       try_add_sup_neg gt other given other_i given_i pos ff ``sup_l_rtl]

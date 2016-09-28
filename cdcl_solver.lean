@@ -41,7 +41,7 @@ structure var_state :=
 (assigned : option proof_hyp)
 
 structure learned_clause :=
-(c : cls)
+(c : clause)
 (actual_proof : proof_term)
 
 inductive prop_lit
@@ -58,10 +58,10 @@ meta instance : has_ordering prop_lit :=
 | neg v₁, neg v₂ := has_ordering.cmp v₁ v₂
 end⟩
 
-meta def of_cls_lit : cls.lit → prop_lit
-| (cls.lit.left v) := neg v
-| (cls.lit.right v) := pos v
-| (cls.lit.final v) := pos v
+meta def of_cls_lit : clause.literal → prop_lit
+| (clause.literal.left v) := neg v
+| (clause.literal.right v) := pos v
+| (clause.literal.final v) := pos v
 
 meta def of_var_and_phase (v : prop_var) : bool → prop_lit
 | tt := pos v
@@ -69,13 +69,13 @@ meta def of_var_and_phase (v : prop_var) : bool → prop_lit
 
 end prop_lit
 
-meta def watch_map := rb_map name (ℕ × ℕ × cls)
+meta def watch_map := rb_map name (ℕ × ℕ × clause)
 
 structure state :=
 (trail : list trail_elem)
 (vars : rb_map prop_var var_state)
 (unassigned : rb_map prop_var prop_var)
-(given : list cls)
+(given : list clause)
 (learned : list learned_clause)
 (watches : rb_map prop_lit watch_map)
 (conflict : option proof_term)
@@ -187,7 +187,7 @@ hyp_name ← solver_of_tactic mk_fresh_name,
 hyp ← return $ local_const hyp_name hyp_name binder_info.default (formula_of_lit v ph),
 push_trail $ trail_elem.dec v ph hyp
 
-meta def lookup_lit (l : cls.lit) : solver (option (bool × proof_hyp)) :=
+meta def lookup_lit (l : clause.literal) : solver (option (bool × proof_hyp)) :=
 do var_st_opt ← lookup_var l↣formula, match var_st_opt with
 | none := return none
 | some ⟨ph, none⟩ := return none
@@ -195,19 +195,19 @@ do var_st_opt ← lookup_var l↣formula, match var_st_opt with
   return $ some (if l↣is_neg then bnot ph else ph, prf)
 end
 
-meta def lit_is_false (l : cls.lit) : solver bool :=
+meta def lit_is_false (l : clause.literal) : solver bool :=
 do s ← lookup_lit l, return $ match s with
 | some (ff, _) := tt
 | _ := ff
 end
 
-meta def lit_is_not_false (l : cls.lit) : solver bool :=
+meta def lit_is_not_false (l : clause.literal) : solver bool :=
 do isf ← lit_is_false l, return $ bnot isf
 
-meta def cls_is_false (c : cls) : solver bool :=
+meta def cls_is_false (c : clause) : solver bool :=
 liftM list.band $ mapM lit_is_false c↣get_lits
 
-private meta def unit_propg_cls' : cls → solver (option prop_var) | c :=
+private meta def unit_propg_cls' : clause → solver (option prop_var) | c :=
 if c↣num_lits = 0 then return (some c↣prf)
 else let hd := c↣get_lit 0 in
 do lit_st ← lookup_lit hd, match lit_st with
@@ -219,7 +219,7 @@ do lit_st ← lookup_lit hd, match lit_st with
 | _                  := return none
 end
 
-meta def unit_propg_cls : cls → solver unit | c :=
+meta def unit_propg_cls : clause → solver unit | c :=
 do has_confl ← has_conflict,
 if has_confl then return () else
 if c↣num_lits = 0 then do set_conflict c↣prf
@@ -251,15 +251,15 @@ stateT.modify $ λst, { st with
   watches := st↣watches↣insert pl (f $ st↣watches_for pl)
 }
 
-private meta def add_watch (n : name) (c : cls) (i j : ℕ) : solver unit :=
+private meta def add_watch (n : name) (c : clause) (i j : ℕ) : solver unit :=
 let l := c↣get_lit i, pl := prop_lit.of_cls_lit l in
 modify_watches_for pl $ λw, w↣insert n (i,j,c)
 
-private meta def remove_watch (n : name) (c : cls) (i : ℕ) : solver unit :=
+private meta def remove_watch (n : name) (c : clause) (i : ℕ) : solver unit :=
 let l := c↣get_lit i, pl := prop_lit.of_cls_lit l in
 modify_watches_for pl $ λw, w↣erase n
 
-private meta def set_watches (n : name) (c : cls) : solver unit :=
+private meta def set_watches (n : name) (c : clause) : solver unit :=
 if c↣num_lits = 0 then
   set_conflict c↣prf
 else if c↣num_lits = 1 then
@@ -281,12 +281,12 @@ else do
       add_watch n c j i
   end
 
-meta def update_watches (n : name) (c : cls) (i₁ i₂ : ℕ) : solver unit := do
+meta def update_watches (n : name) (c : clause) (i₁ i₂ : ℕ) : solver unit := do
 remove_watch n c i₁,
 remove_watch n c i₂,
 set_watches n c
 
-meta def mk_clause (c : cls) : solver unit := do
+meta def mk_clause (c : clause) : solver unit := do
 forM c↣get_lits (λl, mk_var l↣formula),
 revert_to_decision_level_zero (),
 stateT.modify $ λst, { st with given := c :: st↣given },
@@ -303,11 +303,11 @@ match st↣vars↣find v with
   forM' watches↣to_list $ λw, update_watches w↣1 w↣2↣2↣2 w↣2↣1 w↣2↣2↣1
 end
 
-meta def analyze_conflict' : proof_term → list trail_elem → cls
+meta def analyze_conflict' : proof_term → list trail_elem → clause
 | prf (trail_elem.dec v ph hyp :: es) :=
   let abs_prf := abstract_local prf hyp↣local_uniq_name in
   if has_var abs_prf then
-    cls.close_const (analyze_conflict' prf es) hyp
+    clause.close_const (analyze_conflict' prf es) hyp
   else
     analyze_conflict' prf es
 | prf (trail_elem.propg v ph l_prf hyp :: es) :=
@@ -324,17 +324,17 @@ meta def analyze_conflict' : proof_term → list trail_elem → cls
     analyze_conflict' prf es
 | prf [] := ⟨0, 0, ff, prf, const ``false []⟩
 
-meta def analyze_conflict (prf : proof_term) : solver cls :=
+meta def analyze_conflict (prf : proof_term) : solver clause :=
 do st ← stateT.read, return $ analyze_conflict' prf st↣trail
 
-meta def add_learned (c : cls) : solver unit := do
+meta def add_learned (c : clause) : solver unit := do
 prf_abbrev_name ← solver_of_tactic mk_fresh_name,
 c' ← return { c with prf := local_const prf_abbrev_name prf_abbrev_name binder_info.default c↣type },
 stateT.modify $ λst, { st with learned := ⟨c', c↣prf⟩ :: st↣learned },
 c_name ← solver_of_tactic mk_fresh_name,
 set_watches c_name c'
 
-meta def backtrack_with : cls → solver unit | conflict_clause := do
+meta def backtrack_with : clause → solver unit | conflict_clause := do
 isf ← cls_is_false conflict_clause,
 if ¬isf then
   stateT.modify (λst, { st with conflict := none })
@@ -405,7 +405,7 @@ end
 
 meta def run : solver result := run' theory_solver ()
 
-meta def solve (given : list cls) : tactic result := do
+meta def solve (given : list clause) : tactic result := do
 res ← (do forM given mk_clause, run theory_solver) state.initial,
 return res↣1
 

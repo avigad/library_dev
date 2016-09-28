@@ -3,7 +3,7 @@ open tactic monad expr
 
 structure locked_cls :=
 (id : name)
-(c : cls)
+(c : clause)
 (assertions : list expr)
 (reasons : list (list expr))
 
@@ -22,7 +22,7 @@ end locked_cls
 structure active_cls :=
 (id : name)
 (selected : list nat)
-(c : cls)
+(c : clause)
 (assertions : list expr)
 (from_model : bool)
 
@@ -36,13 +36,13 @@ return $ c_fmt ++ " <-- " ++ ass_fmt ++
        " (selected: " ++ to_fmt c↣selected ++ ", model: " ++ to_fmt c↣from_model ++ ")"
 ⟩
 
-meta def clause_with_assertions (ac : active_cls) : cls :=
+meta def clause_with_assertions (ac : active_cls) : clause :=
 ac↣c↣close_constn ac↣assertions
 
 end active_cls
 
 structure passive_cls :=
-(c : cls)
+(c : clause)
 (assertions : list expr)
 (from_model : bool)
 
@@ -51,7 +51,7 @@ namespace passive_cls
 meta instance : has_to_tactic_format passive_cls :=
 ⟨λc, pp c↣c⟩
 
-meta def clause_with_assertions (pc : passive_cls) : cls :=
+meta def clause_with_assertions (pc : passive_cls) : clause :=
 pc↣c↣close_constn pc↣assertions
 
 end passive_cls
@@ -59,7 +59,7 @@ end passive_cls
 structure resolution_prover_state :=
 (active : rb_map name active_cls)
 (passive : rb_map name passive_cls)
-(newly_derived : list cls)
+(newly_derived : list clause)
 (prec : list expr)
 (locked : list locked_cls)
 (sat_solver : cdcl.state)
@@ -158,7 +158,7 @@ match hyp_opt with
 | none := resolution_prover.fail $ "unknown sat variable: " ++ v↣to_string
 end
 
-meta def add_sat_clause (c : cls) : resolution_prover unit := do
+meta def add_sat_clause (c : clause) : resolution_prover unit := do
 already_added ← flip liftM stateT.read (λst, decidable.to_bool $
                      c↣type ∈ st↣sat_solver↣given↣for (λd, d↣type)),
 if already_added then return () else do
@@ -190,10 +190,10 @@ meta def sat_eval_assertions : list expr → resolution_prover bool
 private meta def get_new_cls_id : resolution_prover name := do
 state ← stateT.read,
 stateT.write { state with age := state↣age + 1 },
-cls_prefix ← resolution_prover_of_tactic $ get_unused_name `cls none,
+cls_prefix ← resolution_prover_of_tactic $ get_unused_name `clause none,
 return $ mk_num_name cls_prefix state↣age
 
-meta def collect_ass_hyps (c : cls) : resolution_prover (list expr) :=
+meta def collect_ass_hyps (c : clause) : resolution_prover (list expr) :=
 let lcs := contained_lconsts c↣prf in
 do st ← stateT.read,
 return (do
@@ -202,7 +202,7 @@ return (do
   guard $ lcs↣contains h↣local_uniq_name,
   [h])
 
-meta def register_as_passive (c : cls) : resolution_prover unit := do
+meta def register_as_passive (c : clause) : resolution_prover unit := do
 ass ← collect_ass_hyps c,
 ass_v ← sat_eval_assertions ass,
 id ← get_new_cls_id,
@@ -291,7 +291,7 @@ match sat_result with
     return none
 end
 
-meta def take_newly_derived : resolution_prover (list cls) := do
+meta def take_newly_derived : resolution_prover (list clause) := do
 state ← stateT.read,
 stateT.write { state with newly_derived := [] },
 return state↣newly_derived
@@ -330,7 +330,7 @@ p_set ← return (rb_map.set_of_list (map name_of_funsym p)),
 new_syms ← return $ list.filter (λc, ¬p_set↣contains (name_of_funsym c)) consts,
 set_precedence (new_syms ++ p)
 
-meta def add_inferred (c : cls) (parents : list active_cls) : resolution_prover unit := do
+meta def add_inferred (c : clause) (parents : list active_cls) : resolution_prover unit := do
 c' ← resolution_prover_of_tactic c↣normalize,
 register_consts_in_precedence (contained_funsyms c'↣type)↣values,
 state ← stateT.read,
@@ -349,14 +349,14 @@ meta def seq_inferences : list inference → inference
     else
       return ()
 
-meta def simp_inference (simpl : active_cls → resolution_prover (option cls)) : inference :=
+meta def simp_inference (simpl : active_cls → resolution_prover (option clause)) : inference :=
 λgiven, do maybe_simpld ← simpl given,
 match maybe_simpld with
 | some simpld := do add_inferred simpld [given], remove_redundant given↣id []
 | none := return ()
 end
 
-meta def preprocessing_rule (f : list cls → resolution_prover (list cls)) : resolution_prover unit := do
+meta def preprocessing_rule (f : list clause → resolution_prover (list clause)) : resolution_prover unit := do
 state ← stateT.read,
 newly_derived' ← f state↣newly_derived,
 state' ← stateT.read,
@@ -372,7 +372,7 @@ meta def empty : resolution_prover_state :=
   locked := [], sat_solver := cdcl.state.initial,
   current_model := rb_map.mk _ _, sat_hyps := rb_map.mk _ _, needs_sat_run := ff }
 
-meta def initial (clauses : list cls) : tactic resolution_prover_state := do
+meta def initial (clauses : list clause) : tactic resolution_prover_state := do
 after_setup ← forM' clauses (λc, add_inferred c []) empty,
 return after_setup.2
 

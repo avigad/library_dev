@@ -17,7 +17,6 @@ meta def run_prover_loop
   (preprocessing_rules : list (resolution_prover unit))
   (inference_rules : list inference)
   : ℕ → resolution_prover (option expr) | i := do
--- (do st←stateT.read, resolution_prover_of_tactic $ trace st↣newly_derived),
 sequence' preprocessing_rules,
 new ← take_newly_derived, forM' new register_as_passive,
 resolution_prover_of_tactic (when (is_trace_enabled_for `resolution) (forM' new (λn,
@@ -80,7 +79,7 @@ intros,
 target_name ← get_unused_name `target none, tgt ← target,
 mk_mapp ``classical.by_contradiction [some tgt] >>= apply, intro target_name,
 hyps ← local_context,
-initial_clauses ← mapM cls.of_proof hyps,
+initial_clauses ← mapM clause.of_proof hyps,
 initial_state ← resolution_prover_state.initial initial_clauses,
 res ← run_prover_loop selection21 (age_weight_clause_selection 6 7)
   default_preprocessing default_inferences
