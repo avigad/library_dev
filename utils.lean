@@ -176,7 +176,7 @@ def contains {a} [decidable_eq a] (elem : a) : list a → bool
 | [] := ff
 
 def range : ℕ → list ℕ
-| (n+1) := n :: range n
+| (n+1) := range n ++ [n]
 | 0 := []
 
 def update {A} (new_elem : A) : ℕ → list A → list A

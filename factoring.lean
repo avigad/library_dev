@@ -9,7 +9,7 @@ return $ cls.close_constn (cls.inst opened.1 e) opened.2
 
 private meta def try_factor' (c : cls) (i j : nat) : tactic cls := do
 qf ← cls.open_metan c c↣num_quants,
-unify_lit (cls.get_lit qf.1 i) (cls.get_lit qf.1 j),
+unify_lit (qf↣1↣get_lit i) (qf↣1↣get_lit j),
 qfi ← cls.inst_mvars qf.1,
 guard $ cls.is_maximal gt qfi i,
 at_j ← cls.open_constn qf.1 j,
@@ -36,3 +36,21 @@ take given, do gt ← get_term_order, sequence' $ do
   i ← active_cls.selected given,
   j ← list.range given↣c↣num_lits,
   return $ try_infer_factor gt given i j <|> return ()
+
+meta def factor_dup_lits' : cls → tactic cls | c :=
+match (do i ← c↣get_lits↣zip_with_index,
+          j ← c↣get_lits↣zip_with_index,
+          guard $ i↣2 < j↣2,
+          guard $ i↣1 = j↣1,
+          [(i↣2,j↣2)]) with
+| ((i,j)::_) := try_factor (λx y, ff) c i j >>= factor_dup_lits'
+| [] := return c
+end
+
+meta def factor_dup_lits (c : cls) : tactic cls := do
+qf ← c↣open_constn c↣num_quants,
+qf' ← factor_dup_lits' qf↣1,
+return $ qf'↣close_constn qf↣2
+
+meta def factor_dup_lits_pre := preprocessing_rule $ take new, do
+resolution_prover_of_tactic $ mapM factor_dup_lits new
