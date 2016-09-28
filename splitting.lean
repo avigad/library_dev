@@ -40,3 +40,20 @@ if with_ass↣2↣length > 0 then do
   remove_redundant given↣id []
 else
   return ()
+
+meta def splitting_pre : resolution_prover unit :=
+preprocessing_rule $ take news, do flip filterM news $ take new, do
+ass ← collect_ass_hyps new,
+if new↣num_quants = 0 ∧ new↣num_lits > 1 then do
+  add_sat_clause $ new↣close_constn ass,
+  return ff
+else if new↣num_quants = 0 ∧ new↣num_lits = 1 then do
+  hd ← return $ new↣get_lit 0,
+  hyp ← get_sat_hyp_core hd↣formula hd↣is_neg,
+  if hyp↣is_some then do
+    add_sat_clause $ new↣close_constn ass,
+    return ff
+  else
+    return tt
+else
+  return tt

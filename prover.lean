@@ -59,6 +59,7 @@ tautology_removal_pre,
 subsumption_interreduction_pre,
 forward_subsumption_pre,
 only_pos_to_fin_pre,
+splitting_pre,
 return ()
 ]
 
