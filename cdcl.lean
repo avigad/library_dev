@@ -35,17 +35,16 @@ end
 
 meta def cdcl : tactic unit := cdcl_t skip
 
--- FIXME: using example here hides "contains local constants" errors
-private lemma example1 {a} : a → ¬a → false := by cdcl
-private lemma example2 {a} : a ∨ ¬a := by cdcl
-private lemma example3 {a} {b : Prop} : a → (a → b) → b := by cdcl
-private lemma example4 {a b c} : (a → b) → (¬a → b) → (b → c) → b ∧ c := by cdcl
+example {a} : a → ¬a → false := by cdcl
+example {a} : a ∨ ¬a := by cdcl
+example {a} {b : Prop} : a → (a → b) → b := by cdcl
+example {a b c} : (a → b) → (¬a → b) → (b → c) → b ∧ c := by cdcl
 
 private meta def lit_unification : tactic unit :=
 do ls ← local_context, first $ do l ← ls, [do apply l, assumption]
-private lemma example5 {p : ℕ → Prop} : p 2 ∨ p 4 → (p (2*2) → p (2+0)) → p (1+1) :=
+example {p : ℕ → Prop} : p 2 ∨ p 4 → (p (2*2) → p (2+0)) → p (1+1) :=
 by cdcl_t lit_unification
 
-private lemma example6 {p : ℕ → Prop} :
+example {p : ℕ → Prop} :
         list.foldl (λf v, f ∧ (v ∨ ¬v)) true (map p (list.range 5)) :=
 by cdcl
