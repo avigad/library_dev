@@ -35,5 +35,4 @@ meta def factor_inf : inference :=
 take given, do gt ← get_term_order, sequence' $ do
   i ← active_cls.selected given,
   j ← list.range given↣c↣num_lits,
-  guard $ j ∉ given↣assertions,
   return $ try_infer_factor gt given i j <|> return ()

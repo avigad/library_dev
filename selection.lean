@@ -1,47 +1,43 @@
 import prover_state
 
-meta def non_assertion_lits (pc : passive_cls) : list ℕ :=
-do i ← list.range pc↣c↣num_lits, guard $ i ∉ pc↣assertions, [i]
-
 meta def dumb_selection : selection_strategy :=
-λpc, return $ match do i ← non_assertion_lits pc, guard $ (pc↣c↣get_lit i)↣is_neg, [i] with
-| [] := non_assertion_lits pc
+λc, return $ match c↣c↣lits_where cls.lit.is_neg with
+| [] := list.range c↣c↣num_lits
 | neg_lit::_ := [neg_lit]
 end
 
-meta def selection21 : selection_strategy := take pc, do
+meta def selection21 : selection_strategy := take c, do
 gt ← get_term_order,
 maximal_lits ← return $ list.filter_maximal (λi j,
-  gt (cls.lit.formula $ cls.get_lit pc↣c i) (cls.lit.formula $ cls.get_lit pc↣c j)) (non_assertion_lits pc),
+  gt (c↣c↣get_lit i)↣formula (c↣c↣get_lit j)↣formula) (list.range c↣c↣num_lits),
 if list.length maximal_lits = 1 then return maximal_lits else do
-neg_lits ← return $ list.filter (λi, cls.lit.is_neg (cls.get_lit pc↣c i)) (non_assertion_lits pc),
+neg_lits ← return $ list.filter (λi, (c↣c↣get_lit i)↣is_neg) (list.range c↣c↣num_lits),
 maximal_neg_lits ← return $ list.filter_maximal (λi j,
-  gt (cls.lit.formula $ cls.get_lit pc↣c i) (cls.lit.formula $ cls.get_lit pc↣c j)) neg_lits,
+  gt (c↣c↣get_lit i)↣formula (c↣c↣get_lit j)↣formula) neg_lits,
 if ¬list.empty maximal_neg_lits then
   return (list.taken 1 maximal_neg_lits)
 else
   return maximal_lits
-meta def selection22 : selection_strategy := take pc, do
+meta def selection22 : selection_strategy := take c, do
 gt ← get_term_order,
 maximal_lits ← return $ list.filter_maximal (λi j,
-  gt (cls.lit.formula $ cls.get_lit pc↣c i) (cls.lit.formula $ cls.get_lit pc↣c j)) (non_assertion_lits pc),
-maximal_lits_neg ← return $ list.filter (λi, cls.lit.is_neg (cls.get_lit pc↣c i)) maximal_lits,
+  gt (c↣c↣get_lit i)↣formula (c↣c↣get_lit j)↣formula) (list.range c↣c↣num_lits),
+maximal_lits_neg ← return $ list.filter (λi, (c↣c↣get_lit i)↣is_neg) maximal_lits,
 if ¬list.empty maximal_lits_neg then
   return (list.taken 1 maximal_lits_neg)
 else
   return maximal_lits
 
-meta def clause_weight (c : cls) : nat :=
-40 * cls.num_lits c + expr_size (cls.type c)
+meta def clause_weight (c : passive_cls) : nat :=
+40 * c↣c↣num_lits + expr_size c↣c↣type
 
-meta def find_minimal_by (passive : rb_map name passive_cls) (f : name → cls → ℕ) : name :=
+meta def find_minimal_by (passive : rb_map name passive_cls) (f : name → passive_cls → ℕ) : name :=
 match @rb_map.fold _ _ (option (name × ℕ)) passive none
-      (λk c acc, let w := f k c↣c in
-                 match acc with
-                 | none := some (k, w)
+      (λk c acc, match acc with
+                 | none := some (k, f k c)
                  | (some (n,s)) :=
-                         if w < s then
-                            some (k, w)
+                         if f k c < s then
+                            some (k, f k c)
                          else
                             acc
                          end)

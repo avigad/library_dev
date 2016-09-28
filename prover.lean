@@ -17,6 +17,7 @@ meta def run_prover_loop
   (preprocessing_rules : list (resolution_prover unit))
   (inference_rules : list inference)
   : ℕ → resolution_prover (option expr) | i := do
+-- (do st←stateT.read, resolution_prover_of_tactic $ trace st↣newly_derived),
 sequence' preprocessing_rules,
 new ← take_newly_derived, forM' new register_as_passive,
 resolution_prover_of_tactic (when (is_trace_enabled_for `resolution) (forM' new (λn,

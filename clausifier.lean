@@ -74,6 +74,22 @@ match l with
 | _ := return none
 end
 
+lemma and_f1 {a b} : a ∧ b → a := and.left
+lemma and_f2 {a b} : a ∧ b → b := and.right
+meta def inf_and_f (l : cls.lit) (c : cls) : tactic (option (list cls)) :=
+match l with
+| cls.lit.final (app (app (const and_name _) a) b) :=
+  if and_name = ``and then do
+    prf₁ ← mk_mapp ``and_f1 [none, none, some c↣prf],
+    prf₂ ← mk_mapp ``and_f2 [none, none, some c↣prf],
+    return $ some [
+      { c with num_lits := 1, prf := prf₁, type := a },
+      { c with num_lits := 1, prf := prf₂, type := b }
+    ]
+  else return none
+| _ := return none
+end
+
 meta def inf_false_l (l : cls.lit) (c : cls) : tactic (option (list cls)) :=
 match l with
 | cls.lit.left (const false_name _) :=
@@ -275,7 +291,7 @@ meta def first_some {a : Type} : list (tactic (option a)) → tactic (option a)
 | (x::xs) := do xres ← x, match xres with some y := return (some y) | none := first_some xs end
 
 meta def clausification_rules (ctx : list expr) : list head_lit_rule :=
-[ inf_false_f, inf_true_f, inf_not_f, inf_imp_f, inf_or_f, inf_ex_f,
+[ inf_false_f, inf_true_f, inf_not_f, inf_imp_f, inf_or_f, inf_and_f, inf_ex_f,
   inf_false_l, inf_false_r, inf_true_l, inf_true_r,
   inf_not_r,
   inf_and_l, inf_and_r,

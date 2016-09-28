@@ -47,3 +47,5 @@ by prover_tactic
 
 lemma example15 (person : Type) (someone : person) (drinks : person → Prop) :
   ∃canary, drinks canary → ∀other, drinks other := by prover_tactic
+
+example {p q : ℕ → Prop} {r} : (∀x y, p x ∧ q y ∧ r) -> ∀x, (p x ∧ r ∧ q x) := by prover_tactic

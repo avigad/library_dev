@@ -8,6 +8,9 @@ has_ordering.mk expr.cmp
 meta def imp (a b : expr) : expr :=
 pi (default name) binder_info.default a b
 
+meta def and_ (a b : expr) : expr :=
+app (app (const ``and []) a) b
+
 meta def not_ (a : expr) : expr :=
 app (const ``not []) a
 
@@ -60,6 +63,10 @@ def get_or_else {B} : option B → B → B
 def is_some {B} : option B → bool
 | (some _) := tt
 | none := ff
+
+def to_list {A} : option A → list A
+| (some a) := [a]
+| none := []
 
 end option
 
