@@ -205,21 +205,19 @@ return (do
 meta def register_as_passive (c : cls) : resolution_prover unit := do
 ass ← collect_ass_hyps c,
 ass_v ← sat_eval_assertions ass,
+id ← get_new_cls_id,
+c' ← return $ c↣close_constn ass,
+resolution_prover_of_tactic (assertv id c'↣type c'↣prf),
+prf' ← resolution_prover_of_tactic (get_local id),
+resolution_prover_of_tactic $ infer_type prf', -- FIXME: otherwise ""
+c'' ← return { c with prf := app_of_list prf' ass },
 if c↣num_quants = 0 ∧ c↣num_lits = 0 then
-  add_sat_clause (c↣close_constn ass)
+  add_sat_clause { c' with prf := prf' }
 else if ¬ass_v then do
-  id ← get_new_cls_id,
-  stateT.modify $ λst, { st with locked := ⟨ id, c, ass, [] ⟩ :: st↣locked }
+  stateT.modify $ λst, { st with locked := ⟨ id, c'', ass, [] ⟩ :: st↣locked }
 else do
-  id ← get_new_cls_id,
-  c' ← return $ c↣close_constn ass,
-  resolution_prover_of_tactic (assertv id c'↣type c'↣prf),
-  prf' ← resolution_prover_of_tactic (get_local id),
-  resolution_prover_of_tactic $ infer_type prf', -- FIXME: otherwise ""
   stateT.modify $ λstate, { state with passive :=
-    state↣passive↣insert id { c := { c with prf := app_of_list prf' ass },
-                              assertions := ass,
-                              from_model := ff }
+    state↣passive↣insert id { c := c'', assertions := ass, from_model := ff }
   }
 
 meta def remove_passive (id : name) : resolution_prover unit :=

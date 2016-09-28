@@ -181,11 +181,12 @@ return $ close_constn (mk 0 1 ff prf' type') op.2
 
 private meta def focus' (c : cls) (i : nat) : tactic cls := do
 guard $ lit.is_pos (get_lit c i),
-op ← open_constn c (num_lits c),
-hyp_i ← option.to_monad (list.nth op.2 i),
+qf ← c↣open_constn c↣num_quants,
+op ← qf↣1↣open_constn c↣num_lits,
+hyp_i ← (op↣2↣nth i)↣to_monad,
 prf' ← mk_mapp ``classical.by_contradiction [none, some (lambdas [hyp_i] op↣1↣prf)],
-type' ← return (lit.formula (get_lit c i)),
-return $ close_constn (mk 0 1 tt prf' type') (list.remove op.2 i)
+type' ← return (qf↣1↣get_lit i)↣formula,
+return $ close_constn ⟨0, 1, tt, prf', type'⟩ (qf↣2 ++ op↣2↣remove i)
 
 meta def focus (c : cls) (i : nat) : tactic cls :=
 if has_fin c ∧ i+1 = num_lits c then

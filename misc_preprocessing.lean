@@ -21,3 +21,14 @@ preprocessing_rule $ λnew, resolution_prover_of_tactic (filterM (λc, liftM bno
 meta def remove_duplicates_pre : resolution_prover unit :=
 preprocessing_rule $ λnew,
 return (rb_map.values (rb_map.of_list (list.map (λc:cls, (c↣type, c)) new)))
+
+meta def only_pos_to_fin_pre : resolution_prover unit :=
+preprocessing_rule $ take news, flip mapM news $ take new, do
+match list.filter (λl : (cls.lit × ℕ), l↣1↣is_pos) new↣get_lits↣zip_with_index with
+| [l] := do univ ← resolution_prover_of_tactic $ infer_univ l↣1↣formula,
+            if ¬l↣1↣is_final ∧ univ = level.zero then
+              resolution_prover_of_tactic (new↣focus l↣2)
+            else
+              return new
+| _ := return new
+end

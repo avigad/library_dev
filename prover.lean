@@ -51,12 +51,14 @@ run_prover_loop (i+1)
 
 meta def default_preprocessing : list (resolution_prover unit) :=
 [
+only_pos_to_fin_pre,
 factor_dup_lits_pre,
 remove_duplicates_pre,
 refl_r_pre,
 tautology_removal_pre,
 subsumption_interreduction_pre,
 forward_subsumption_pre,
+only_pos_to_fin_pre,
 return ()
 ]
 
