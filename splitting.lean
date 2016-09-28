@@ -9,23 +9,34 @@ else if c↣num_quants ≠ 0 then do
   return (qf_wo_as↣1↣close_constn qf↣2, qf_wo_as↣2)
 else do
   hd ← return $ c↣get_lit 0,
-  hyp_opt ← get_sat_hyp_core hd↣formula hd↣is_pos,
+  hyp_opt ← get_sat_hyp_core hd↣formula hd↣is_neg,
   match hyp_opt with
   | some h :=
     if hd↣is_final then do
       c' ← resolution_prover_of_tactic c↣fin_to_pos,
-      extract_assertions (c↣inst h)
+      return (c'↣inst h, [h])
     else do
-      extract_assertions (c↣inst h)
-  | _ := do
-    op ← resolution_prover_of_tactic c↣open_const,
-    op_wo_as ← extract_assertions op↣1,
-    return (op_wo_as↣1↣close_const op↣2, op_wo_as↣2)
+      wo_as ← extract_assertions (c↣inst h),
+      return (wo_as↣1, h :: wo_as↣2)
+  | _ :=
+    if hd↣is_final then
+      return (c, [])
+    else do
+      op ← resolution_prover_of_tactic c↣open_const,
+      op_wo_as ← extract_assertions op↣1,
+      return (op_wo_as↣1↣close_const op↣2, op_wo_as↣2)
   end
 
 meta def splitting_inf : inference := take given,
-if given↣c↣num_quants ≠ 0 ∨ given↣c↣num_lits ≤ 1 then
-  return ()
-else do
-  add_sat_clause given↣c,
+if given↣c↣num_lits ≤ 1 then return () else do
+forM given↣c↣get_lits (λl,
+     if l↣formula↣has_var ∨ l↣formula↣is_not↣is_some then
+       return ()
+     else
+       mk_sat_var l↣formula l↣is_neg),
+with_ass ← extract_assertions given↣c,
+if with_ass↣2↣length > 0 then do
+  add_inferred with_ass↣1 [given],
   remove_redundant given↣id []
+else
+  return ()

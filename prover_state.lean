@@ -137,9 +137,11 @@ meta def mk_sat_var (v : expr) (suggested_ph : bool) : resolution_prover unit :=
 do st ← stateT.read, if st↣sat_hyps↣contains v then return () else do
 hpv ← resolution_prover_of_tactic mk_fresh_name,
 hnv ← resolution_prover_of_tactic mk_fresh_name,
+univ ← resolution_prover_of_tactic $ infer_univ v,
 stateT.modify $ λst, { st with sat_hyps := st↣sat_hyps↣insert v
   (local_const hpv hpv binder_info.default v,
-   local_const hnv hnv binder_info.default (imp v false_)) },
+   local_const hnv hnv binder_info.default
+               (if univ = level.zero then not_ v else imp v false_)) },
 in_sat_solver $ cdcl.mk_var_core v suggested_ph
 
 meta def get_sat_hyp_core (v : expr) (ph : bool) : resolution_prover (option expr) :=
@@ -168,7 +170,7 @@ meta def sat_eval_lit (v : expr) (pol : bool) : resolution_prover bool :=
 do v_st ← flip liftM stateT.read $ λst, st↣current_model↣find v,
 match v_st with
 | some ph := return $ if pol then ph else bnot ph
-| none := resolution_prover.fail ("sat var not in current model: " ++ v↣to_string)
+| none := return tt
 end
 
 meta def sat_eval_assertion (assertion : expr) : resolution_prover bool :=

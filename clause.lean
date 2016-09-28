@@ -171,7 +171,7 @@ quants' ← return $ filter (λlc, rb_map.contains lconsts_in_types (local_uniq_
 lits' ← return $ filter (λlc, ¬rb_map.contains lconsts_in_types (local_uniq_name lc)) opened.2,
 return $ close_constn opened.1 (quants' ++ lits')
 
-lemma fin_to_pos_helper {p} (Hp : p) : ¬p → false := take Hnp, Hnp Hp
+lemma fin_to_pos_helper {p} (Hp : p) : (p → false) → false := take Hnp, Hnp Hp
 meta def fin_to_pos (c : cls) : tactic cls :=
 if ¬has_fin c then return c else do
 op ← open_constn c c↣num_binders,
