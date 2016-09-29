@@ -61,7 +61,6 @@ end⟩
 meta def of_cls_lit : clause.literal → prop_lit
 | (clause.literal.left v) := neg v
 | (clause.literal.right v) := pos v
-| (clause.literal.final v) := pos v
 
 meta def of_var_and_phase (v : prop_var) : bool → prop_lit
 | tt := pos v
@@ -211,11 +210,7 @@ private meta def unit_propg_cls' : clause → solver (option prop_var) | c :=
 if c↣num_lits = 0 then return (some c↣prf)
 else let hd := c↣get_lit 0 in
 do lit_st ← lookup_lit hd, match lit_st with
-| some (ff, isf_prf) :=
-  if hd↣is_final then
-    return (some $ app isf_prf c↣prf)
-  else
-    unit_propg_cls' (c↣inst isf_prf)
+| some (ff, isf_prf) := unit_propg_cls' (c↣inst isf_prf)
 | _                  := return none
 end
 
@@ -225,16 +220,10 @@ if has_confl then return () else
 if c↣num_lits = 0 then do set_conflict c↣prf
 else let hd := c↣get_lit 0 in
 do lit_st ← lookup_lit hd, match lit_st with
-| some (ff, isf_prf) :=
-  if hd↣is_final then
-    set_conflict (app isf_prf c↣prf)
-  else
-    unit_propg_cls (c↣inst isf_prf)
+| some (ff, isf_prf) := unit_propg_cls (c↣inst isf_prf)
 | some (tt, _) := return ()
 | none :=
-if c↣num_lits = 1 ∧ c↣has_fin then
-  add_propagation c↣type tt c↣prf ff
-else do fls_prf_opt ← unit_propg_cls' (c↣inst (expr.mk_var 0)),
+do fls_prf_opt ← unit_propg_cls' (c↣inst (expr.mk_var 0)),
 match fls_prf_opt with
 | some fls_prf := do
 fls_prf' ← return $ lam `H binder_info.default c↣type↣binding_domain fls_prf,
@@ -322,7 +311,7 @@ meta def analyze_conflict' : proof_term → list trail_elem → clause
     analyze_conflict' (app l_prf (lambdas [hyp] prf)) es
   else
     analyze_conflict' prf es
-| prf [] := ⟨0, 0, ff, prf, const ``false []⟩
+| prf [] := ⟨0, 0, prf, const ``false []⟩
 
 meta def analyze_conflict (prf : proof_term) : solver clause :=
 do st ← stateT.read, return $ analyze_conflict' prf st↣trail

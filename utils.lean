@@ -179,10 +179,13 @@ def range : ℕ → list ℕ
 | (n+1) := range n ++ [n]
 | 0 := []
 
-def update {A} (new_elem : A) : ℕ → list A → list A
+private def update' {A} (new_elem : A) : ℕ → list A → list A
 | 0     (x::xs) := new_elem :: xs
-| (i+1) (x::xs) := x :: update i xs
+| (i+1) (x::xs) := x :: update' i xs
 | _     []      := []
+
+def update {A} (l : list A) (i : ℕ) (new_elem : A) :=
+update' new_elem i l
 
 def partition {A} (pred : A → Prop) [decidable_pred pred] : list A → list A × list A
 | (x::xs) := match partition xs with (ts,fs) := if pred x then (x::ts, fs) else (ts, x::fs) end
@@ -206,6 +209,8 @@ meta def sort {A} [has_ordering A] : list A → list A
 
 meta def sort_on {A B} (f : A → B) [has_ordering B] : list A → list A :=
 @sort _ ⟨λx y, has_ordering.cmp (f x) (f y)⟩
+
+def sum {A} [has_add A] [has_zero A] : list A → A := foldl add zero
 
 end list
 
@@ -249,7 +254,14 @@ list.foldl (λlcs e, contained_lconsts' e lcs) (rb_map.mk name expr) es
 
 meta def lambdas : list expr → expr → expr
 | (local_const uniq pp info t :: es) f :=
-               lam pp info t (abstract_local (lambdas es f) uniq)
+  let abs := abstract_local (lambdas es f) uniq in
+  match abs with
+  | (app lam' (var i)) :=
+    if i = unsigned.of_nat 0 ∧ ¬lam'↣has_var
+    then lam'
+    else lam pp info t abs
+  | _ := lam pp info t abs
+  end
 | _ f := f
 
 meta def pis : list expr → expr → expr

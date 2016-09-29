@@ -8,87 +8,11 @@ meta def inf_whnf (l : clause.literal) (c : clause) : tactic (option (list claus
 normalized ← whnf l↣formula,
 if normalized = l↣formula then return none else
 match l with
-| clause.literal.final _ := return $ some [{ c with type := normalized }]
 | clause.literal.left _ := return $ some [{ c with type := imp normalized c↣type↣binding_body }]
 | clause.literal.right _ := return $ some [{ c with type := imp normalized↣not_ c↣type↣binding_body }]
 end
 
-meta def inf_false_f (l : clause.literal) (c : clause) : tactic (option (list clause)) :=
-match l with
-| clause.literal.final (const false_name _) :=
-  if false_name = ``false then
-    return (some [{ c with has_fin := ff, num_lits := 0 }])
-  else
-    return none
-| _ := return none
-end
-
-meta def inf_true_f (l : clause.literal) (c : clause) : tactic (option (list clause)) :=
-match l with
-| clause.literal.final (const true_name _) :=
-  if true_name = ``true then
-    return (some [])
-  else
-    return none
-| _ := return none
-end
-
-meta def inf_not_f (l : clause.literal) (c : clause) : tactic (option (list clause)) :=
-match l with
-| clause.literal.final (app (const not_name _) a) :=
-  if not_name = ``not then do
-    return $ some [{ c with has_fin := ff, type := imp a (const ``false []) }]
-  else
-    return none
-| _ := return none
-end
-
-meta def inf_imp_f (l : clause.literal) (c : clause) : tactic (option (list clause)) :=
-match l with
-| clause.literal.final (pi _ _ _ _) :=
-    return $ some [{ c with num_lits := 2 }]
-| _ := return none
-end
-
 set_option eqn_compiler.max_steps 500
-
-meta def inf_ex_f (l : clause.literal) (c : clause) : tactic (option (list clause)) :=
-match l with
-| clause.literal.final (app (app (const exists_name _) d) p) :=
-  if exists_name = ``Exists then do
-    c' ← clause.fin_to_pos c,
-    return $ some [c']
-  else
-    return none
-| _ := return none
-end
-
-lemma or_f {a b} : a ∨ b → (¬a → b) := or.resolve_left
-meta def inf_or_f (l : clause.literal) (c : clause) : tactic (option (list clause)) :=
-match l with
-| clause.literal.final (app (app (const or_name _) a) b) :=
-  if or_name = ``or then do
-    prf' ← mk_mapp ``or_f [none, none, some c↣prf],
-    return $ some [{ c with num_lits := 2, prf := prf', type := imp (app (const ``not []) a) b }]
-  else return none
-| _ := return none
-end
-
-lemma and_f1 {a b} : a ∧ b → a := and.left
-lemma and_f2 {a b} : a ∧ b → b := and.right
-meta def inf_and_f (l : clause.literal) (c : clause) : tactic (option (list clause)) :=
-match l with
-| clause.literal.final (app (app (const and_name _) a) b) :=
-  if and_name = ``and then do
-    prf₁ ← mk_mapp ``and_f1 [none, none, some c↣prf],
-    prf₂ ← mk_mapp ``and_f2 [none, none, some c↣prf],
-    return $ some [
-      { c with num_lits := 1, prf := prf₁, type := a },
-      { c with num_lits := 1, prf := prf₂, type := b }
-    ]
-  else return none
-| _ := return none
-end
 
 meta def inf_false_l (l : clause.literal) (c : clause) : tactic (option (list clause)) :=
 match l with
@@ -291,8 +215,7 @@ meta def first_some {a : Type} : list (tactic (option a)) → tactic (option a)
 | (x::xs) := do xres ← x, match xres with some y := return (some y) | none := first_some xs end
 
 meta def clausification_rules (ctx : list expr) : list head_lit_rule :=
-[ inf_false_f, inf_true_f, inf_not_f, inf_imp_f, inf_or_f, inf_and_f, inf_ex_f,
-  inf_false_l, inf_false_r, inf_true_l, inf_true_r,
+[ inf_false_l, inf_false_r, inf_true_l, inf_true_r,
   inf_not_r,
   inf_and_l, inf_and_r,
   inf_or_l, inf_or_r,
@@ -324,7 +247,7 @@ match one_step with
 end
 
 meta def clausify (cs : list clause) : tactic (list clause) :=
-liftM join $ sequence (do c ← cs, [do cs' ← clausify_core c, return (option.get_or_else cs' [c])])
+liftM list.join $ sequence (do c ← cs, [do cs' ← clausify_core c, return (option.get_or_else cs' [c])])
 
 meta def clausification_pre : resolution_prover unit := preprocessing_rule $ λnew, do
 clausified ← resolution_prover_of_tactic $ sequence (do n ← new,

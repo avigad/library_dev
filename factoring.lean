@@ -14,13 +14,7 @@ qfi ← clause.inst_mvars qf.1,
 guard $ clause.is_maximal gt qfi i,
 at_j ← clause.open_constn qf.1 j,
 hyp_i ← option.to_monad (list.nth at_j.2 i),
-cs ← sort_and_constify_metas qf.2,
-qf' ← clause.inst_mvars $
-  if clause.has_fin c ∧ j+1 = clause.num_lits c then
-    clause.close_constn (clause.of_proof_and_type (app hyp_i at_j.1↣prf) (const ``false [])) at_j.2
-  else
-    clause.close_constn (clause.inst at_j.1 hyp_i) at_j.2,
-return $ clause.close_constn qf' cs
+clause.meta_closure qf↣2 $ (at_j↣1↣inst hyp_i)↣close_constn at_j↣2
 
 meta def try_factor (c : clause) (i j : nat) : tactic clause :=
 if i > j then try_factor' gt c j i else try_factor' gt c i j

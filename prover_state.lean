@@ -268,13 +268,8 @@ forM' model↣to_list $ λassg, do
   name ← resolution_prover_of_tactic mk_fresh_name,
   hyp ← get_sat_hyp assg↣1 assg↣2,
   if old_model↣find assg↣1 = some assg↣2 then return () else do
-  stateT.modify $ λst, { st with
-    passive := st↣passive↣insert name $
-      if assg↣2 = tt then
-        ⟨ ⟨ 0, 1, tt, hyp, assg↣1 ⟩, [hyp], tt ⟩
-      else
-        ⟨ ⟨ 0, 1, ff, hyp, imp assg↣1 false_ ⟩, [hyp], tt ⟩
-  }
+  c ← resolution_prover_of_tactic $ clause.of_proof hyp,
+  stateT.modify $ λst, { st with passive := st↣passive↣insert name ⟨ c, [hyp], tt ⟩ }
 
 meta def do_sat_run : resolution_prover (option expr) :=
 do sat_result ← in_sat_solver $ cdcl.run (return none),

@@ -6,19 +6,19 @@ variables (ac1 ac2 : active_cls)
 variables (c1 c2 : clause)
 variables (i1 i2 : nat)
 
--- c1 : ... → a
--- c2 : ... → a → ...
+-- c1 : ... → ¬a → ...
+-- c2 : ... →  a → ...
 meta def try_resolve : tactic clause := do
-qf1 ← clause.open_metan c1 c1↣num_quants,
-qf2 ← clause.open_metan c2 c2↣num_quants,
-unify (clause.literal.formula (clause.get_lit qf1.1 i1)) (clause.literal.formula (clause.get_lit qf2.1 i2)),
-qf1i ← clause.inst_mvars qf1.1,
+qf1 ← c1↣open_metan c1↣num_quants,
+qf2 ← c2↣open_metan c2↣num_quants,
+unify (qf1↣1↣get_lit i1)↣formula (qf2↣1↣get_lit i2)↣formula,
+qf1i ← qf1↣1↣inst_mvars,
 guard $ clause.is_maximal gt qf1i i1,
-focused_qf1 ← clause.focus qf1.1 i1,
-op1 ← clause.open_constn focused_qf1 focused_qf1↣num_binders,
-op2 ← clause.open_constn qf2.1 i2,
+op1 ← qf1↣1↣open_constn i1,
+op2 ← qf2↣1↣open_constn c2↣num_lits,
+a_in_op2 ← (op2↣2↣nth i2)↣to_monad,
 clause.meta_closure (qf1.2 ++ qf2.2) $
-  clause.close_constn (clause.inst op2.1 op1↣1↣prf) (op1.2 ++ op2.2)
+  (op1↣1↣inst (op2↣1↣close_const a_in_op2)↣prf)↣close_constn (op1↣2 ++ op2↣2↣remove i2)
 
 meta def try_add_resolvent : resolution_prover unit := do
 c' ← resolution_prover_of_tactic $ try_resolve gt ac1↣c ac2↣c i1 i2,

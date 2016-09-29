@@ -4,7 +4,6 @@ open expr list tactic monad decidable
 structure clause :=
 (num_quants : ℕ)
 (num_lits : ℕ)
-(has_fin : bool)
 (prf : expr)
 (type : expr)
 
@@ -13,15 +12,14 @@ namespace clause
 private meta def tactic_format (c : clause) : tactic format := do
 prf_fmt : format ← pp (prf c),
 type_fmt ← pp (type c),
-fin_fmt ← return $ to_fmt (if has_fin c then ", has final" else ""),
 return $ prf_fmt ++ to_fmt " : " ++ type_fmt ++ to_fmt " (" ++
-  to_fmt (num_quants c) ++ to_fmt " quants, " ++ to_fmt (num_lits c) ++ to_fmt " lits" ++ fin_fmt ++ to_fmt ")"
+  to_fmt (num_quants c) ++ to_fmt " quants, " ++ to_fmt (num_lits c) ++ to_fmt " lits" ++ to_fmt ")"
 
 meta instance : has_to_tactic_format clause := ⟨tactic_format⟩
 
-def num_binders (c : clause) : ℕ :=
-if has_fin c then num_quants c + num_lits c - 1
-else num_quants c + num_lits c
+def num_binders (c : clause) : ℕ := num_quants c + num_lits c
+
+/- foo foo -- bar baz -/
 
 private meta def parse_clause_type : expr → ℕ × ℕ × bool
 | (pi n bi d b) :=
@@ -31,15 +29,6 @@ private meta def parse_clause_type : expr → ℕ × ℕ × bool
   end
 | e := if expr.is_false e then (0, 0, ff) else (0, 1, tt)
 
-meta def of_proof_and_type (prf type : expr) : clause :=
-match parse_clause_type type with
-(qs, ls, fin) := mk qs ls fin prf type
-end
-
-meta def of_proof (prf : expr) : tactic clause := do
-type ← infer_type prf,
-return $ of_proof_and_type prf type
-
 meta def validate (c : clause) : tactic unit := do
 type' ← infer_type c↣prf,
 unify c↣type type' <|> (do pp_ty ← pp c↣type, pp_ty' ← pp type',
@@ -48,7 +37,7 @@ unify c↣type type' <|> (do pp_ty ← pp c↣type, pp_ty' ← pp type',
 meta def inst (c : clause) (e : expr) : clause :=
 (if num_quants c > 0
   then mk (num_quants c - 1) (num_lits c)
-  else mk 0 (num_lits c - 1)) (has_fin c)
+  else mk 0 (num_lits c - 1))
 (app (prf c) e) (instantiate_var (binding_body (type c)) e)
 
 meta def instn (c : clause) (es : list expr) : clause :=
@@ -68,12 +57,13 @@ match e with
 | local_const uniq pp info t :=
     let abst_type' := abstract_local (type c) (local_uniq_name e) in
     let type' := pi pp binder_info.default t (abstract_local (type c) uniq) in
-    let prf' := lam pp binder_info.default t (abstract_local (prf c) uniq) in
+    let abs_prf := abstract_local (prf c) uniq in
+    let prf' := lambdas [e] c↣prf in
     if num_quants c > 0 ∨ has_var abst_type' then
       { c with num_quants := c↣num_quants + 1, prf := prf', type := type' }
     else
       { c with num_lits := c↣num_lits + 1, prf := prf', type := type' }
-| _ := mk 0 0 tt (mk_var 0) (mk_var 0)
+| _ := ⟨0, 0, default expr, default expr⟩
 end
 
 meta def open_constn : clause → ℕ → tactic (clause × list expr)
@@ -94,6 +84,28 @@ meta def close_constn : clause → list expr → clause
 | c [] := c
 | c (b::bs') := close_const (close_constn c bs') b
 
+set_option eqn_compiler.max_steps 500
+
+private meta def parse_clause : expr → expr → tactic clause
+| prf (pi n bi d b) := do
+  lc_n ← mk_fresh_name,
+  lc ← return $ local_const lc_n n bi d,
+  c ← parse_clause (app prf lc) (instantiate_var b lc),
+  return $ c↣close_const (local_const lc_n n binder_info.default d)
+| prf (const ``false []) := return { num_quants := 0, num_lits := 0, prf := prf, type := false_ }
+| prf (app (const ``not []) formula) := parse_clause prf (formula↣imp false_)
+| prf type := do
+  univ ← infer_univ type,
+  not_type ← return $ if univ = level.zero then not_ type else type↣imp false_,
+  parse_clause (lam `H binder_info.default not_type $ app (mk_var 0) prf) (imp not_type false_)
+
+meta def of_proof_and_type (prf type : expr) : tactic clause :=
+parse_clause prf type
+
+meta def of_proof (prf : expr) : tactic clause := do
+type ← infer_type prf,
+of_proof_and_type prf type
+
 meta def inst_mvars (c : clause) : tactic clause := do
 prf' ← instantiate_mvars (prf c),
 type' ← instantiate_mvars (type c),
@@ -102,7 +114,6 @@ return { c with prf := prf', type := type' }
 inductive literal
 | left : expr → literal
 | right : expr → literal
-| final : expr → literal
 
 namespace literal
 
@@ -111,18 +122,12 @@ meta instance : decidable_eq literal := by mk_dec_eq_instance
 def formula : literal → expr
 | (left f) := f
 | (right f) := f
-| (final f) := f
 
 def is_neg : literal → bool
 | (left _) := tt
 | (right _) := ff
-| (final _) := ff
 
 def is_pos (l : literal) : bool := bnot l↣is_neg
-
-def is_final : literal → bool
-| (final _) := tt
-| _ := ff
 
 meta def to_formula (l : literal) : tactic expr :=
 if is_neg l then mk_mapp ``not [some (formula l)]
@@ -131,7 +136,6 @@ else return (formula l)
 meta def type_str : literal → string
 | (literal.left _) := "left"
 | (literal.right _) := "right"
-| (literal.final _) := "final"
 
 meta instance : has_to_tactic_format literal :=
 ⟨λl, do
@@ -148,8 +152,7 @@ meta def get_binder (e : expr) (i : nat) :=
 binding_domain (get_binding_body e i)
 
 meta def get_lit (c : clause) (i : nat) : literal :=
-if has_fin c ∧ num_lits c = i + 1 then literal.final (get_binding_body (type c) (num_quants c + i))
-else let bind := get_binder (type c) (num_quants c + i) in
+let bind := get_binder (type c) (num_quants c + i) in
 match is_not bind with
 | some formula := literal.right formula
 | none := literal.left bind
@@ -171,36 +174,10 @@ quants' ← return $ filter (λlc, rb_map.contains lconsts_in_types (local_uniq_
 lits' ← return $ filter (λlc, ¬rb_map.contains lconsts_in_types (local_uniq_name lc)) opened.2,
 return $ close_constn opened.1 (quants' ++ lits')
 
-lemma fin_to_pos_helper {p} (Hp : p) : (p → false) → false := take Hnp, Hnp Hp
-meta def fin_to_pos (c : clause) : tactic clause :=
-if ¬has_fin c then return c else do
-op ← open_constn c c↣num_binders,
-prf' ← mk_mapp ``fin_to_pos_helper [some (type op.1), some (prf op.1)],
-type' ← return $ imp (imp op↣1↣type false_) false_,
-return $ close_constn (mk 0 1 ff prf' type') op.2
-
-private meta def focus' (c : clause) (i : nat) : tactic clause := do
-guard $ literal.is_pos (get_lit c i),
-qf ← c↣open_constn c↣num_quants,
-op ← qf↣1↣open_constn c↣num_lits,
-hyp_i ← (op↣2↣nth i)↣to_monad,
-prf' ← mk_mapp ``classical.by_contradiction [none, some (lambdas [hyp_i] op↣1↣prf)],
-type' ← return (qf↣1↣get_lit i)↣formula,
-return $ close_constn ⟨0, 1, tt, prf', type'⟩ (qf↣2 ++ op↣2↣remove i)
-
-meta def focus (c : clause) (i : nat) : tactic clause :=
-if has_fin c ∧ i+1 = num_lits c then
-  return c
-else if has_fin c then
-  do c' ← fin_to_pos c, focus' c' i
-else
-  focus' c i
-
 meta def whnf_head_lit (c : clause) : tactic clause := do
 atom' ← whnf (literal.formula $ get_lit c 0),
-return $ if c↣has_fin ∧ c↣num_lits = 1 ∧ c↣num_quants = 0 then
-  { c with type := atom' }
-else if literal.is_neg (get_lit c 0) then
+return $
+if literal.is_neg (get_lit c 0) then
   { c with type := imp atom' (binding_body c↣type) }
 else
   { c with type := imp (app (const ``not []) atom') c↣type↣binding_body }
