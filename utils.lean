@@ -50,6 +50,13 @@ meta def expr_size : expr → nat
 | (elet _ t v b) := expr_size v + expr_size b
 | (macro _ _ _) := 1
 
+meta def mk_local (pp_name : name) (bi : binder_info) (type : expr) : tactic expr := do
+uniq_name ← mk_fresh_name,
+return $ local_const uniq_name pp_name bi type
+
+meta def mk_local_def (pp_name : name) (type : expr) : tactic expr :=
+mk_local pp_name binder_info.default type
+
 namespace option
 
 def to_monad {m : Type → Type} [monad m] [alternative m] {A} : option A → m A
@@ -294,3 +301,15 @@ match sort_of_type with
 end
 
 end tactic
+
+class has_coe_fam (A : Type _ → Type _) (B : Type _ → Type _) :=
+(at_point : Π x, A x → B x)
+
+namespace has_coe_fam
+
+instance {A B} [has_coe_fam A B] {x} : has_coe (A x) (B x) :=
+⟨has_coe_fam.at_point _ x⟩
+
+instance id_fam {A} : has_coe_fam A A := ⟨λx, id⟩
+
+end has_coe_fam

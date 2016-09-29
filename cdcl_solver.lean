@@ -105,8 +105,8 @@ meta instance : monad solver := stateT.monad _ _
 meta def solver_of_tactic {A} (tac : tactic A) : solver A :=
 take st, do res ← tac, return (res, st)
 
-meta instance {a} : has_coe (tactic a) (solver a) :=
-⟨solver_of_tactic⟩
+meta instance : has_coe_fam tactic solver :=
+⟨λa, solver_of_tactic⟩
 
 meta def fail {A B} [has_to_format B] (b : B) : solver A :=
 solver_of_tactic (tactic.fail b)

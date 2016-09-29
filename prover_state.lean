@@ -99,11 +99,8 @@ meta instance : monad resolution_prover := stateT.monad _ _
 meta def resolution_prover_of_tactic {a} (tac : tactic a) : resolution_prover a :=
 λs, do res ← tac, return (res, s)
 
-meta instance {a} : has_coe (tactic a) (resolution_prover a) :=
-⟨resolution_prover_of_tactic⟩
-
-meta instance cmd_coe : has_coe command (resolution_prover unit) :=
-⟨resolution_prover_of_tactic⟩
+meta instance : has_coe_fam tactic resolution_prover :=
+⟨λa, resolution_prover_of_tactic⟩
 
 meta def resolution_prover.fail {A B : Type} [has_to_format B] (msg : B) : resolution_prover A :=
 @tactic.fail A _ _ msg

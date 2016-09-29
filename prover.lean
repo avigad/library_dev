@@ -9,7 +9,7 @@ set_option trace.resolution false
 
 meta def trace_clauses : resolution_prover unit := do
 state ← stateT.read,
-↑(tactic.trace state)
+↑(trace state)
 
 meta def run_prover_loop
   (literal_selection : selection_strategy)
