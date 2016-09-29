@@ -11,9 +11,9 @@ hvs ← forM hyps (λhyp, assertv hyp↣local_pp_name hyp↣local_type hyp),
 solved ← (do th_solver, now, return tt) <|> return ff,
 set_goals goals,
 if solved then do
-  prf ← instantiate_mvars subgoal,
-  prf' ← whnf prf, -- gets rid of the unnecessary asserts
-  return $ some prf'
+  proof ← instantiate_mvars subgoal,
+  proof' ← whnf proof, -- gets rid of the unnecessary asserts
+  return $ some proof'
 else
   return none
 
@@ -26,7 +26,7 @@ gen_clauses ← mapM clause.of_proof hyps,
 clauses ← clausify gen_clauses,
 res ← cdcl.solve (theory_solver_of_tactic th_solver) clauses,
 match res with
-| (cdcl.result.unsat prf) := exact prf
+| (cdcl.result.unsat proof) := exact proof
 | (cdcl.result.sat interp) :=
   let interp' := do e ← interp↣to_list, [cdcl.formula_of_lit e↣1 e↣2] in
   do pp_interp ← pp interp',

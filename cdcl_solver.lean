@@ -116,8 +116,8 @@ end
 
 meta def mk_var (v : prop_var) : solver unit := mk_var_core v ff
 
-meta def set_conflict (prf : proof_term) : solver unit :=
-stateT.modify $ λst, { st with conflict := some prf }
+meta def set_conflict (proof : proof_term) : solver unit :=
+stateT.modify $ λst, { st with conflict := some proof }
 
 meta def has_conflict : solver bool :=
 do st ← stateT.read, return st↣conflict↣is_some
@@ -165,13 +165,13 @@ do st ← stateT.read, return $ st↣vars↣find v
 meta def add_propagation (v : prop_var) (ph : bool) (just : proof_term) (just_is_dn : bool) : solver unit :=
 do v_st ← lookup_var v, match v_st with
 | none := solver_of_tactic (fail $ "propagating unknown variable: " ++ v↣to_string)
-| some ⟨assg_ph, some prf⟩ :=
+| some ⟨assg_ph, some proof⟩ :=
     if ph = assg_ph then
       return ()
     else if assg_ph ∧ ¬just_is_dn then
-      set_conflict (app just prf)
+      set_conflict (app just proof)
     else
-      set_conflict (app prf just)
+      set_conflict (app proof just)
 | some ⟨_, none⟩ := do
     hyp_name ← solver_of_tactic mk_fresh_name,
     hyp ← return $ local_const hyp_name hyp_name binder_info.default (formula_of_lit v ph),
@@ -190,8 +190,8 @@ meta def lookup_lit (l : clause.literal) : solver (option (bool × proof_hyp)) :
 do var_st_opt ← lookup_var l↣formula, match var_st_opt with
 | none := return none
 | some ⟨ph, none⟩ := return none
-| some ⟨ph, some prf⟩ :=
-  return $ some (if l↣is_neg then bnot ph else ph, prf)
+| some ⟨ph, some proof⟩ :=
+  return $ some (if l↣is_neg then bnot ph else ph, proof)
 end
 
 meta def lit_is_false (l : clause.literal) : solver bool :=
@@ -207,7 +207,7 @@ meta def cls_is_false (c : clause) : solver bool :=
 liftM list.band $ mapM lit_is_false c↣get_lits
 
 private meta def unit_propg_cls' : clause → solver (option prop_var) | c :=
-if c↣num_lits = 0 then return (some c↣prf)
+if c↣num_lits = 0 then return (some c↣proof)
 else let hd := c↣get_lit 0 in
 do lit_st ← lookup_lit hd, match lit_st with
 | some (ff, isf_prf) := unit_propg_cls' (c↣inst isf_prf)
@@ -217,7 +217,7 @@ end
 meta def unit_propg_cls : clause → solver unit | c :=
 do has_confl ← has_conflict,
 if has_confl then return () else
-if c↣num_lits = 0 then do set_conflict c↣prf
+if c↣num_lits = 0 then do set_conflict c↣proof
 else let hd := c↣get_lit 0 in
 do lit_st ← lookup_lit hd, match lit_st with
 | some (ff, isf_prf) := unit_propg_cls (c↣inst isf_prf)
@@ -250,7 +250,7 @@ modify_watches_for pl $ λw, w↣erase n
 
 private meta def set_watches (n : name) (c : clause) : solver unit :=
 if c↣num_lits = 0 then
-  set_conflict c↣prf
+  set_conflict c↣proof
 else if c↣num_lits = 1 then
   unit_propg_cls c
 else do
@@ -293,33 +293,33 @@ match st↣vars↣find v with
 end
 
 meta def analyze_conflict' : proof_term → list trail_elem → clause
-| prf (trail_elem.dec v ph hyp :: es) :=
-  let abs_prf := abstract_local prf hyp↣local_uniq_name in
+| proof (trail_elem.dec v ph hyp :: es) :=
+  let abs_prf := abstract_local proof hyp↣local_uniq_name in
   if has_var abs_prf then
-    clause.close_const (analyze_conflict' prf es) hyp
+    clause.close_const (analyze_conflict' proof es) hyp
   else
-    analyze_conflict' prf es
-| prf (trail_elem.propg v ph l_prf hyp :: es) :=
-  let abs_prf := abstract_local prf hyp↣local_uniq_name in
+    analyze_conflict' proof es
+| proof (trail_elem.propg v ph l_prf hyp :: es) :=
+  let abs_prf := abstract_local proof hyp↣local_uniq_name in
   if has_var abs_prf then
     analyze_conflict' (elet hyp↣local_pp_name (formula_of_lit v ph) l_prf abs_prf) es
   else
-    analyze_conflict' prf es
-| prf (trail_elem.dbl_neg_propg v ph l_prf hyp :: es) :=
-  let abs_prf := abstract_local prf hyp↣local_uniq_name in
+    analyze_conflict' proof es
+| proof (trail_elem.dbl_neg_propg v ph l_prf hyp :: es) :=
+  let abs_prf := abstract_local proof hyp↣local_uniq_name in
   if has_var abs_prf then
-    analyze_conflict' (app l_prf (lambdas [hyp] prf)) es
+    analyze_conflict' (app l_prf (lambdas [hyp] proof)) es
   else
-    analyze_conflict' prf es
-| prf [] := ⟨0, 0, prf, const ``false []⟩
+    analyze_conflict' proof es
+| proof [] := ⟨0, 0, proof, const ``false []⟩
 
-meta def analyze_conflict (prf : proof_term) : solver clause :=
-do st ← stateT.read, return $ analyze_conflict' prf st↣trail
+meta def analyze_conflict (proof : proof_term) : solver clause :=
+do st ← stateT.read, return $ analyze_conflict' proof st↣trail
 
 meta def add_learned (c : clause) : solver unit := do
 prf_abbrev_name ← solver_of_tactic mk_fresh_name,
-c' ← return { c with prf := local_const prf_abbrev_name prf_abbrev_name binder_info.default c↣type },
-stateT.modify $ λst, { st with learned := ⟨c', c↣prf⟩ :: st↣learned },
+c' ← return { c with proof := local_const prf_abbrev_name prf_abbrev_name binder_info.default c↣type },
+stateT.modify $ λst, { st with learned := ⟨c', c↣proof⟩ :: st↣learned },
 c_name ← solver_of_tactic mk_fresh_name,
 set_watches c_name c'
 
@@ -335,16 +335,16 @@ else do
     return ()
 
 meta def replace_learned_clauses' : proof_term → list learned_clause → proof_term
-| prf [] := prf
-| prf (⟨c, actual_proof⟩ :: lcs) :=
-  let abs_prf := abstract_local prf c↣prf↣local_uniq_name in
+| proof [] := proof
+| proof (⟨c, actual_proof⟩ :: lcs) :=
+  let abs_prf := abstract_local proof c↣proof↣local_uniq_name in
   if has_var abs_prf then
-    replace_learned_clauses' (elet c↣prf↣local_pp_name c↣type actual_proof abs_prf) lcs
+    replace_learned_clauses' (elet c↣proof↣local_pp_name c↣type actual_proof abs_prf) lcs
   else
-    replace_learned_clauses' prf lcs
+    replace_learned_clauses' proof lcs
 
-meta def replace_learned_clauses (prf : proof_term) : solver proof_term :=
-do st ← stateT.read, return $ replace_learned_clauses' prf st↣learned
+meta def replace_learned_clauses (proof : proof_term) : solver proof_term :=
+do st ← stateT.read, return $ replace_learned_clauses' proof st↣learned
 
 inductive result
 | unsat : proof_term → result
@@ -370,8 +370,8 @@ match st↣conflict with
 | some conflict := do
   conflict_clause ← analyze_conflict conflict,
   if conflict_clause↣num_lits = 0 then do
-    prf ← replace_learned_clauses conflict_clause↣prf,
-    return (result.unsat prf)
+    proof ← replace_learned_clauses conflict_clause↣proof,
+    return (result.unsat proof)
   else do
     backtrack_with conflict_clause,
     add_learned conflict_clause,

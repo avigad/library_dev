@@ -20,12 +20,12 @@ meta def run_prover_loop
 sequence' preprocessing_rules,
 new ← take_newly_derived, forM' new register_as_passive,
 resolution_prover_of_tactic (when (is_trace_enabled_for `resolution) (forM' new (λn,
-  trace { n with prf := const (mk_simple_name " derived") [] }))),
+  trace { n with proof := const (mk_simple_name " derived") [] }))),
 needs_sat_run ← flip liftM stateT.read (λst, st↣needs_sat_run),
 if needs_sat_run then do
   res ← do_sat_run,
   match res with
-  | some prf := return (some prf)
+  | some proof := return (some proof)
   | none := do
     model ← flip liftM stateT.read (λst, st↣current_model),
     resolution_prover_of_tactic (when (is_trace_enabled_for `resolution) $ do

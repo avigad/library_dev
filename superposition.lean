@@ -73,7 +73,7 @@ new_atom ← whnf $ app abs_rwr_ctx rwr_to',
 new_hi2 ← return $ local_const hi2↣local_uniq_name `H binder_info.default new_atom,
 new_fin_prf ←
   return $ app_of_list (const congr_ax [univ]) [eq_type, rwr_from, rwr_to,
-            abs_rwr_ctx, (op2↣1↣close_const hi2)↣prf, new_hi2],
+            abs_rwr_ctx, (op2↣1↣close_const hi2)↣proof, new_hi2],
 clause.meta_closure (qf1↣2 ++ qf2↣2) $ (op1↣1↣inst new_fin_prf)↣close_constn (op1↣2 ++ op2↣2↣update i2 new_hi2)
 
 example (i : Type) (a b : i) (p : i → Prop) (H : a = b) (Hpa : p a) : true := by do

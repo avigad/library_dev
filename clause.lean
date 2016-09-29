@@ -4,13 +4,13 @@ open expr list tactic monad decidable
 structure clause :=
 (num_quants : ℕ)
 (num_lits : ℕ)
-(prf : expr)
+(proof : expr)
 (type : expr)
 
 namespace clause
 
 private meta def tactic_format (c : clause) : tactic format := do
-prf_fmt : format ← pp (prf c),
+prf_fmt : format ← pp (proof c),
 type_fmt ← pp (type c),
 return $ prf_fmt ++ to_fmt " : " ++ type_fmt ++ to_fmt " (" ++
   to_fmt (num_quants c) ++ to_fmt " quants, " ++ to_fmt (num_lits c) ++ to_fmt " lits" ++ to_fmt ")"
@@ -30,7 +30,7 @@ private meta def parse_clause_type : expr → ℕ × ℕ × bool
 | e := if expr.is_false e then (0, 0, ff) else (0, 1, tt)
 
 meta def validate (c : clause) : tactic unit := do
-type' ← infer_type c↣prf,
+type' ← infer_type c↣proof,
 unify c↣type type' <|> (do pp_ty ← pp c↣type, pp_ty' ← pp type',
                            fail (to_fmt "wrong type: " ++ pp_ty ++ " =!= " ++ pp_ty'))
 
@@ -38,7 +38,7 @@ meta def inst (c : clause) (e : expr) : clause :=
 (if num_quants c > 0
   then mk (num_quants c - 1) (num_lits c)
   else mk 0 (num_lits c - 1))
-(app (prf c) e) (instantiate_var (binding_body (type c)) e)
+(app (proof c) e) (instantiate_var (binding_body (type c)) e)
 
 meta def instn (c : clause) (es : list expr) : clause :=
 foldr (λe c', inst c' e) c es
@@ -57,12 +57,12 @@ match e with
 | local_const uniq pp info t :=
     let abst_type' := abstract_local (type c) (local_uniq_name e) in
     let type' := pi pp binder_info.default t (abstract_local (type c) uniq) in
-    let abs_prf := abstract_local (prf c) uniq in
-    let prf' := lambdas [e] c↣prf in
+    let abs_prf := abstract_local (proof c) uniq in
+    let proof' := lambdas [e] c↣proof in
     if num_quants c > 0 ∨ has_var abst_type' then
-      { c with num_quants := c↣num_quants + 1, prf := prf', type := type' }
+      { c with num_quants := c↣num_quants + 1, proof := proof', type := type' }
     else
-      { c with num_lits := c↣num_lits + 1, prf := prf', type := type' }
+      { c with num_lits := c↣num_lits + 1, proof := proof', type := type' }
 | _ := ⟨0, 0, default expr, default expr⟩
 end
 
@@ -87,29 +87,29 @@ meta def close_constn : clause → list expr → clause
 set_option eqn_compiler.max_steps 500
 
 private meta def parse_clause : expr → expr → tactic clause
-| prf (pi n bi d b) := do
+| proof (pi n bi d b) := do
   lc_n ← mk_fresh_name,
   lc ← return $ local_const lc_n n bi d,
-  c ← parse_clause (app prf lc) (instantiate_var b lc),
+  c ← parse_clause (app proof lc) (instantiate_var b lc),
   return $ c↣close_const (local_const lc_n n binder_info.default d)
-| prf (const ``false []) := return { num_quants := 0, num_lits := 0, prf := prf, type := false_ }
-| prf (app (const ``not []) formula) := parse_clause prf (formula↣imp false_)
-| prf type := do
+| proof (const ``false []) := return { num_quants := 0, num_lits := 0, proof := proof, type := false_ }
+| proof (app (const ``not []) formula) := parse_clause proof (formula↣imp false_)
+| proof type := do
   univ ← infer_univ type,
   not_type ← return $ if univ = level.zero then not_ type else type↣imp false_,
-  parse_clause (lam `H binder_info.default not_type $ app (mk_var 0) prf) (imp not_type false_)
+  parse_clause (lam `H binder_info.default not_type $ app (mk_var 0) proof) (imp not_type false_)
 
-meta def of_proof_and_type (prf type : expr) : tactic clause :=
-parse_clause prf type
+meta def of_proof_and_type (proof type : expr) : tactic clause :=
+parse_clause proof type
 
-meta def of_proof (prf : expr) : tactic clause := do
-type ← infer_type prf,
-of_proof_and_type prf type
+meta def of_proof (proof : expr) : tactic clause := do
+type ← infer_type proof,
+of_proof_and_type proof type
 
 meta def inst_mvars (c : clause) : tactic clause := do
-prf' ← instantiate_mvars (prf c),
+proof' ← instantiate_mvars (proof c),
 type' ← instantiate_mvars (type c),
-return { c with prf := prf', type := type' }
+return { c with proof := proof', type := type' }
 
 inductive literal
 | left : expr → literal

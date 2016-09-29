@@ -194,7 +194,7 @@ cls_prefix ← resolution_prover_of_tactic $ get_unused_name `clause none,
 return $ mk_num_name cls_prefix state↣age
 
 meta def collect_ass_hyps (c : clause) : resolution_prover (list expr) :=
-let lcs := contained_lconsts c↣prf in
+let lcs := contained_lconsts c↣proof in
 do st ← stateT.read,
 return (do
   hs ← st↣sat_hyps↣values,
@@ -207,12 +207,12 @@ ass ← collect_ass_hyps c,
 ass_v ← sat_eval_assertions ass,
 id ← get_new_cls_id,
 c' ← return $ c↣close_constn ass,
-resolution_prover_of_tactic (assertv id c'↣type c'↣prf),
-prf' ← resolution_prover_of_tactic (get_local id),
-resolution_prover_of_tactic $ infer_type prf', -- FIXME: otherwise ""
-c'' ← return { c with prf := app_of_list prf' ass },
+resolution_prover_of_tactic (assertv id c'↣type c'↣proof),
+proof' ← resolution_prover_of_tactic (get_local id),
+resolution_prover_of_tactic $ infer_type proof', -- FIXME: otherwise ""
+c'' ← return { c with proof := app_of_list proof' ass },
 if c↣num_quants = 0 ∧ c↣num_lits = 0 then
-  add_sat_clause { c' with prf := prf' }
+  add_sat_clause { c' with proof := proof' }
 else if ¬ass_v then do
   stateT.modify $ λst, { st with locked := ⟨ id, c'', ass, [] ⟩ :: st↣locked }
 else do
@@ -276,7 +276,7 @@ do sat_result ← in_sat_solver $ cdcl.run (return none),
 stateT.modify $ λst, { st with needs_sat_run := ff },
 old_model ← liftM resolution_prover_state.current_model stateT.read,
 match sat_result with
-| (cdcl.result.unsat prf) := return (some prf)
+| (cdcl.result.unsat proof) := return (some proof)
 | (cdcl.result.sat new_model) := do
     stateT.modify $ λst, { st with current_model := new_model },
     move_locked_to_passive,

@@ -18,7 +18,7 @@ op1 ← qf1↣1↣open_constn i1,
 op2 ← qf2↣1↣open_constn c2↣num_lits,
 a_in_op2 ← (op2↣2↣nth i2)↣to_monad,
 clause.meta_closure (qf1.2 ++ qf2.2) $
-  (op1↣1↣inst (op2↣1↣close_const a_in_op2)↣prf)↣close_constn (op1↣2 ++ op2↣2↣remove i2)
+  (op1↣1↣inst (op2↣1↣close_const a_in_op2)↣proof)↣close_constn (op1↣2 ++ op2↣2↣remove i2)
 
 meta def try_add_resolvent : resolution_prover unit := do
 c' ← resolution_prover_of_tactic $ try_resolve gt ac1↣c ac2↣c i1 i2,

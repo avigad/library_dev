@@ -29,8 +29,8 @@ meta def inf_false_r (l : clause.literal) (c : clause) : tactic (option (list cl
 match l with
 | clause.literal.right (const false_name _) :=
 if false_name = ``false then do
-  prf' ← mk_mapp ``false_r [none, some c↣prf],
-  return $ some [{ c with num_lits := c↣num_lits - 1, prf := prf', type := binding_body c↣type }]
+  proof' ← mk_mapp ``false_r [none, some c↣proof],
+  return $ some [{ c with num_lits := c↣num_lits - 1, proof := proof', type := binding_body c↣type }]
 else
   return none
 | _ := return none
@@ -41,8 +41,8 @@ meta def inf_true_l (l : clause.literal) (c : clause) : tactic (option (list cla
 match l with
 | clause.literal.left (const true_name _) :=
 if true_name = ``true then do
-  prf' ← mk_mapp ``true_l [none, some c↣prf],
-  return $ some [{ c with num_lits := c↣num_lits - 1, prf := prf', type := binding_body c↣type }]
+  proof' ← mk_mapp ``true_l [none, some c↣proof],
+  return $ some [{ c with num_lits := c↣num_lits - 1, proof := proof', type := binding_body c↣type }]
 else
   return none
 | _ := return none
@@ -62,8 +62,8 @@ lemma not_r {a c} : (¬¬a → c) → (a → c) := λnnac a, nnac (λx, x a)
 meta def inf_not_r (l : clause.literal) (c : clause) : tactic (option (list clause)) :=
 match (l, is_not (clause.literal.formula l)) with
 | (clause.literal.right _, some a) := do
-  prf' ← mk_mapp ``not_r [none, none, some c↣prf],
-  return $ some [{ c with prf := prf', type := imp a (binding_body c↣type) }]
+  proof' ← mk_mapp ``not_r [none, none, some c↣proof],
+  return $ some [{ c with proof := proof', type := imp a (binding_body c↣type) }]
 | _ := return none
 end
 
@@ -72,8 +72,8 @@ meta def inf_and_l (l : clause.literal) (c : clause) : tactic (option (list clau
 match l with
 | clause.literal.left (app (app (const and_name _) a) b) :=
   if and_name = ``and then do
-    prf' ← mk_mapp ``and_l [none, none, none, some c↣prf],
-    return $ some [{ c with num_lits := c↣num_lits + 1, prf := prf', type := imp a (imp b (binding_body c↣type)) }]
+    proof' ← mk_mapp ``and_l [none, none, none, some c↣proof],
+    return $ some [{ c with num_lits := c↣num_lits + 1, proof := proof', type := imp a (imp b (binding_body c↣type)) }]
   else return none
 | _ := return none
 end
@@ -84,13 +84,13 @@ meta def inf_and_r (l : clause.literal) (c : clause) : tactic (option (list clau
 match l with
 | clause.literal.right (app (app (const and_name _) a) b) :=
   if and_name = ``and then do
-    prf₁ ← mk_mapp ``and_r1 [none, none, none, some c↣prf],
-    prf₂ ← mk_mapp ``and_r2 [none, none, none, some c↣prf],
+    proof₁ ← mk_mapp ``and_r1 [none, none, none, some c↣proof],
+    proof₂ ← mk_mapp ``and_r2 [none, none, none, some c↣proof],
     na ← mk_mapp ``not [some a],
     nb ← mk_mapp ``not [some b],
     return $ some [
-      { c with prf := prf₁, type := imp na (binding_body c↣type) },
-      { c with prf := prf₂, type := imp nb (binding_body c↣type) }
+      { c with proof := proof₁, type := imp na (binding_body c↣type) },
+      { c with proof := proof₂, type := imp nb (binding_body c↣type) }
     ]
   else return none
 | _ := return none
@@ -103,8 +103,8 @@ match l with
   if or_name = ``or then do
     na ← mk_mapp ``not [some a],
     nb ← mk_mapp ``not [some b],
-    prf' ← mk_mapp ``or_r [none, none, none, some c↣prf],
-    return $ some [{ c with num_lits := c↣num_lits + 1, prf := prf', type := imp na (imp nb (binding_body c↣type)) }]
+    proof' ← mk_mapp ``or_r [none, none, none, some c↣proof],
+    return $ some [{ c with num_lits := c↣num_lits + 1, proof := proof', type := imp na (imp nb (binding_body c↣type)) }]
   else return none
 | _ := return none
 end
@@ -115,11 +115,11 @@ meta def inf_or_l (l : clause.literal) (c : clause) : tactic (option (list claus
 match l with
 | clause.literal.left (app (app (const or_name _) a) b) :=
   if or_name = ``or then do
-    prf₁ ← mk_mapp ``or_l1 [none, none, none, some c↣prf],
-    prf₂ ← mk_mapp ``or_l2 [none, none, none, some c↣prf],
+    proof₁ ← mk_mapp ``or_l1 [none, none, none, some c↣proof],
+    proof₂ ← mk_mapp ``or_l2 [none, none, none, some c↣proof],
     return $ some [
-      { c with prf := prf₁, type := imp a (binding_body c↣type) },
-      { c with prf := prf₂, type := imp b (binding_body c↣type) }
+      { c with proof := proof₁, type := imp a (binding_body c↣type) },
+      { c with proof := proof₂, type := imp b (binding_body c↣type) }
     ]
   else return none
 | _ := return none
@@ -130,8 +130,8 @@ meta def inf_all_r (l : clause.literal) (c : clause) : tactic (option (list clau
 match l with
 | clause.literal.right (pi n bi a b) := do
     nb ← mk_mapp ``not [some b],
-    prf' ← mk_mapp ``all_r [none, none, none, some c↣prf],
-    return $ some [{ c with num_quants := 1, prf := prf', type := pi n bi a (imp nb (binding_body c↣type)) }]
+    proof' ← mk_mapp ``all_r [none, none, none, some c↣proof],
+    return $ some [{ c with num_quants := 1, proof := proof', type := pi n bi a (imp nb (binding_body c↣type)) }]
 | _ := return none
 end
 
@@ -141,12 +141,12 @@ meta def inf_imp_l (l : clause.literal) (c : clause) : tactic (option (list clau
 match l with
 | clause.literal.left (pi _ _ a b) :=
   if ¬has_var b then do
-    prf₁ ← mk_mapp ``imp_l1 [none, none, none, some c↣prf],
-    prf₂ ← mk_mapp ``imp_l2 [none, none, none, some c↣prf],
+    proof₁ ← mk_mapp ``imp_l1 [none, none, none, some c↣proof],
+    proof₂ ← mk_mapp ``imp_l2 [none, none, none, some c↣proof],
     na ← mk_mapp ``not [some a],
     return $ some [
-      { c with prf := prf₁, type := imp na (binding_body c↣type) },
-      { c with prf := prf₂, type := imp b (binding_body c↣type) }
+      { c with proof := proof₁, type := imp na (binding_body c↣type) },
+      { c with proof := proof₂, type := imp b (binding_body c↣type) }
     ]
   else return none
 | _ := return none
@@ -157,10 +157,10 @@ meta def inf_ex_l (l : clause.literal) (c : clause) : tactic (option (list claus
 match l with
 | clause.literal.left (app (app (const ex_name _) d) p) :=
   if ex_name = ``Exists then do
-    prf' ← mk_mapp ``ex_l [none, none, none, some c↣prf],
+    proof' ← mk_mapp ``ex_l [none, none, none, some c↣proof],
     n ← mk_fresh_name, -- FIXME: (binding_name p) produces ugly [anonymous] output
     px ← whnf $ app p (mk_var 0),
-    return $ some [{ c with num_quants := 1, prf := prf',
+    return $ some [{ c with num_quants := 1, proof := proof',
       type := pi n binder_info.default d (imp px (binding_body c↣type)) }]
   else return none
 | _ := return none
@@ -176,8 +176,8 @@ match l with
     nb ← mk_mapp ``not [some b],
     enb ← mk_mapp ``Exists [none, some $ lam n binder_info.default a nb],
     nenb ← mk_mapp ``not [some enb],
-    prf' ← mk_mapp ``all_l [none, none, none, some c↣prf],
-    return $ some [{ c with prf := prf', type := imp nenb (binding_body c↣type) }]
+    proof' ← mk_mapp ``all_l [none, none, none, some c↣proof],
+    return $ some [{ c with proof := proof', type := imp nenb (binding_body c↣type) }]
 | _ := return none
 end
 
@@ -203,8 +203,8 @@ match l with
     sk_ax' ← get_local sk_ax_name, sk_sym' ← get_local sk_sym_name_pp,
     sk_p' ← whnf_core transparency.none $ app p (app_of_list sk_sym' (ctx ++ [inh_lc])),
     not_sk_p' ← mk_mapp ``not [some sk_p'],
-    prf' ← mk_mapp ``helper_r [none, none, none, some (app_of_list sk_ax' (ctx ++ [inh_lc])), some c↣prf],
-    return $ some [{ c with num_quants := 1, prf := lambdas [inh_lc] prf',
+    proof' ← mk_mapp ``helper_r [none, none, none, some (app_of_list sk_ax' (ctx ++ [inh_lc])), some c↣proof],
+    return $ some [{ c with num_quants := 1, proof := lambdas [inh_lc] proof',
       type := pis [inh_lc] (imp not_sk_p' (binding_body c↣type)) }]
 else return none
 | _ := return none
