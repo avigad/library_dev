@@ -95,7 +95,7 @@ meta def rwr_positions (c : clause) (i : nat) : list (list ℕ) :=
 get_rwr_positions (c↣get_lit i)↣formula
 
 meta def try_add_sup : resolution_prover unit :=
-(do c' ← resolution_prover_of_tactic $ try_sup gt ac1↣c ac2↣c i1 i2 pos ltr congr_ax,
+(do c' ← ↑(try_sup gt ac1↣c ac2↣c i1 i2 pos ltr congr_ax),
     add_inferred c' [ac1,ac2]) <|> return ()
 
 meta def superposition_back_inf : inference :=

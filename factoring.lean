@@ -20,8 +20,8 @@ meta def try_factor (c : clause) (i j : nat) : tactic clause :=
 if i > j then try_factor' gt c j i else try_factor' gt c i j
 
 meta def try_infer_factor (c : active_cls) (i j : nat) : resolution_prover unit := do
-f ← resolution_prover_of_tactic (try_factor gt c↣c i j),
-ss ← resolution_prover_of_tactic $ does_subsume f c↣c,
+f ← ↑(try_factor gt c↣c i j),
+ss : bool ← ↑(does_subsume f c↣c),
 add_inferred f [c],
 if ss then remove_redundant c↣id [] else return ()
 
@@ -47,4 +47,4 @@ qf' ← factor_dup_lits' qf↣1,
 return $ qf'↣close_constn qf↣2
 
 meta def factor_dup_lits_pre := preprocessing_rule $ take new, do
-resolution_prover_of_tactic $ mapM factor_dup_lits new
+↑(mapM factor_dup_lits new)

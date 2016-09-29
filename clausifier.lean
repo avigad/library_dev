@@ -250,12 +250,11 @@ meta def clausify (cs : list clause) : tactic (list clause) :=
 liftM list.join $ sequence (do c ← cs, [do cs' ← clausify_core c, return (option.get_or_else cs' [c])])
 
 meta def clausification_pre : resolution_prover unit := preprocessing_rule $ λnew, do
-clausified ← resolution_prover_of_tactic $ sequence (do n ← new,
-           [do n' ← clausify_core n, return $ option.get_or_else n' [n]]),
+clausified ← sequence (do n ← new, [do n' ← ↑(clausify_core n), return $ option.get_or_else n' [n]]),
 return (list.join clausified)
 
 meta def clausification_inf : inference := λgiven, do
-clausified ← resolution_prover_of_tactic $ clausify_core given↣c,
+clausified : option (list clause) ← ↑(clausify_core given↣c),
 match clausified with
 | some cs := do forM' cs (λc, add_inferred c [given]), remove_redundant given↣id []
 | none := return ()

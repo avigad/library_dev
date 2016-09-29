@@ -17,7 +17,7 @@ end
 
 meta def unify_eq_inf : inference := take given, sequence' $ do
 i ← given↣selected,
-[(do u ← resolution_prover_of_tactic $ try_unify_eq_l given↣c i, add_inferred u [given]) <|> return ()]
+[(do u ← ↑(try_unify_eq_l given↣c i), add_inferred u [given]) <|> return ()]
 
 meta def has_refl_r (c : clause) : bool :=
 list.bor $ do

@@ -99,8 +99,14 @@ meta instance : monad resolution_prover := stateT.monad _ _
 meta def resolution_prover_of_tactic {a} (tac : tactic a) : resolution_prover a :=
 λs, do res ← tac, return (res, s)
 
+meta instance {a} : has_coe (tactic a) (resolution_prover a) :=
+⟨resolution_prover_of_tactic⟩
+
+meta instance cmd_coe : has_coe command (resolution_prover unit) :=
+⟨resolution_prover_of_tactic⟩
+
 meta def resolution_prover.fail {A B : Type} [has_to_format B] (msg : B) : resolution_prover A :=
-resolution_prover_of_tactic (tactic.fail msg)
+@tactic.fail A _ _ msg
 
 meta def resolution_prover.failed {A : Type} : resolution_prover A :=
 resolution_prover.fail "failed"
@@ -129,15 +135,14 @@ liftM passive stateT.read
 
 meta def in_sat_solver {A} (cmd : cdcl.solver A) : resolution_prover A := do
 state ← stateT.read,
-result ← resolution_prover_of_tactic $ cmd state↣sat_solver,
+result : A × cdcl.state ← ↑(cmd state↣sat_solver),
 stateT.write { state with sat_solver := result↣2 },
 return result↣1
 
 meta def mk_sat_var (v : expr) (suggested_ph : bool) : resolution_prover unit :=
 do st ← stateT.read, if st↣sat_hyps↣contains v then return () else do
-hpv ← resolution_prover_of_tactic mk_fresh_name,
-hnv ← resolution_prover_of_tactic mk_fresh_name,
-univ ← resolution_prover_of_tactic $ infer_univ v,
+hpv ← ↑mk_fresh_name, hnv ← ↑mk_fresh_name,
+univ ← ↑(infer_univ v),
 stateT.modify $ λst, { st with sat_hyps := st↣sat_hyps↣insert v
   (local_const hpv hpv binder_info.default v,
    local_const hnv hnv binder_info.default
@@ -190,7 +195,7 @@ meta def sat_eval_assertions : list expr → resolution_prover bool
 private meta def get_new_cls_id : resolution_prover name := do
 state ← stateT.read,
 stateT.write { state with age := state↣age + 1 },
-cls_prefix ← resolution_prover_of_tactic $ get_unused_name `clause none,
+cls_prefix ← ↑(get_unused_name `clause none),
 return $ mk_num_name cls_prefix state↣age
 
 meta def collect_ass_hyps (c : clause) : resolution_prover (list expr) :=
@@ -207,9 +212,9 @@ ass ← collect_ass_hyps c,
 ass_v ← sat_eval_assertions ass,
 id ← get_new_cls_id,
 c' ← return $ c↣close_constn ass,
-resolution_prover_of_tactic (assertv id c'↣type c'↣proof),
-proof' ← resolution_prover_of_tactic (get_local id),
-resolution_prover_of_tactic $ infer_type proof', -- FIXME: otherwise ""
+@coe _ (resolution_prover unit) _ (assertv id c'↣type c'↣proof),
+proof' ← ↑(get_local id),
+type : expr ← ↑(infer_type proof'), -- FIXME: otherwise ""
 c'' ← return { c with proof := app_of_list proof' ass },
 if c↣num_quants = 0 ∧ c↣num_lits = 0 then
   add_sat_clause { c' with proof := proof' }
@@ -265,10 +270,10 @@ do passive ← flip liftM stateT.read (λst, st↣passive), forM' passive↣to_l
 meta def add_new_from_model_clauses (old_model : rb_map expr bool) : resolution_prover unit := do
 model ← flip liftM stateT.read (λst, st↣current_model),
 forM' model↣to_list $ λassg, do
-  name ← resolution_prover_of_tactic mk_fresh_name,
+  name ← ↑mk_fresh_name,
   hyp ← get_sat_hyp assg↣1 assg↣2,
   if old_model↣find assg↣1 = some assg↣2 then return () else do
-  c ← resolution_prover_of_tactic $ clause.of_proof hyp,
+  c ← ↑(clause.of_proof hyp),
   stateT.modify $ λst, { st with passive := st↣passive↣insert name ⟨ c, [hyp], tt ⟩ }
 
 meta def do_sat_run : resolution_prover (option expr) :=
@@ -326,7 +331,7 @@ new_syms ← return $ list.filter (λc, ¬p_set↣contains (name_of_funsym c)) c
 set_precedence (new_syms ++ p)
 
 meta def add_inferred (c : clause) (parents : list active_cls) : resolution_prover unit := do
-c' ← resolution_prover_of_tactic c↣normalize,
+c' : clause ← ↑c↣normalize,
 register_consts_in_precedence (contained_funsyms c'↣type)↣values,
 state ← stateT.read,
 stateT.write { state with newly_derived := c' :: state↣newly_derived }

@@ -23,7 +23,7 @@ meta def does_subsume_with_assertions (small large : clause) : resolution_prover
 small_ass ← collect_ass_hyps small,
 large_ass ← collect_ass_hyps large,
 if small_ass↣subset_of large_ass then do
-  resolution_prover_of_tactic $ does_subsume small large
+  does_subsume small large
 else
   return ff
 
@@ -39,7 +39,7 @@ meta def forward_subsumption : inference := take given, do
 active ← get_active,
 any_tt active (λa,
   if a↣id = given↣id then return ff else do
-  ss ← resolution_prover_of_tactic $ does_subsume a↣c given↣c,
+  ss : bool ← ↑(does_subsume a↣c given↣c),
   if ss then do
     remove_redundant given↣id [a],
     return tt
@@ -52,7 +52,7 @@ active ← get_active, filterM (λn, do
   n_ass ← collect_ass_hyps n,
   do ss ← any_tt active (λa,
         if a↣assertions↣subset_of n_ass then do
-          resolution_prover_of_tactic $ does_subsume a↣c n
+          ↑(does_subsume a↣c n)
         else
           return ff),
      return (bnot ss)) new
@@ -73,12 +73,11 @@ preprocessing_rule $ λnew,
 let new' := list.sort_on clause.num_lits new in
 subsumption_interreduction new'
 
-meta def keys_where_tt (active : rb_map name active_cls) (pred : active_cls → tactic bool) : tactic (list name) :=
-@rb_map.fold _ _ (tactic (list name)) active (return []) $ λk a cont, do
+meta def keys_where_tt {m} [monad m] (active : rb_map name active_cls) (pred : active_cls → m bool) : m (list name) :=
+@rb_map.fold _ _ (m (list name)) active (return []) $ λk a cont, do
   v ← pred a, rest ← cont, return $ if v then k::rest else rest
 
 meta def backward_subsumption : inference := λgiven, do
 active ← get_active,
-ss ← resolution_prover_of_tactic $
-  keys_where_tt active (λa, does_subsume given↣c a↣c),
+ss ← keys_where_tt active (λa, does_subsume given↣c a↣c),
 sequence' $ do id ← ss, guard (id ≠ given↣id), [remove_redundant id [given]]
