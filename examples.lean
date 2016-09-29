@@ -11,10 +11,8 @@ n' ← get_unused_name n none,
 assertv n' t p
 end tactic.interactive
 
-lemma def_eq_add : ∀x y : ℕ, 0 + y = y ∧ nat.succ x + y = nat.succ (x+y) := sorry
-
 example : ∀x y : ℕ, x + y = y + x :=
-begin with_lemma def_eq_add, intros, induction x, repeat prover_tactic end
+begin with_lemma nat.succ_add, with_lemma nat.zero_add, intros, induction x, repeat prover_tactic end
 
 example {a b} : ¬(b ∨ ¬a) ∨ (a → b) := by prover_tactic
 example {a} : a ∨ ¬a := by prover_tactic
