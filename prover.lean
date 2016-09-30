@@ -1,6 +1,7 @@
 import clause prover_state
 import subsumption misc_preprocessing
 import resolution factoring clausifier superposition equality splitting
+import inhabited
 import selection
 open monad tactic expr
 
@@ -63,6 +64,7 @@ return ()
 meta def default_inferences : list inference :=
 [
 clausification_inf,
+inhabited_infs,
 forward_subsumption, backward_subsumption,
 splitting_inf,
 factor_inf,

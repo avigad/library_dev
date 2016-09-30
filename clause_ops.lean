@@ -37,3 +37,12 @@ forM new_hyps (λnew_hyp, do
   nhn ← ↑mk_fresh_name,
   nh ← return $ local_const nhn `nh binder_info.default (imp type false_),
   return $ (op↣1↣inst (lambdas [h] (app nh new_hyp↣2)))↣close_constn (op↣2 ++ new_hyp↣1 ++ [nh]))
+
+meta def on_first_right (c : clause) (f : expr → tactic (list (list expr × expr))) : tactic (list clause) :=
+first $ do i ← list.range c↣num_lits, [on_right_at c i f]
+
+meta def on_first_right' (c : clause) (f : expr → tactic (list (list expr × expr))) : tactic (list clause) :=
+first $ do i ← list.range c↣num_lits, [on_right_at' c i f]
+
+meta def on_first_left (c : clause) (f : expr → tactic (list (list expr × expr))) : tactic (list clause) :=
+first $ do i ← list.range c↣num_lits, [on_left_at c i f]

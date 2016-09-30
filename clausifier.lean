@@ -5,18 +5,6 @@ open expr list tactic monad decidable
 meta def try_option {a} (tac : tactic a) : tactic (option a) :=
 liftM some tac <|> return none
 
-private meta def on_first_right (c : clause)
-        (f : expr → tactic (list (list expr × expr))) : tactic (list clause) :=
-first $ do i ← list.range c↣num_lits, [on_right_at c i f]
-
-private meta def on_first_right' (c : clause)
-        (f : expr → tactic (list (list expr × expr))) : tactic (list clause) :=
-first $ do i ← list.range c↣num_lits, [on_right_at' c i f]
-
-private meta def on_first_left (c : clause)
-        (f : expr → tactic (list (list expr × expr))) : tactic (list clause) :=
-first $ do i ← list.range c↣num_lits, [on_left_at c i f]
-
 meta def inf_whnf_l (c : clause) : tactic (list clause) :=
 on_first_left c $ λtype, do
   type' ← whnf type,
