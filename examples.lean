@@ -8,7 +8,7 @@ meta def with_lemmas (ls : types.raw_ident_list) : tactic unit := monad.forM' ls
 p ← mk_const l,
 t ← infer_type p,
 n ← get_unused_name p↣get_app_fn↣const_name none,
-assertv n t p
+tactic.assertv n t p
 end tactic.interactive
 
 example : ∀x y : ℕ, x + y = y + x :=
