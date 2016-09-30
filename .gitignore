@@ -1,0 +1,6 @@
+.#*
+flycheck*
+*.[cio]lean
+*.d
+/.ninja*
+/build.ninja
