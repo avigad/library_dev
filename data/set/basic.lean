@@ -101,14 +101,14 @@ theorem mem_univ_iff (x : A) : x ∈ @univ A ↔ true := iff.rfl
 
 theorem mem_univ_eq (x : A) : x ∈ @univ A = true := rfl
 
-theorem empty_ne_univ [h : inhabited A] : (empty_col : set A) ≠ univ :=
-assume H : empty_col = univ,
+theorem empty_ne_univ [h : inhabited A] : (∅ : set A) ≠ univ :=
+assume H : ∅ = univ,
 absurd (mem_univ (inhabited.default A)) (eq.rec_on H (not_mem_empty _))
 
 theorem subset_univ (s : set A) : s ⊆ univ := λ x H, trivial
 
 theorem eq_univ_of_univ_subset {s : set A} (H : univ ⊆ s) : s = univ :=
-eq_of_subset_of_subset (subset_univ s) H
+eq_of_subset_of_subset (@subset_univ _ s) @H
 
 theorem eq_univ_of_forall {s : set A} (H : ∀ x, x ∈ s) : s = univ :=
 ext (take x, iff.intro (assume H', trivial) (assume H', H x))
@@ -480,16 +480,16 @@ ext (take x, iff.intro
       (suppose x ∈ s, or.inl this)
       (suppose x ∉ s, or.inr (and.intro H1 this))))
 
-theorem diff_subset (s t : set A) : s \ t ⊆ s := inter_subset_left s _
+theorem diff_subset (s t : set A) : s \ t ⊆ s := @inter_subset_left _ s _
 
 theorem compl_eq_univ_diff (s : set A) : -s = univ \ s :=
 ext (take x, iff.intro (assume H, and.intro trivial H) (assume H, and.right H))
 
 /- powerset -/
 
-theorem mem_powerset {x s : set A} (H : x ⊆ s) : x ∈ 𝒫 s := H
+theorem mem_powerset {x s : set A} (H : x ⊆ s) : x ∈ 𝒫 s := @H
 
-theorem subset_of_mem_powerset {x s : set A} (H : x ∈ 𝒫 s) : x ⊆ s := H
+theorem subset_of_mem_powerset {x s : set A} (H : x ∈ 𝒫 s) : x ⊆ s := @H
 
 theorem mem_powerset_iff (x s : set A) : x ∈ 𝒫 s ↔ x ⊆ s := iff.rfl
 
