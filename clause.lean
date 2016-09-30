@@ -1,7 +1,7 @@
 import init.meta.tactic utils
 open expr list tactic monad decidable
 
-structure clause :=
+meta structure clause :=
 (num_quants : ℕ)
 (num_lits : ℕ)
 (proof : expr)
@@ -17,7 +17,7 @@ return $ prf_fmt ++ to_fmt " : " ++ type_fmt ++ to_fmt " (" ++
 
 meta instance : has_to_tactic_format clause := ⟨tactic_format⟩
 
-def num_binders (c : clause) : ℕ := num_quants c + num_lits c
+meta def num_binders (c : clause) : ℕ := num_quants c + num_lits c
 
 /- foo foo -- bar baz -/
 
@@ -111,7 +111,7 @@ proof' ← instantiate_mvars (proof c),
 type' ← instantiate_mvars (type c),
 return { c with proof := proof', type := type' }
 
-inductive literal
+meta inductive literal
 | left : expr → literal
 | right : expr → literal
 
@@ -119,15 +119,15 @@ namespace literal
 
 meta instance : decidable_eq literal := by mk_dec_eq_instance
 
-def formula : literal → expr
+meta def formula : literal → expr
 | (left f) := f
 | (right f) := f
 
-def is_neg : literal → bool
+meta def is_neg : literal → bool
 | (left _) := tt
 | (right _) := ff
 
-def is_pos (l : literal) : bool := bnot l↣is_neg
+meta def is_pos (l : literal) : bool := bnot l↣is_neg
 
 meta def to_formula (l : literal) : tactic expr :=
 if is_neg l then mk_mapp ``not [some (formula l)]

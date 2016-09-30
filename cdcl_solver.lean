@@ -3,48 +3,48 @@ open tactic expr monad
 
 namespace cdcl
 
-@[reducible] def prop_var := expr
-@[reducible] def proof_term := expr
-@[reducible] def proof_hyp := expr
+@[reducible] meta def prop_var := expr
+@[reducible] meta def proof_term := expr
+@[reducible] meta def proof_hyp := expr
 
-inductive trail_elem
+meta inductive trail_elem
 | dec : prop_var → bool → proof_hyp → trail_elem
 | propg : prop_var → bool → proof_term → proof_hyp → trail_elem
 | dbl_neg_propg : prop_var → bool → proof_term → proof_hyp → trail_elem
 
 namespace trail_elem
 
-def var : trail_elem → prop_var
+meta def var : trail_elem → prop_var
 | (dec v _ _) := v
 | (propg v _ _ _) := v
 | (dbl_neg_propg v _ _ _) := v
 
-def phase : trail_elem → bool
+meta def phase : trail_elem → bool
 | (dec _ ph _) := ph
 | (propg _ ph _ _) := ph
 | (dbl_neg_propg _ ph _ _) := ph
 
-def hyp : trail_elem → proof_hyp
+meta def hyp : trail_elem → proof_hyp
 | (dec _ _ h) := h
 | (propg _ _ _ h) := h
 | (dbl_neg_propg _ _ _ h) := h
 
-def is_decision : trail_elem → bool
+meta def is_decision : trail_elem → bool
 | (dec _ _ _) := tt
 | (propg _ _ _ _) := ff
 | (dbl_neg_propg _ _ _ _) := ff
 
 end trail_elem
 
-structure var_state :=
+meta structure var_state :=
 (phase : bool)
 (assigned : option proof_hyp)
 
-structure learned_clause :=
+meta structure learned_clause :=
 (c : clause)
 (actual_proof : proof_term)
 
-inductive prop_lit
+meta inductive prop_lit
 | neg : prop_var → prop_lit
 | pos : prop_var → prop_lit
 
@@ -70,7 +70,7 @@ end prop_lit
 
 meta def watch_map := rb_map name (ℕ × ℕ × clause)
 
-structure state :=
+meta structure state :=
 (trail : list trail_elem)
 (vars : rb_map prop_var var_state)
 (unassigned : rb_map prop_var prop_var)
@@ -352,7 +352,7 @@ meta def replace_learned_clauses' : proof_term → list learned_clause → proof
 meta def replace_learned_clauses (proof : proof_term) : solver proof_term :=
 do st ← stateT.read, return $ replace_learned_clauses' proof st↣learned
 
-inductive result
+meta inductive result
 | unsat : proof_term → result
 | sat : rb_map prop_var bool → result
 

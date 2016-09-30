@@ -1,7 +1,7 @@
 import clause lpo cdcl_solver
 open tactic monad expr
 
-structure locked_cls :=
+meta structure locked_cls :=
 (id : name)
 (c : clause)
 (assertions : list expr)
@@ -19,7 +19,7 @@ return $ c_fmt ++ " <-- " ++ ass_fmt ++ " (reasons: " ++ reasons_fmt ++ ")"
 
 end locked_cls
 
-structure active_cls :=
+meta structure active_cls :=
 (id : name)
 (selected : list nat)
 (c : clause)
@@ -41,7 +41,7 @@ ac↣c↣close_constn ac↣assertions
 
 end active_cls
 
-structure passive_cls :=
+meta structure passive_cls :=
 (c : clause)
 (assertions : list expr)
 (from_model : bool)
@@ -56,7 +56,7 @@ pc↣c↣close_constn pc↣assertions
 
 end passive_cls
 
-structure resolution_prover_state :=
+meta structure resolution_prover_state :=
 (active : rb_map name active_cls)
 (passive : rb_map name passive_cls)
 (newly_derived : list clause)
