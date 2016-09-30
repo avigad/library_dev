@@ -74,7 +74,7 @@ unify_eq_inf,
 (λg, return ())
 ]
 
-meta def prover_tactic : tactic unit := do
+meta def super : tactic unit := do
 intros,
 target_name ← get_unused_name `target none, tgt ← target,
 mk_mapp ``classical.by_contradiction [some tgt] >>= apply, intro target_name,
@@ -88,3 +88,17 @@ match res with
 | (some empty_clause, st) := apply empty_clause
 | (none, saturation) := trace "saturation" >> trace saturation >> skip
 end
+
+namespace tactic.interactive
+
+meta def with_lemmas (ls : types.raw_ident_list) : tactic unit := monad.forM' ls $ λl, do
+p ← mk_const l,
+t ← infer_type p,
+n ← get_unused_name p↣get_app_fn↣const_name none,
+tactic.assertv n t p
+
+meta def super (extra_lemmas : types.with_ident_list) : tactic unit := do
+with_lemmas extra_lemmas,
+super
+
+end tactic.interactive

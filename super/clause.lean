@@ -19,8 +19,6 @@ meta instance : has_to_tactic_format clause := ⟨tactic_format⟩
 
 meta def num_binders (c : clause) : ℕ := num_quants c + num_lits c
 
-/- foo foo -- bar baz -/
-
 private meta def parse_clause_type : expr → ℕ × ℕ × bool
 | (pi n bi d b) :=
   match parse_clause_type b with
