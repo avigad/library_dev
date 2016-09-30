@@ -25,6 +25,12 @@ def strict_subset (a b : set A) := a ⊆ b ∧ a ≠ b
 
 instance : has_ssubset (set A) := ⟨strict_subset⟩
 
+protected def subset' (s₁ s₂ : set A) :=
+∀ ⦃a⦄, a ∈ s₁ → a ∈ s₂
+
+instance set_has_subset' : has_subset (set A) :=
+⟨set.subset'⟩
+
 end set
 
 
@@ -107,8 +113,8 @@ absurd (mem_univ (inhabited.default A)) (eq.rec_on H (not_mem_empty _))
 
 theorem subset_univ (s : set A) : s ⊆ univ := λ x H, trivial
 
-theorem eq_univ_of_univ_subset {s : set A} (H : univ ⊆ s) : s = univ :=
-eq_of_subset_of_subset (@subset_univ _ s) @H
+theorem eq_univ_of_univ_subset {s : set A} (h : univ ⊆ s) : s = univ :=
+eq_of_subset_of_subset (subset_univ s) h
 
 theorem eq_univ_of_forall {s : set A} (H : ∀ x, x ∈ s) : s = univ :=
 ext (take x, iff.intro (assume H', trivial) (assume H', H x))
@@ -489,7 +495,8 @@ ext (take x, iff.intro (assume H, and.intro trivial H) (assume H, and.right H))
 
 theorem mem_powerset {x s : set A} (H : x ⊆ s) : x ∈ 𝒫 s := @H
 
-theorem subset_of_mem_powerset {x s : set A} (H : x ∈ 𝒫 s) : x ⊆ s := @H
+-- TODO: remove @ when subset is corrected in init
+theorem subset_of_mem_powerset {x s : set A} (h : x ∈ 𝒫 s) : x ⊆ s := @h
 
 theorem mem_powerset_iff (x s : set A) : x ∈ 𝒫 s ↔ x ⊆ s := iff.rfl
 
@@ -499,7 +506,6 @@ section image
 
 variables {B C : Type}
 
--- TODO: "abbreviation" is gone?
 @[reducible] def eq_on (f1 f2 : A → B) (a : set A) : Prop :=
 ∀ x ∈ a, f1 x = f2 x
 
