@@ -10,7 +10,7 @@ Authors Jeremy Avigad, Leonardo de Moura
 
 -- QUESTION: could we somehow make the first argument in ∀ x ∈ a, ... implicit?
 -/
-import ...logic.basic
+import logic.basic
 open function tactic
 
 universe variables u v
