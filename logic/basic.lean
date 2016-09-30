@@ -3,13 +3,119 @@ Copyright (c) 2016 Jeremy Avigad. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jeremy Avigad, Leonardo de Moura
 
--- TODO: should we make an effort to separate out the classical principles?
--- TODO: in particular, do we want versions of theorems that assume "decidable" as
-         a hypothesis?
 -- TODO: fix all the names, once we agree on naming conventions
 -- TODO: port logic.identities.
 -/
 open tactic  -- TODO: currently only needed for "intros"
+
+/-
+   TODO: these are better names for theorems in init.logic.
+-/
+
+lemma implies_trans {p q r : Prop} (h₁ : implies p q) (h₂ : implies q r) : implies p r :=
+implies.trans h₁ h₂
+
+lemma not_intro {a : Prop} (h : a → false) : ¬ a :=
+not.intro h
+
+-- this is also called mt in init.logic. We can keep both.
+lemma contrapos {a b : Prop} (h : a → b) (nb : ¬ b) : ¬ a :=
+implies.resolve h nb
+
+-- not_not_intro and non_contradictory_intro are the same.
+-- I suggest keeping only the first.
+
+-- maybe keep both names?
+lemma false_elim {c : Prop} (h : false) : c :=
+false.elim h
+
+-- parallels not_false_iff
+lemma not_true_iff : (¬ true) ↔ false :=
+not_true
+
+lemma {u} id_def {A : Type u} (a : A) : id a = a := id.def a
+
+-- should substr be marked as [elab_as_eliminator]?
+
+def {u} ne_def {A : Type u} (a b : A) : ne a b = ¬ (a = b) := ne.def a b
+
+section
+universe variable u
+variables {A : Type u} {a b : A}
+
+lemma ne_intro (h : a = b → false) : a ≠ b := h
+
+lemma ne_elim (h : a ≠ b) : a = b → false := h
+
+lemma ne_irrefl (h : a ≠ a) : false := h rfl
+
+lemma ne_symm (h : a ≠ b) : b ≠ a :=
+assume (h₁ : b = a), h (eq.symm h₁)
+end
+
+-- similarly, we have heq_elim, heq_subst, heq_trans
+
+section
+variables {a b c d : Prop}
+
+lemma and_elim (h₁ : a ∧ b) (h₂ : a → b → c) : c :=
+and.elim h₁ h₂
+
+-- isn't symm better than swap?
+lemma and_symm : a ∧ b → b ∧ a := and.swap
+
+lemma or_elim (h₁ : a ∨ b) (h₂ : a → c) (h₃ : b → c) : c :=
+or.elim h₁ h₂ h₃
+
+lemma not_not_em (a : Prop) : ¬¬(a ∨ ¬a) :=
+non_contradictory_em a
+
+lemma or_symm : a ∨ b → b ∨ a := or.swap
+
+lemma iff_intro : (a → b) → (b → a) → (a ↔ b) := iff.intro
+
+-- why does iff.elim switch the order of h₁ and h₂?
+@[recursor 4]
+lemma iff_elim (h₁ : a ↔ b) (h₂ : (a → b) → (b → a) → c) : c :=
+iff.elim h₂ h₁
+
+-- similarly, we have iff.intro, iff.elim, iff.elim_left, iff.mp,
+-- iff.elim_right, iff.mpr, iff.refl, iff.rfl, iff.trans, iff.symm, iff.comm,
+-- iff.of_eq
+
+lemma not_not_not_iff (a : Prop) : ¬¬¬a ↔ ¬a :=
+not_non_contradictory_iff_absurd a
+
+-- similarly, imp_congr -> implies_congr, imp_congr_ctx -> implies_congr_ctx,
+-- imp_congr_right -> implies_congr_right
+lemma and_comm : a ∧ b ↔ b ∧ a := and.comm
+
+lemma and_assoc : (a ∧ b) ∧ c ↔ a ∧ (b ∧ c) := and.assoc
+
+lemma and_left_comm : a ∧ (b ∧ c) ↔ b ∧ (a ∧ c) := and.left_comm
+
+lemma or_implies_or (h₂ : a → c) (h₃ : b → d) : a ∨ b → c ∨ d := or.imp h₂ h₃
+
+lemma or_implies_or_left (h : a → b) : a ∨ c → b ∨ c := or.imp_left h
+
+lemma or_implies_or_right (h : a → b) : c ∨ a → c ∨ b := or.imp_right h
+
+lemma or_comm : a ∨ b ↔ b ∨ a := or.comm
+
+lemma or_assoc : (a ∨ b) ∨ c ↔ a ∨ (b ∨ c) := or.assoc
+
+lemma or_left_comm : a ∨ (b ∨ c) ↔ b ∨ (a ∨ c) := or.left_comm
+
+-- similarly, or.resolve_left, or.neg_resolve_left, or.resolve_right, or.neg_resolve_right
+
+attribute [intro]
+lemma {u} exists_unique_intro {A : Type u} {p : A → Prop} (w : A)
+    (h₁ : p w) (h₂ : ∀ y, p y → y = w) :
+  ∃! x, p x :=
+exists_unique.intro w h₁ h₂
+
+
+end
 
 /-
     propositional connectives
@@ -20,66 +126,47 @@ variables {a b c d : Prop}
 
 /- implies -/
 
-definition imp (a b : Prop) : Prop := a → b
+theorem implies_self (h : a) : a := h
 
-theorem imp.id (H : a) : a := H
+theorem implies_intro (h : a) (h₂ : b) : a := h
 
-theorem imp.intro (H : a) (H₂ : b) : a := H
+theorem implies_true_iff (a : Prop) : (a → true) ↔ true :=
+iff_true_intro (implies_intro trivial)
 
-theorem imp.mp (H : a) (H₂ : a → b) : b :=
-H₂ H
+theorem true_implies_iff (a : Prop) : (true → a) ↔ a :=
+iff.intro (assume H, H trivial) implies_intro
 
-theorem imp.syl (H : a → b) (H₂ : c → a) (Hc : c) : b :=
-H (H₂ Hc)
+theorem implies_false_iff (a : Prop) : (a → false) ↔ ¬ a := iff.rfl
 
-theorem imp.left (H : a → b) (H₂ : b → c) (Ha : a) : c :=
-H₂ (H Ha)
-
-theorem imp_true (a : Prop) : (a → true) ↔ true :=
-iff_true_intro (imp.intro trivial)
-
-theorem true_imp (a : Prop) : (true → a) ↔ a :=
-iff.intro (assume H, H trivial) imp.intro
-
-theorem imp_false (a : Prop) : (a → false) ↔ ¬ a := iff.rfl
-
-theorem false_imp (a : Prop) : (false → a) ↔ true :=
+theorem false_implies_iff (a : Prop) : (false → a) ↔ true :=
 iff_true_intro false.elim
 
 /- not -/
 
-theorem {u} not.elim {A : Type u} (H1 : ¬a) (H2 : a) : A := absurd H2 H1
-
-theorem not.mto {a b : Prop} : (a → b) → ¬b → ¬a := imp.left
-
-theorem not_imp_not_of_imp {a b : Prop} : (a → b) → ¬b → ¬a := not.mto
+theorem {u} not_elim {A : Type u} (H1 : ¬a) (H2 : a) : A := absurd H2 H1
 
 theorem not_not_of_not_implies : ¬(a → b) → ¬¬a :=
-not.mto not.elim
+contrapos not_elim
 
 theorem not_of_not_implies : ¬(a → b) → ¬b :=
-not.mto imp.intro
-
-theorem not_not_em : ¬¬(a ∨ ¬a) :=
-assume not_em : ¬(a ∨ ¬a),
-not_em (or.inr (not.mto or.inl not_em))
+contrapos implies_intro
 
 theorem not_iff_not (H : a ↔ b) : ¬a ↔ ¬b :=
-iff.intro (not.mto (iff.mpr H)) (not.mto (iff.mp H))
+iff.intro (contrapos (iff.mpr H)) (contrapos (iff.mp H))
 
 /- and -/
 
 definition not_and_of_not_left (b : Prop) : ¬a → ¬(a ∧ b) :=
-not.mto and.left
+contrapos and.left
 
 definition not_and_of_not_right (a : Prop) {b : Prop} : ¬b →  ¬(a ∧ b) :=
-not.mto and.right
+contrapos and.right
 
 theorem and.imp_left (H : a → b) : a ∧ c → b ∧ c :=
-and.imp H imp.id
+and.imp H implies_self
 
 theorem and.imp_right (H : a → b) : c ∧ a → c ∧ b :=
-and.imp imp.id H
+and.imp implies_self H
 
 theorem and_of_and_of_imp_of_imp (H₁ : a ∧ b) (H₂ : a → c) (H₃ : b → d) : c ∧ d :=
 and.imp H₂ H₃ H₁
@@ -111,21 +198,21 @@ theorem or.elim3 (H : a ∨ b ∨ c) (Ha : a → d) (Hb : b → d) (Hc : c → d
 or.elim H Ha (assume H₂, or.elim H₂ Hb Hc)
 
 theorem or_resolve_right (H₁ : a ∨ b) (H₂ : ¬a) : b :=
-or.elim H₁ (not.elim H₂) imp.id
+or.elim H₁ (not_elim H₂) implies_self
 
 theorem or_resolve_left (H₁ : a ∨ b) : ¬b → a :=
 or_resolve_right (or.swap H₁)
 
 theorem or.imp_distrib : ((a ∨ b) → c) ↔ ((a → c) ∧ (b → c)) :=
 iff.intro
-  (λH, and.intro (imp.syl H or.inl) (imp.syl H or.inr))
+  (λH, and.intro (implies_trans or.inl H) (implies_trans or.inr H))
   (and.rec or.rec)
 
 theorem or_iff_right_of_imp {a b : Prop} (Ha : a → b) : (a ∨ b) ↔ b :=
-iff.intro (or.rec Ha imp.id) or.inr
+iff.intro (or.rec Ha implies_self) or.inr
 
 theorem or_iff_left_of_imp {a b : Prop} (Hb : b → a) : (a ∨ b) ↔ a :=
-iff.intro (or.rec imp.id Hb) or.inl
+iff.intro (or.rec implies_self Hb) or.inl
 
 theorem or_iff_or (H1 : a ↔ c) (H2 : b ↔ d) : (a ∨ b) ↔ (c ∨ d) :=
 iff.intro (or.imp (iff.mp H1) (iff.mp H2)) (or.imp (iff.mpr H1) (iff.mpr H2))
@@ -143,7 +230,7 @@ iff.trans (iff.trans and.comm (and_distrib c a b)) (or_iff_or and.comm and.comm)
 theorem or_distrib (a b c : Prop) : a ∨ (b ∧ c) ↔ (a ∨ b) ∧ (a ∨ c) :=
 iff.intro
   (or.rec (λH, and.intro (or.inl H) (or.inl H)) (and.imp or.inr or.inr))
-  (and.rec (or.rec (imp.syl imp.intro or.inl) (imp.syl or.imp_right and.intro)))
+  (and.rec (or.rec (implies_trans or.inl implies_intro) (implies_trans and.intro or.imp_right)))
 
 theorem or_distrib_right (a b c : Prop) : (a ∧ b) ∨ c ↔ (a ∨ c) ∧ (b ∨ c) :=
 iff.trans (iff.trans or.comm (or_distrib c a b)) (and_congr or.comm or.comm)
@@ -156,12 +243,8 @@ theorem forall_imp_forall {A : Type} {P Q : A → Prop} (H : ∀a, (P a → Q a)
   : Q a :=
 (H a) (p a)
 
-theorem forall_iff_forall {A : Type} {P Q : A → Prop} (H : ∀a, (P a ↔ Q a))
-  : (∀a, P a) ↔ (∀a, Q a) :=
-iff.intro (λp a, iff.elim_left (H a) (p a)) (λq a, iff.elim_right (H a) (q a))
-
 theorem imp_iff {P : Prop} (Q : Prop) (p : P) : (P → Q) ↔ Q :=
-iff.intro (λf, f p) imp.intro
+iff.intro (λf, f p) implies_intro
 
 end propositional
 
@@ -172,7 +255,7 @@ theorem exists_imp_distrib {A : Type} {b : Prop} {p : A → Prop} :
   ((∃ a : A, p a) → b) ↔ (∀ a : A, p a → b) :=
 iff.intro (λ e x h, e ⟨x, h⟩) Exists.rec
 
-theorem forall_iff_not_exists {A : Type} {p : A → Prop} :
+theorem not_exists_iff_forall_not {A : Type} {p : A → Prop} :
   (¬ ∃ a : A, p a) ↔ ∀ a : A, ¬ p a :=
 exists_imp_distrib
 
@@ -210,26 +293,23 @@ sorry
 section
   open classical
 
-  -- TODO: wait for better support for rewrite
-  lemma not_bounded_exists {A : Type} {s : set A} {p : A → Prop} :
-    (¬ (∃ x ∈ s, p x)) = (∀ x ∈ s, ¬ p x) :=
-  sorry
-/-
+  lemma not_bexists_iff {A : Type} {s : set A} {p : A → Prop} :
+    (¬ (∃ x ∈ s, p x)) ↔ (∀ x ∈ s, ¬ p x) :=
   begin
-    rewrite forall_iff_not_exists,
-    apply propext,
+    rewrite not_exists_iff_forall_not,
     apply forall_congr,
     intro x,
-    rewrite forall_iff_not_exists,
-    rewrite not_and_iff_not_or_not,
-    rewrite imp_iff_not_or
+    apply iff.intro,
+    {  intros h1 xs px,
+       exact h1 ⟨xs, px⟩ },
+    intros h1 h2,
+    cases h2 with xs px,
+    exact h1 xs px
   end
--/
 
-  lemma not_bounded_forall {A : Type} {s : set A} {p : A → Prop} :
-    (¬ (∀ x ∈ s, p x)) = (∃ x ∈ s, ¬ p x) :=
-  sorry
 /-
+  lemma not_bforall_iff {A : Type} {s : set A} {p : A → Prop} :
+    (¬ (∀ x ∈ s, p x)) ↔ (∃ x ∈ s, ¬ p x) :=
   calc (¬ (∀ x ∈ s, p x)) = ¬ ¬ (∃ x ∈ s, ¬ p x) :
     begin
       rewrite not_bounded_exists,
@@ -238,7 +318,7 @@ section
       intros x H,
       rewrite not_not_iff
     end
-    ... = (∃ x ∈ S, ¬ P x) : by (rewrite not_not_iff)
+    ... = (∃ x ∈ s, ¬ p x) : by (rewrite not_not_iff)
 -/
 
 end

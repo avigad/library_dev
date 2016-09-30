@@ -20,16 +20,19 @@ Use periods *only* for namespaces and system-defined identifiers
 
 and so on. I would suggest also defining `and_intro` as an alias for
 `and.intro`, etc.
- 
+
 
 Axiomatic descriptions
 ----------------------
 
 - `refl`
+- `irrefl`
 - `symm`
 - `trans`
 - `antisymm`
 - `asymm`
+
+- `congr`: for congruences
 
 - `comm`
 - `assoc`
@@ -52,7 +55,7 @@ Variable conventions
 Names for symbols
 -----------------
 
-- `imp` : implication
+- `implies` : implication
 - `forall`
 - `exists`
 - `bforall` : bounded forall

@@ -3,9 +3,7 @@ Copyright (c) 2014 Jeremy Avigad. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors Jeremy Avigad, Leonardo de Moura
 
--- TODO: in init.core, change "separable" to "has_sep" (and maybe "insertable"?)
--- TODO: in init.core, add space to "\" notation
--- TODO: in init.set, make argument to subset implicit
+-- TODO: subset should have a weak implicit argument
 -- TODO: in emacs mode, change "\sub" to regular subset, use "\ssub" for strict,
          similarly for "\sup"
 -- TODO: and.comm and and.assoc should not have implicit arguments
@@ -17,7 +15,6 @@ open function tactic
 
 universe variables u v
 variable {A : Type u}
-
 
 
 /- definitions -/
@@ -48,7 +45,7 @@ ext (λ x, iff.intro (λ ina, h₁ ina) (λ inb, h₂ inb))
 
 -- an alterantive name
 theorem eq_of_subset_of_subset {a b : set A} (h₁ : a ⊆ b) (h₂ : b ⊆ a) : a = b :=
-subset_antisymm h₁ h₂
+subset_antisymm @h₁ @h₂
 
 theorem mem_of_subset_of_mem {s₁ s₂ : set A} {a : A} : s₁ ⊆ s₂ → a ∈ s₁ → a ∈ s₂ :=
 assume h₁ h₂, h₁ h₂
@@ -59,9 +56,9 @@ assume h, absurd rfl (and.elim_right h)
 
 /- empty set -/
 
--- TODO: interesting, this fails if either annotation is removed
+-- TODO: needs annotation
 theorem not_mem_empty (x : A) : x ∉ (∅ : set A) :=
-assume H : x ∈ (∅ : set A), H
+assume h, h
 
 theorem mem_empty_eq (x : A) : (x ∈ (∅ : set A)) = false :=
 rfl
@@ -71,19 +68,18 @@ ext (take x, iff.intro
   (assume xs, absurd xs (H x))
   (assume xe, absurd xe (not_mem_empty _)))
 
-theorem ne_empty_of_mem {s : set A} {x : A} (H : x ∈ s) : s ≠ ∅ :=
-sorry
---  begin intro Hs, rewrite Hs at H, apply not_mem_empty _ H end
+theorem ne_empty_of_mem {s : set A} {x : A} (h : x ∈ s) : s ≠ ∅ :=
+begin intro hs, rewrite hs at h, apply not_mem_empty _ h end
 
 -- classical!
 theorem exists_mem_of_ne_empty {s : set A} (H : s ≠ ∅) : ∃ x, x ∈ s :=
 sorry
 
 theorem empty_subset (s : set A) : ∅ ⊆ s :=
-take x, assume H, false.elim H
+take x, assume h, false_elim h
 
 theorem eq_empty_of_subset_empty {s : set A} (H : s ⊆ ∅) : s = ∅ :=
-subset_antisymm H (empty_subset s)
+subset_antisymm @H (@empty_subset _ s)
 
 theorem subset_empty_iff (s : set A) : s ⊆ ∅ ↔ s = ∅ :=
 sorry
