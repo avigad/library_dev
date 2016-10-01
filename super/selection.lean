@@ -29,7 +29,7 @@ else
   return maximal_lits
 
 meta def clause_weight (c : passive_cls) : nat :=
-(c↣c↣get_lits↣for (λl, expr_size l↣formula + if l↣is_pos then 10 else 1))↣sum
+(c↣c↣get_lits↣for (λl, expr_size l↣formula + if l↣is_pos then 10 else 1))↣sum + (if c↣from_model then 0 else 1000)
 
 meta def find_minimal_by (passive : rb_map name passive_cls) (f : name → passive_cls → ℕ) : name :=
 match @rb_map.fold _ _ (option (name × ℕ)) passive none

@@ -104,6 +104,7 @@ take given, do active ← get_active, sequence' $ do
   guard (given↣c↣get_lit given_i)↣is_pos,
   option.to_monad $ is_eq (given↣c↣get_lit given_i)↣formula,
   other ← rb_map.values active,
+  guard $ ¬given↣in_sos ∨ ¬other↣in_sos,
   other_i ← other↣selected,
   pos ← rwr_positions other↣c other_i,
   [do try_add_sup gt given other given_i other_i pos tt ``sup_ltr,
@@ -113,6 +114,7 @@ meta def superposition_fwd_inf : inference :=
 take given, do active ← get_active, sequence' $ do
   given_i ← given↣selected,
   other ← rb_map.values active,
+  guard $ ¬given↣in_sos ∨ ¬other↣in_sos,
   other_i ← other↣selected,
   guard (other↣c↣get_lit other_i)↣is_pos,
   option.to_monad $ is_eq (other↣c↣get_lit other_i)↣formula,

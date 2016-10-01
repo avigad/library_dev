@@ -32,6 +32,7 @@ take given, do active : rb_map name active_cls ← get_active, sequence' $ do
   given_i ← given↣selected,
   guard $ clause.literal.is_neg (given↣c↣get_lit given_i),
   other ← rb_map.values active,
+  guard $ ¬given↣in_sos ∨ ¬other↣in_sos,
   other_i ← other↣selected,
   guard $ clause.literal.is_pos (other↣c↣get_lit other_i),
   [maybe_add_resolvent gt other given other_i given_i]
@@ -41,6 +42,7 @@ take given, do active : rb_map name active_cls ← get_active, sequence' $ do
   given_i ← given↣selected,
   guard $ clause.literal.is_pos (given↣c↣get_lit given_i),
   other ← rb_map.values active,
+  guard $ ¬given↣in_sos ∨ ¬other↣in_sos,
   other_i ← other↣selected,
   guard $ clause.literal.is_neg (other↣c↣get_lit other_i),
   [maybe_add_resolvent gt given other given_i other_i]

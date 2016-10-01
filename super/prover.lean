@@ -42,7 +42,7 @@ given ← option.to_monad (rb_map.find passive given_name),
 -- trace_clauses,
 remove_passive given_name,
 selected_lits ← literal_selection given,
-activated_given ← return $ active_cls.mk given_name selected_lits given↣c given↣assertions given↣from_model,
+activated_given ← return $ active_cls.mk given_name selected_lits given↣c given↣assertions given↣from_model given↣in_sos,
 () : unit ← ↑(when (is_trace_enabled_for `resolution) (do
   fmt ← pp activated_given, trace (to_fmt "given: " ++ fmt))),
 add_active activated_given,
@@ -74,19 +74,20 @@ unify_eq_inf,
 (λg, return ())
 ]
 
-meta def super : tactic unit := do
+meta def super (sos_lemmas : list expr) : tactic unit := do
 intros,
 target_name ← get_unused_name `target none, tgt ← target,
 mk_mapp ``classical.by_contradiction [some tgt] >>= apply, intro target_name,
 hyps ← local_context,
-initial_clauses ← mapM clause.of_proof hyps,
+initial_clauses ← mapM clause.of_proof (hyps ++ sos_lemmas),
 initial_state ← resolution_prover_state.initial initial_clauses,
 res ← run_prover_loop selection21 (age_weight_clause_selection 6 7)
   default_preprocessing default_inferences
   0 initial_state,
 match res with
 | (some empty_clause, st) := apply empty_clause
-| (none, saturation) := trace "saturation" >> trace saturation >> skip
+| (none, saturation) := do sat_fmt ← pp saturation,
+                           fail $ to_fmt "saturation:" ++ format.line ++ sat_fmt
 end
 
 namespace tactic.interactive
@@ -97,8 +98,8 @@ t ← infer_type p,
 n ← get_unused_name p↣get_app_fn↣const_name none,
 tactic.assertv n t p
 
-meta def super (extra_lemmas : types.with_ident_list) : tactic unit := do
-with_lemmas extra_lemmas,
-super
+meta def super (extra_lemma_names : types.with_ident_list) : tactic unit := do
+extra_lemmas ← mapM mk_const extra_lemma_names,
+super extra_lemmas
 
 end tactic.interactive

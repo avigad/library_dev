@@ -1,7 +1,8 @@
 import .prover
 open tactic
 
--- set_option trace.resolution true
+example (m n : ℕ) : 0 + m = 0 + n → m = n :=
+by super with nat.zero_add
 
 example : ∀x y : ℕ, x + y = y + x :=
 begin intros, induction x,

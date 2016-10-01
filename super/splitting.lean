@@ -34,6 +34,8 @@ if with_ass↣2↣length > 0 then do
 else
   return ()
 
+-- FIXME(gabriel): this introduces variables that are then not introduced as
+-- clauses because they didn't change in the model...
 meta def splitting_pre : resolution_prover unit :=
 preprocessing_rule $ take news, do flip filterM news $ take new, do
 ass ← collect_ass_hyps new,
