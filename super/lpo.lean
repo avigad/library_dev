@@ -18,13 +18,13 @@ meta def alpha (lpo : expr → expr → bool) : list expr → expr → bool
 meta def lex_ma (lpo : expr → expr → bool) (s t : expr) : list expr → list expr → bool
 | (si::ss) (ti::ts) :=
   if si = ti then lex_ma ss ts
-  else if lpo si ti then majo lpo s ts || alpha lpo (si::ss) t
+  else if lpo si ti then majo lpo s ts
   else alpha lpo (si::ss) t
 | _ _ := ff
 
 meta def lpo (prec_gt : expr → expr → bool) : expr → expr → bool | s t :=
 if prec_gt (get_app_fn s) (get_app_fn t) then majo lpo s (get_app_args t)
-else if get_app_fn s = get_app_fn t then lex_ma lpo s t (get_app_args t) (get_app_args t)
+else if get_app_fn s = get_app_fn t then lex_ma lpo s t (get_app_args s) (get_app_args t)
 else alpha lpo (get_app_args s) t
 
 meta def prec_gt_of_name_list (ns : list name) : expr → expr → bool :=
@@ -33,6 +33,17 @@ let nis := rb_map.of_list (list.zip_with_index ns) in
 | (some si, some ti) := to_bool (si > ti)
 | _ := ff
 end
+
+open tactic
+example (m n : ℕ) : true := by do
+e₁ ← to_expr `((0 + (m : ℕ)) + 0),
+e₂ ← to_expr `(0 + (0 + (m : ℕ))),
+e₃ ← to_expr `(0 + (m : ℕ)),
+prec ← return (contained_funsyms e₁)↣keys,
+prec_gt ← return $ prec_gt_of_name_list prec,
+guard $ lpo prec_gt e₁ e₃,
+guard $ lpo prec_gt e₂ e₃,
+to_expr `(trivial) >>= apply
 
 /-
 open tactic
