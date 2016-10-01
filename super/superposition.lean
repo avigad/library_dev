@@ -35,9 +35,9 @@ variable pos : list ℕ
 variable ltr : bool
 variable congr_ax : name
 
-lemma sup_ltr {A a1 a2} {f : A → Type _} : (f a1 → false) → f a2 → a1 = a2 → false :=
+lemma sup_ltr (A a1 a2) (f : A → Type _) : (f a1 → false) → f a2 → a1 = a2 → false :=
 take hnfa1 hfa2 heq, hnfa1 (heq↣symm ▸ hfa2)
-lemma sup_rtl {A a1 a2} {f : A → Type _} : (f a1 → false) → f a2 → a2 = a1 → false :=
+lemma sup_rtl (A a1 a2) (f : A → Type _) : (f a1 → false) → f a2 → a2 = a1 → false :=
 take hnfa1 hfa2 heq, hnfa1 (heq ▸ hfa2)
 
 meta def is_eq_dir (e : expr) (ltr : bool) : option (expr × expr) :=
@@ -55,7 +55,7 @@ atom ← return (qf2↣1↣get_lit i2)↣formula,
 eq_type ← infer_type rwr_from,
 atom_at_pos_type ← infer_type $ get_position atom pos,
 unify eq_type atom_at_pos_type,
-unify rwr_from (get_position atom pos),
+unify_core transparency.none rwr_from (get_position atom pos),
 rwr_from' ← instantiate_mvars rwr_from,
 rwr_to' ← instantiate_mvars rwr_to,
 guard $ ¬gt rwr_to' rwr_from',
