@@ -47,10 +47,14 @@ Variable conventions
 --------------------
 
 - `A`, `B`, `C`, ... for types
+- `a`, `b`, `c`, ... for propositions
+- `x`, `y`, `z`, ... for elements of a generic type
+- `h`, `h₁`, ...     for assumptions
+- `p`, `q`, `r`, ... for predicates and relations
 - `s`, `t`, `u`, ... for lists
 - `s`, `t`, `u`, ... for sets
 - `m`, `n`, `k`, ... for natural numbers
-
+- `i`, `j`, `k`, ... for integers
 
 Names for symbols
 -----------------

@@ -2,42 +2,37 @@
   TODO: better or alternative names for theorems in init.core.
 -/
 
-def and_elim_left {a b : Prop} (h : and a b) : a :=
-and.elim_left h
+def and_intro {a b : Prop} (ha : a) (hb : b) : and a b := and.intro ha hb
+
+def and_elim_left {a b : Prop} (h : and a b) : a := and.elim_left h
 
 def and_left := @and.elim_left
 
-def and_elim_right {a b : Prop} (h : and a b) : b :=
-and.elim_right h
+def and_elim_right {a b : Prop} (h : and a b) : b := and.elim_right h
 
 def and_right := @and.elim_right
 
 def or_inl {a b : Prop} (ha : a) : or a b := or.inl ha
- 
+
 def or_inr {a b : Prop} (hb : b) : or a b := or.inr hb
 
-def or_intro_left {a : Prop} (b : Prop) (ha : a) : or a b :=
-or.inl ha
+def or_intro_left {a : Prop} (b : Prop) (ha : a) : or a b := or.inl ha
 
-def or_intro_right (a : Prop) {b : Prop} (hb : b) : or a b :=
-or.inr hb
+def or_intro_right (a : Prop) {b : Prop} (hb : b) : or a b := or.inr hb
 
 section
   universe variable u
   variables {A : Type u}
   variables {a b c a': A}
- 
+
   theorem eq_refl {A : Type u} (a : A) : a = a := eq.refl a
 
   attribute [elab_as_eliminator]
-  theorem eq_subst {P : A → Prop} (H₁ : a = b) (H₂ : P a) : P b :=
-  eq.rec H₂ H₁
+  theorem eq_subst {P : A → Prop} (H₁ : a = b) (H₂ : P a) : P b := eq.rec H₂ H₁
 
-  theorem eq_trans (H₁ : a = b) (H₂ : b = c) : a = c :=
-  eq_subst H₂ H₁
+  theorem eq_trans (H₁ : a = b) (H₂ : b = c) : a = c := eq_subst H₂ H₁
 
-  theorem eq_symm : a = b → b = a :=
-  λ h, eq.rec (eq_refl a) h
+  theorem eq_symm : a = b → b = a := λ h, eq.rec (eq_refl a) h
 end
 
 /-
@@ -126,11 +121,19 @@ not_non_contradictory_iff_absurd a
 
 lemma and_implies (hac : a → c) (hbd : b → d) : a ∧ b → c ∧ d := and.imp hac hbd
 
+variables (a b c)
+
 lemma and_comm : a ∧ b ↔ b ∧ a := and.comm
 
 lemma and_assoc : (a ∧ b) ∧ c ↔ a ∧ (b ∧ c) := and.assoc
 
 lemma and_left_comm : a ∧ (b ∧ c) ↔ b ∧ (a ∧ c) := and.left_comm
+
+lemma and_right_comm : (a ∧ b) ∧ c ↔ (a ∧ c) ∧ b :=
+iff.trans (and_assoc a b c) (iff.trans (and_congr iff.rfl (and_comm _ _))
+                                      (iff.symm (and_assoc _ _ _)))
+
+variables {a b c d}
 
 lemma or_implies_or (h₂ : a → c) (h₃ : b → d) : a ∨ b → c ∨ d := or.imp h₂ h₃
 
@@ -138,11 +141,17 @@ lemma or_implies_or_left (h : a → b) : a ∨ c → b ∨ c := or.imp_left h
 
 lemma or_implies_or_right (h : a → b) : c ∨ a → c ∨ b := or.imp_right h
 
+variables (a b c)
+
 lemma or_comm : a ∨ b ↔ b ∨ a := or.comm
 
 lemma or_assoc : (a ∨ b) ∨ c ↔ a ∨ (b ∨ c) := or.assoc
 
 lemma or_left_comm : a ∨ (b ∨ c) ↔ b ∨ (a ∨ c) := or.left_comm
+
+lemma or_right_comm : (a ∨ b) ∨ c ↔ (a ∨ c) ∨ b :=
+iff.trans (or_assoc a b c) (iff.trans (or_congr iff.rfl (or_comm _ _))
+                                      (iff.symm (or_assoc _ _ _)))
 
 -- similarly, or.resolve_left, or.neg_resolve_left, or.resolve_right, or.neg_resolve_right
 
