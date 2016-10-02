@@ -79,8 +79,8 @@ private meta def join_with_nl : list format → format :=
 list.foldl (λx y, x ++ format.line ++ y) format.nil
 
 private meta def resolution_prover_state_tactic_fmt (s : resolution_prover_state) : tactic format := do
-active_fmts ← mapM pp (rb_map.values s↣active),
-passive_fmts ← mapM pp (rb_map.values s↣passive),
+active_fmts ← mapM pp $ rb_map.values s↣active,
+passive_fmts ← mapM pp $ rb_map.values s↣passive,
 new_fmts ← mapM pp s↣newly_derived,
 locked_fmts ← mapM pp s↣locked,
 sat_fmts ← mapM pp s↣sat_solver↣given,
@@ -166,8 +166,8 @@ match hyp_opt with
 end
 
 meta def add_sat_clause (c : clause) : resolution_prover unit := do
-already_added ← flip liftM stateT.read (λst, decidable.to_bool $
-                     c↣type ∈ st↣sat_solver↣given↣for (λd, d↣type)),
+already_added ← flip liftM stateT.read $ λst, decidable.to_bool $
+                     c↣type ∈ st↣sat_solver↣given↣for (λd, d↣type),
 if already_added then return () else do
 forM c↣get_lits $ λl, mk_sat_var l↣formula l↣is_neg,
 in_sat_solver $ cdcl.mk_clause c,
@@ -258,7 +258,7 @@ do active ← get_active, forM' active↣values $ λac, do
     return ()
 
 meta def move_passive_to_locked : resolution_prover unit :=
-do passive ← flip liftM stateT.read (λst, st↣passive), forM' passive↣to_list $ λpc, do
+do passive ← flip liftM stateT.read $ λst, st↣passive, forM' passive↣to_list $ λpc, do
   c_val ← sat_eval_assertions pc↣2↣assertions,
   if ¬c_val ∧ pc↣2↣from_model then do
      stateT.modify $ λst, { st with passive := st↣passive↣erase pc↣1 }
@@ -300,7 +300,7 @@ stateT.write { state with newly_derived := [] },
 return state↣newly_derived
 
 meta def remove_redundant (id : name) (parents : list active_cls) : resolution_prover unit := do
-guard $ parents↣for_all (λp, p↣id ≠ id),
+guard $ parents↣for_all $ λp, p↣id ≠ id,
 red_opt ← flip liftM stateT.read (λst, st↣active↣find id),
 match red_opt with
 | none := return ()
@@ -310,7 +310,7 @@ match red_opt with
   else
   let reasons := parents↣for (λp, p↣assertions),
       assertion := red↣assertions in
-  if reasons↣for_all (λr, r↣subset_of assertion) then do
+  if reasons↣for_all $ λr, r↣subset_of assertion then do
     stateT.modify $ λst, { st with active := st↣active↣erase id }
   else do
     stateT.modify $ λst, { st with active := st↣active↣erase id,

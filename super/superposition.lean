@@ -21,7 +21,7 @@ meta def replace_position (v : expr) : expr → list ℕ → expr
 | (app a b) (p::ps) :=
 let args := get_app_args (app a b) in
 match args↣nth p with
-| some arg := app_of_list a↣get_app_fn (args↣update p $ replace_position arg ps)
+| some arg := app_of_list a↣get_app_fn $ args↣update p $ replace_position arg ps
 | none := app a b
 end
 | e [] := v

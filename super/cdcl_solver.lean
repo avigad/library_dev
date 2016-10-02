@@ -155,7 +155,7 @@ match st↣trail with
 end
 
 meta def is_decision_level_zero : solver bool :=
-do st ← stateT.read, return $ st↣trail↣for_all (λelem, ¬elem↣is_decision)
+do st ← stateT.read, return $ st↣trail↣for_all $ λelem, ¬elem↣is_decision
 
 meta def revert_to_decision_level_zero : unit → solver unit | () := do
 is_dl0 ← is_decision_level_zero,
@@ -243,7 +243,7 @@ end
 
 private meta def modify_watches_for (pl : prop_lit) (f : watch_map → watch_map) : solver unit :=
 stateT.modify $ λst, { st with
-  watches := st↣watches↣insert pl (f $ st↣watches_for pl)
+  watches := st↣watches↣insert pl $ f $ st↣watches_for pl
 }
 
 private meta def add_watch (n : name) (c : clause) (i j : ℕ) : solver unit :=

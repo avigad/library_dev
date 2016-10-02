@@ -89,7 +89,7 @@ private meta def parse_clause : expr → expr → tactic clause
   lc_n ← mk_fresh_name,
   lc ← return $ local_const lc_n n bi d,
   c ← parse_clause (app proof lc) (instantiate_var b lc),
-  return $ c↣close_const (local_const lc_n n binder_info.default d)
+  return $ c↣close_const $ local_const lc_n n binder_info.default d
 | proof (const ``false []) := return { num_quants := 0, num_lits := 0, proof := proof, type := false_ }
 | proof (app (const ``not []) formula) := parse_clause proof (formula↣imp false_)
 | proof type := do
@@ -173,7 +173,7 @@ lits' ← return $ filter (λlc, ¬rb_map.contains lconsts_in_types (local_uniq_
 return $ close_constn opened.1 (quants' ++ lits')
 
 meta def whnf_head_lit (c : clause) : tactic clause := do
-atom' ← whnf (literal.formula $ get_lit c 0),
+atom' ← whnf $ literal.formula $ get_lit c 0,
 return $
 if literal.is_neg (get_lit c 0) then
   { c with type := imp atom' (binding_body c↣type) }
