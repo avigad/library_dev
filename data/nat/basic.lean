@@ -93,10 +93,10 @@ protected theorem add_right_cancel {n m k : ℕ} (H : n + m = k + m) : n = k :=
 by super with nat.add_comm nat.add_left_cancel
 
 theorem eq_zero_of_add_eq_zero_right {n m : ℕ} : n + m = 0 → n = 0 :=
-begin cases n, simp, simp, super with nat.succ_ne_zero end
+begin cases n, simp, super with nat.succ_ne_zero end
 
 theorem eq_zero_of_add_eq_zero_left {n m : ℕ} (H : n + m = 0) : m = 0 :=
-by super with nat.eq_zero_of_add_eq_zero_right nat.add_comm
+by super with nat.eq_zero_of_add_eq_zero_right
 
 theorem eq_zero_and_eq_zero_of_add_eq_zero {n m : ℕ} (H : n + m = 0) : n = 0 ∧ m = 0 :=
 by super with nat.eq_zero_of_add_eq_zero_right nat.eq_zero_of_add_eq_zero_left
@@ -154,16 +154,14 @@ local attribute [simp] nat.mul_assoc
 lemma one_succ_zero : 1 = succ 0 := rfl
 local attribute [simp] one_succ_zero
 
-protected theorem mul_one (n : ℕ) : n * 1 = n :=
-by simp
+protected theorem mul_one (n : ℕ) : n * 1 = n := by simp
+local attribute [simp] nat.mul_one
 
-protected theorem one_mul (n : ℕ) : 1 * n = n :=
-by super with nat.mul_one nat.mul_comm
-
-local attribute [simp] nat.one_mul nat.mul_one
+protected theorem one_mul (n : ℕ) : 1 * n = n := by simp
+local attribute [simp] nat.one_mul
 
 theorem eq_zero_or_eq_zero_of_mul_eq_zero {n m : ℕ} : n * m = 0 → n = 0 ∨ m = 0 :=
-begin cases n, simp, cases m, simp, simp, super with nat.succ_ne_zero end
+begin cases n, simp, cases m, simp, super with nat.succ_ne_zero end
 
 -- TODO(gabriel): port rings
 -- attribute [instance]
