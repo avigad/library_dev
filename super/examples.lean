@@ -1,6 +1,12 @@
 import .prover
 open tactic
 
+example : nat.zero ≠ nat.succ nat.zero := by super
+example (x y : ℕ) : nat.succ x = nat.succ y → x = y := by super
+
+definition is_positive (n : ℕ) := n > 0
+example (n : ℕ) : n > 0 ↔ is_positive n := by super
+
 example (m n : ℕ) : 0 + m = 0 + n → m = n :=
 by super with nat.zero_add
 

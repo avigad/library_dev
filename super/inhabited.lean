@@ -45,10 +45,6 @@ on_first_right' c $ λhinh,
   | _ := failed
   end
 
-meta def simp_if_successful (parent : active_cls) (tac : tactic (list clause)) : resolution_prover unit :=
-(do inferred ← ↑tac, forM' inferred $ λc, add_inferred c [parent], remove_redundant parent↣id [])
-<|> return ()
-
 meta def inhabited_infs : inference := take given, do
 insts ← ↑(nonempty_lookup_left given↣c),
 forM' insts (λc, add_inferred c []),

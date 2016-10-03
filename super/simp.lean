@@ -28,10 +28,6 @@ on_right_at' c i $ λhyp, do
   prf  ← mk_app ``eq.mpr [heqsymm, hyp],
   return [(add_hyps, prf)]
 
-meta def inf_if_successful (parent : active_cls) (tac : tactic (list clause)) : resolution_prover unit :=
-(do inferred ← ↑tac, forM' inferred $ λc, add_inferred c [parent])
-<|> return ()
-
 meta def simp_inf : inference := take given, sequence' $ do
 r ← [try_simplify_right, try_simplify_left],
 i ← list.range given↣c↣num_lits,

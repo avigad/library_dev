@@ -380,3 +380,11 @@ after_setup ← forM' clauses (λc, add_inferred c []) empty,
 return after_setup.2
 
 end resolution_prover_state
+
+meta def inf_if_successful (parent : active_cls) (tac : tactic (list clause)) : resolution_prover unit :=
+(do inferred ← ↑tac, forM' inferred $ λc, add_inferred c [parent])
+<|> return ()
+
+meta def simp_if_successful (parent : active_cls) (tac : tactic (list clause)) : resolution_prover unit :=
+(do inferred ← ↑tac, forM' inferred $ λc, add_inferred c [parent], remove_redundant parent↣id [])
+<|> return ()

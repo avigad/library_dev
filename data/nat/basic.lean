@@ -49,8 +49,7 @@ begin induction n, simp, simp end
 theorem exists_eq_succ_of_ne_zero {n : ℕ} (H : n ≠ 0) : ∃k : ℕ, n = succ k :=
 by super with nat.eq_zero_or_eq_succ_pred
 
-theorem succ_inj {n m : ℕ} (H : succ n = succ m) : n = m :=
-by super with nat.pred_succ
+theorem succ_inj {n m : ℕ} (H : succ n = succ m) : n = m := by super
 
 theorem discriminate {B : Prop} {n : ℕ} (H1: n = 0 → B) (H2 : ∀m, n = succ m → B) : B :=
 begin induction n, super, super end
@@ -87,13 +86,13 @@ local attribute [simp] nat.add_comm nat.add_assoc nat.add_left_comm
 protected theorem add_right_comm (n m k : ℕ) : n + m + k = n + k + m := by simp
 
 protected theorem add_left_cancel {n m k : ℕ} : n + m = n + k → m = k :=
-begin induction n, simp, simp, simp at v_0, super with nat.succ_inj end
+begin induction n, simp, simp, simp at v_0, super end
 
 protected theorem add_right_cancel {n m k : ℕ} (H : n + m = k + m) : n = k :=
 by super with nat.add_comm nat.add_left_cancel
 
 theorem eq_zero_of_add_eq_zero_right {n m : ℕ} : n + m = 0 → n = 0 :=
-begin cases n, simp, super with nat.succ_ne_zero end
+begin cases n, simp, super end
 
 theorem eq_zero_of_add_eq_zero_left {n m : ℕ} (H : n + m = 0) : m = 0 :=
 by super with nat.eq_zero_of_add_eq_zero_right
@@ -161,7 +160,7 @@ protected theorem one_mul (n : ℕ) : 1 * n = n := by simp
 local attribute [simp] nat.one_mul
 
 theorem eq_zero_or_eq_zero_of_mul_eq_zero {n m : ℕ} : n * m = 0 → n = 0 ∨ m = 0 :=
-begin cases n, simp, cases m, simp, super with nat.succ_ne_zero end
+begin cases n, simp, cases m, simp, super end
 
 -- TODO(gabriel): port rings
 -- attribute [instance]

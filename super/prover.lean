@@ -1,7 +1,7 @@
 import .clause .prover_state
 import .subsumption .misc_preprocessing
 import .resolution .factoring .clausifier .superposition .equality .splitting
-import .inhabited .simp
+import .inhabited .simp .datatypes
 import .selection
 open monad tactic expr
 
@@ -54,6 +54,7 @@ meta def default_preprocessing : list (resolution_prover unit) :=
 factor_dup_lits_pre,
 remove_duplicates_pre,
 refl_r_pre,
+diff_constr_eq_l_pre,
 tautology_removal_pre,
 subsumption_interreduction_pre,
 forward_subsumption_pre,
@@ -65,6 +66,7 @@ meta def default_inferences : list inference :=
 [
 clausification_inf,
 inhabited_infs,
+datatype_infs,
 forward_subsumption, backward_subsumption,
 splitting_inf,
 factor_inf,
