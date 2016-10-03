@@ -6,7 +6,7 @@ meta instance : has_ordering expr :=
 has_ordering.mk expr.cmp
 
 meta def imp (a b : expr) : expr :=
-pi (default name) binder_info.default a b
+pi `a binder_info.default a b
 
 meta def and_ (a b : expr) : expr :=
 app (app (const ``and []) a) b
