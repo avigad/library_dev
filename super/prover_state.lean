@@ -276,6 +276,7 @@ meta def add_new_from_model_clauses (old_model : rb_map expr bool) : resolution_
 model ← flip liftM stateT.read (λst, st↣current_model),
 forM' model↣to_list $ λassg, do
   name ← ↑mk_fresh_name,
+  name ← return $ name <.> "h",
   hyp ← get_sat_hyp assg↣1 assg↣2,
   if old_model↣find assg↣1 = some assg↣2 then return () else do
   c ← ↑(clause.of_proof hyp),

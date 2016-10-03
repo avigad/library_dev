@@ -38,6 +38,7 @@ meta def get_meta_type : expr → expr
 | (mvar _ t) := t
 | _ := mk_var 0
 
+-- TODO(gabriel): think about how to handle the avalanche of implicit arguments
 meta def expr_size : expr → nat
 | (var _) := 1
 | (sort _) := 1
@@ -45,9 +46,9 @@ meta def expr_size : expr → nat
 | (mvar n t) := 1
 | (local_const _ _ _ _) := 1
 | (app a b) := expr_size a + expr_size b
-| (lam _ _ d b) := expr_size b
-| (pi _ _ d b) := expr_size b
-| (elet _ t v b) := expr_size v + expr_size b
+| (lam _ _ d b) := 1 + expr_size b
+| (pi _ _ d b) := 1 + expr_size b
+| (elet _ t v b) := 1 + expr_size v + expr_size b
 | (macro _ _ _) := 1
 
 meta def mk_local (pp_name : name) (bi : binder_info) (type : expr) : tactic expr := do
