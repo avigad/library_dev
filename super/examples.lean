@@ -3,6 +3,7 @@ open tactic
 
 example : nat.zero ≠ nat.succ nat.zero := by super
 example (x y : ℕ) : nat.succ x = nat.succ y → x = y := by super
+example (i : Type) (a b c : i) : [a,b,c] = [b,c,a] -> a = b ∧ b = c := by super
 
 definition is_positive (n : ℕ) := n > 0
 example (n : ℕ) : n > 0 ↔ is_positive n := by super
