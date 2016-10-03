@@ -107,7 +107,9 @@ t ← infer_type p,
 n ← get_unused_name p↣get_app_fn↣const_name none,
 tactic.assertv n t p
 
-meta def super (extra_lemma_names : types.with_ident_list) : tactic unit := do
+meta def super (extra_clause_names : types.raw_ident_list)
+               (extra_lemma_names : types.with_ident_list) : tactic unit := do
+with_lemmas extra_clause_names,
 extra_lemmas ← mapM mk_const extra_lemma_names,
 super extra_lemmas
 
