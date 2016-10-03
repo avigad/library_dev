@@ -1,6 +1,8 @@
 import .clause .prover_state .utils
 open tactic monad expr list
 
+namespace super
+
 meta def try_unify_eq_l (c : clause) (i : nat) : tactic clause := do
 guard $ clause.literal.is_neg (clause.get_lit c i),
 qf ← clause.open_metan c c↣num_quants,
@@ -30,3 +32,5 @@ end
 
 meta def refl_r_pre : resolution_prover unit :=
 preprocessing_rule $ take new, return (filter (λc, ¬has_refl_r c) new)
+
+end super

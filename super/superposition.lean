@@ -1,6 +1,8 @@
 import .clause .prover_state .utils
 open tactic monad expr
 
+namespace super
+
 meta def get_rwr_positions : expr → list (list ℕ)
 | (app a b) := [[]] ++
   do arg ← list.zip_with_index (get_app_args (app a b)),
@@ -80,15 +82,15 @@ example (i : Type) (a b : i) (p : i → Prop) (H : a = b) (Hpa : p a) : true := 
 H ← get_local `H >>= clause.of_proof,
 Hpa ← get_local `Hpa >>= clause.of_proof,
 a ← get_local `a,
-try_sup (λx y, ff) H Hpa 0 0 [0] tt ``sup_ltr >>= clause.validate,
+try_sup (λx y, ff) H Hpa 0 0 [0] tt ``super.sup_ltr >>= clause.validate,
 to_expr `(trivial) >>= apply
 
 example (i : Type) (a b : i) (p : i → Prop) (H : a = b) (Hpa : p a → false) (Hpb : p b → false) : true := by do
 H ← get_local `H >>= clause.of_proof,
 Hpa ← get_local `Hpa >>= clause.of_proof,
 Hpb ← get_local `Hpb >>= clause.of_proof,
-try_sup (λx y, ff) H Hpa 0 0 [0] tt ``sup_ltr >>= clause.validate,
-try_sup (λx y, ff) H Hpb 0 0 [0] ff ``sup_rtl >>= clause.validate,
+try_sup (λx y, ff) H Hpa 0 0 [0] tt ``super.sup_ltr >>= clause.validate,
+try_sup (λx y, ff) H Hpb 0 0 [0] ff ``super.sup_rtl >>= clause.validate,
 to_expr `(trivial) >>= apply
 
 meta def rwr_positions (c : clause) (i : nat) : list (list ℕ) :=
@@ -107,8 +109,9 @@ take given, do active ← get_active, sequence' $ do
   guard $ ¬given↣in_sos ∨ ¬other↣in_sos,
   other_i ← other↣selected,
   pos ← rwr_positions other↣c other_i,
-  [do try_add_sup gt given other given_i other_i pos tt ``sup_ltr,
-      try_add_sup gt given other given_i other_i pos ff ``sup_rtl]
+  -- FIXME(gabriel): ``sup_ltr fails to resolve at runtime
+  [do try_add_sup gt given other given_i other_i pos tt ``super.sup_ltr,
+      try_add_sup gt given other given_i other_i pos ff ``super.sup_rtl]
 
 meta def superposition_fwd_inf : inference :=
 take given, do active ← get_active, sequence' $ do
@@ -119,10 +122,12 @@ take given, do active ← get_active, sequence' $ do
   guard (other↣c↣get_lit other_i)↣is_pos,
   option.to_monad $ is_eq (other↣c↣get_lit other_i)↣formula,
   pos ← rwr_positions given↣c given_i,
-  [do try_add_sup gt other given other_i given_i pos tt ``sup_ltr,
-      try_add_sup gt other given other_i given_i pos ff ``sup_rtl]
+  [do try_add_sup gt other given other_i given_i pos tt ``super.sup_ltr,
+      try_add_sup gt other given other_i given_i pos ff ``super.sup_rtl]
 
 meta def superposition_inf : inference :=
 take given, do gt ← get_term_order,
 superposition_fwd_inf gt given,
 superposition_back_inf gt given
+
+end super

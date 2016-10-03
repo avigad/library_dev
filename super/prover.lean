@@ -5,8 +5,10 @@ import .inhabited .simp .datatypes
 import .selection
 open monad tactic expr
 
-declare_trace resolution
-set_option trace.resolution false
+declare_trace super
+set_option trace.super false
+
+namespace super
 
 meta def trace_clauses : resolution_prover unit := do
 state ← stateT.read,
@@ -76,6 +78,10 @@ unify_eq_inf,
 simp_inf,
 (λg, return ())
 ]
+
+end super
+
+open super
 
 meta def super (sos_lemmas : list expr) : tactic unit := do
 intros,

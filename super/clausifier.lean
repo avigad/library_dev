@@ -2,6 +2,8 @@ import .clause .clause_ops
 import .prover_state
 open expr list tactic monad decidable
 
+namespace super
+
 meta def try_option {a} (tac : tactic a) : tactic (option a) :=
 liftM some tac <|> return none
 
@@ -139,7 +141,7 @@ on_first_left c $ λallb,
   | (pi n bi a b) := do
     enb ← mk_mapp ``Exists [none, some $ lam n binder_info.default a (not_ b)],
     hnenb ← mk_local_def `h (not_ enb),
-    pallb ← mk_mapp ``demorgan [some a, none, some hnenb],
+    pallb ← mk_mapp ``super.demorgan [some a, none, some hnenb],
     return [([hnenb], pallb)]
   | _ := failed
   end
@@ -197,3 +199,6 @@ meta def clausification_inf : inference :=
                cs' ← ↑(clausify cs),
                forM' cs' (λc, add_inferred c [given]),
                remove_redundant given↣id []]
+
+
+end super

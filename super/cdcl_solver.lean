@@ -1,5 +1,5 @@
 import .clause
-open tactic expr monad
+open tactic expr monad super
 
 namespace cdcl
 

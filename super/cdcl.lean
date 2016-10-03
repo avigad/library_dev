@@ -1,5 +1,5 @@
 import .clause .clausifier .cdcl_solver
-open tactic expr monad
+open tactic expr monad super
 
 private meta def theory_solver_of_tactic (th_solver : tactic unit) : cdcl.solver (option cdcl.proof_term) :=
 do s ← stateT.read, ↑do

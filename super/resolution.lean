@@ -1,6 +1,8 @@
 import .clause .prover_state .utils
 open tactic monad
 
+namespace super
+
 variable gt : expr → expr → bool
 variables (ac1 ac2 : active_cls)
 variables (c1 c2 : clause)
@@ -49,3 +51,5 @@ take given, do active : rb_map name active_cls ← get_active, sequence' $ do
 
 meta def resolution_inf : inference :=
 take given, do gt ← get_term_order, resolution_left_inf gt given >> resolution_right_inf gt given
+
+end super

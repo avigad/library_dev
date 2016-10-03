@@ -1,5 +1,7 @@
 import .prover_state
 
+namespace super
+
 meta def dumb_selection : selection_strategy :=
 λc, return $ match c↣c↣lits_where clause.literal.is_neg with
 | [] := list.range c↣c↣num_lits
@@ -67,3 +69,5 @@ take iter, if iter % mod < thr then
               weight_clause_selection iter
            else
               oldest_clause_selection iter
+
+end super

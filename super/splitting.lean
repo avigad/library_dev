@@ -1,6 +1,8 @@
 import .prover_state
 open monad
 
+namespace super
+
 meta def extract_assertions : clause → resolution_prover (clause × list expr) | c :=
 if c↣num_lits = 0 then return (c, [])
 else if c↣num_quants ≠ 0 then do
@@ -52,3 +54,5 @@ else if new↣num_quants = 0 ∧ new↣num_lits = 1 then do
     return tt
 else
   return tt
+
+end super

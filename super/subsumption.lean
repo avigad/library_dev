@@ -1,6 +1,8 @@
 import .clause .prover_state
 open tactic monad
 
+namespace super
+
 private meta def try_subsume_core : list clause.literal → list clause.literal → tactic unit
 | [] _ := skip
 | small large := first $ do
@@ -81,3 +83,5 @@ meta def backward_subsumption : inference := λgiven, do
 active ← get_active,
 ss ← keys_where_tt active (λa, does_subsume given↣c a↣c),
 sequence' $ do id ← ss, guard (id ≠ given↣id), [remove_redundant id [given]]
+
+end super

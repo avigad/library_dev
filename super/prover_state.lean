@@ -1,6 +1,8 @@
 import .clause .lpo .cdcl_solver
 open tactic monad expr
 
+namespace super
+
 meta structure locked_cls :=
 (id : name)
 (c : clause)
@@ -388,3 +390,5 @@ meta def inf_if_successful (parent : active_cls) (tac : tactic (list clause)) : 
 meta def simp_if_successful (parent : active_cls) (tac : tactic (list clause)) : resolution_prover unit :=
 (do inferred ← ↑tac, forM' inferred $ λc, add_inferred c [parent], remove_redundant parent↣id [])
 <|> return ()
+
+end super

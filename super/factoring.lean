@@ -1,6 +1,8 @@
 import .clause .prover_state .subsumption
 open tactic expr monad
 
+namespace super
+
 variable gt : expr → expr → bool
 
 meta def inst_lit (c : clause) (i : nat) (e : expr) : tactic clause := do
@@ -48,3 +50,5 @@ return $ qf'↣close_constn qf↣2
 
 meta def factor_dup_lits_pre := preprocessing_rule $ take new, do
 ↑(mapM factor_dup_lits new)
+
+end super

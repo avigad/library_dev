@@ -1,6 +1,8 @@
 import .clause_ops .prover_state
 open tactic monad
 
+namespace super
+
 meta def prove_using_assumption : tactic unit := do
 tgt ← target,
 ass ← mk_local_def `h tgt,
@@ -32,3 +34,5 @@ meta def simp_inf : inference := take given, sequence' $ do
 r ← [try_simplify_right, try_simplify_left],
 i ← list.range given↣c↣num_lits,
 [inf_if_successful given (r given↣c i)]
+
+end super

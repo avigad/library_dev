@@ -1,6 +1,8 @@
 import .clause_ops .prover_state
 open expr tactic monad
 
+namespace super
+
 meta def has_diff_constr_eq_l (c : clause) : tactic bool := do
 env ← get_env,
 return $ list.bor $ do
@@ -44,3 +46,5 @@ to_expr `(trivial) >>= exact
 
 meta def datatype_infs : inference := take given, do
 sequence' (do i ← list.range given↣c↣num_lits, [inf_if_successful given $ try_no_confusion_eq_r given↣c i])
+
+end super

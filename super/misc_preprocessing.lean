@@ -1,6 +1,8 @@
 import .clause .prover_state
 open expr list monad
 
+namespace super
+
 meta def is_taut (c : clause) : tactic bool := do
 qf ← clause.open_constn c c↣num_quants,
 return $ list.bor (do
@@ -21,3 +23,5 @@ preprocessing_rule $ λnew, filterM (λc, liftM bnot ↑(is_taut c)) new
 meta def remove_duplicates_pre : resolution_prover unit :=
 preprocessing_rule $ λnew,
 return (rb_map.values (rb_map.of_list (list.map (λc:clause, (c↣type, c)) new)))
+
+end super

@@ -1,6 +1,8 @@
 import init.meta.tactic .utils
 open expr list tactic monad decidable
 
+namespace super
+
 meta structure clause :=
 (num_quants : ℕ)
 (num_lits : ℕ)
@@ -218,3 +220,5 @@ qf' ← clause.inst_mvars qf,
 clause.inst_mvars $ clause.close_constn qf' bs
 
 end clause
+
+end super

@@ -1,6 +1,8 @@
 import .clause
 open monad tactic expr
 
+namespace super
+
 meta def on_left_at {m} [monad m] (c : clause) (i : ℕ)
                     [has_coe_fam tactic m]
                     -- f gets a type and returns a list of proofs of that type
@@ -46,3 +48,5 @@ first $ do i ← list.range c↣num_lits, [on_right_at' c i f]
 
 meta def on_first_left (c : clause) (f : expr → tactic (list (list expr × expr))) : tactic (list clause) :=
 first $ do i ← list.range c↣num_lits, [on_left_at c i f]
+
+end super

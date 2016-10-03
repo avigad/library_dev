@@ -1,6 +1,8 @@
 import .clause_ops .prover_state
 open expr tactic monad
 
+namespace super
+
 meta def nonempty_lookup_left (c : clause) : tactic (list clause) :=
 collect_successes $ do l ← c↣get_lits, guard l↣is_neg, return $ do
   type ← return l↣formula,
@@ -50,3 +52,5 @@ insts ← ↑(nonempty_lookup_left given↣c),
 forM' insts (λc, add_inferred c []),
 forM' [try_nonempty_left, try_nonempty_right, try_inhabited_left, try_inhabited_right] $ λr,
       simp_if_successful given (r given↣c)
+
+end super
