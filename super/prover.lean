@@ -60,7 +60,6 @@ diff_constr_eq_l_pre,
 tautology_removal_pre,
 subsumption_interreduction_pre,
 forward_subsumption_pre,
-splitting_pre,
 return ()
 ]
 

@@ -282,6 +282,7 @@ remove_watch n c i₂,
 set_watches n c
 
 meta def mk_clause (c : clause) : solver unit := do
+c : clause ← ↑c↣distinct,
 forM c↣get_lits (λl, mk_var l↣formula),
 revert_to_decision_level_zero (),
 stateT.modify $ λst, { st with given := c :: st↣given },
@@ -393,7 +394,7 @@ match st↣conflict with
   | some unassigned :=
     match st↣vars↣find unassigned with
     | some ⟨ph, none⟩ := do add_decision unassigned ph, run' ()
-    | _ := fail "unassigned variable is assigned"
+    | _ := fail $ "unassigned variable is assigned: " ++ unassigned↣to_string
     end
   end
 end

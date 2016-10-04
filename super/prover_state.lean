@@ -168,6 +168,7 @@ match hyp_opt with
 end
 
 meta def add_sat_clause (c : clause) : resolution_prover unit := do
+c : clause ← ↑c↣distinct,
 already_added ← flip liftM stateT.read $ λst, decidable.to_bool $
                      c↣type ∈ st↣sat_solver↣given↣for (λd, d↣type),
 if already_added then return () else do

@@ -2,7 +2,7 @@ open tactic expr list
 
 namespace expr
 
-meta instance : has_ordering expr :=
+meta instance ordering_fallback : has_ordering expr :=
 has_ordering.mk expr.cmp
 
 meta def imp (a b : expr) : expr :=
@@ -156,6 +156,10 @@ match l with
 | [] := tt
 | _::_ := ff
 end
+
+def zip_with {A B C} (f : A → B → C) : list A → list B → list C
+| (x::xs) (y::ys) := f x y :: zip_with xs ys
+| _       _       := []
 
 private def zip_with_index' {A} : ℕ → list A → list (A × ℕ)
 | _ nil := nil

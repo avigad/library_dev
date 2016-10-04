@@ -33,22 +33,7 @@ take given, do gt ← get_term_order, sequence' $ do
   j ← list.range given↣c↣num_lits,
   return $ try_infer_factor gt given i j <|> return ()
 
-meta def factor_dup_lits' : clause → tactic clause | c :=
-match (do i ← c↣get_lits↣zip_with_index,
-          j ← c↣get_lits↣zip_with_index,
-          guard $ i↣2 < j↣2,
-          guard $ i↣1 = j↣1,
-          [(i↣2,j↣2)]) with
-| ((i,j)::_) := try_factor (λx y, ff) c i j >>= factor_dup_lits'
-| [] := return c
-end
-
-meta def factor_dup_lits (c : clause) : tactic clause := do
-qf ← c↣open_constn c↣num_quants,
-qf' ← factor_dup_lits' qf↣1,
-return $ qf'↣close_constn qf↣2
-
 meta def factor_dup_lits_pre := preprocessing_rule $ take new, do
-↑(mapM factor_dup_lits new)
+↑(mapM clause.distinct new)
 
 end super

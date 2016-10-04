@@ -10,7 +10,6 @@ on_first_left_dn c $ λhnx,
     univ ← infer_univ type,
     inst ← mk_instance (app (const ``nonempty [univ]) type),
     instt ← infer_type inst,
-    trace [hnx, hnx↣local_type, type, inst, instt],
     return [([], app_of_list (const ``nonempty.elim [univ])
                              [type, false_, inst, hnx])]
   | _ := failed

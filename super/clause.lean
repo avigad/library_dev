@@ -219,6 +219,20 @@ bs ← sort_and_constify_metas metas,
 qf' ← clause.inst_mvars qf,
 clause.inst_mvars $ clause.close_constn qf' bs
 
+private meta def distinct' : list expr → expr → clause
+| [] proof := ⟨ 0, 0, proof, false_ ⟩
+| (h::hs) proof :=
+  let (dups, rest) := partition (λh' : expr, h↣local_type = h'↣local_type) hs,
+      proof_wo_dups := foldl (λproof (h' : expr),
+                              instantiate_var (abstract_local proof h'↣local_uniq_name) h)
+                         proof dups in
+    (distinct' rest proof_wo_dups)↣close_const h
+
+meta def distinct (c : clause) : tactic clause := do
+(qf, vs) ← c↣open_constn c↣num_quants,
+(fls, hs) ← qf↣open_constn qf↣num_lits,
+return $ (distinct' hs fls↣proof)↣close_constn vs
+
 end clause
 
 end super
