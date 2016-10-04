@@ -3,13 +3,18 @@ open expr tactic monad
 
 namespace super
 
-meta def nonempty_lookup_left (c : clause) : tactic (list clause) :=
-collect_successes $ do l ← c↣get_lits, guard l↣is_neg, return $ do
-  type ← return l↣formula,
-  guard ¬type↣has_var,
-  univ ← infer_univ type,
-  inst ← mk_instance (app (const ``nonempty [univ]) type),
-  clause.of_proof inst
+meta def try_nonempty_lookup_left (c : clause) : tactic (list clause) :=
+on_first_left_dn c $ λhnx,
+  match is_not hnx↣local_type with
+  | some type := do
+    univ ← infer_univ type,
+    inst ← mk_instance (app (const ``nonempty [univ]) type),
+    instt ← infer_type inst,
+    trace [hnx, hnx↣local_type, type, inst, instt],
+    return [([], app_of_list (const ``nonempty.elim [univ])
+                             [type, false_, inst, hnx])]
+  | _ := failed
+  end
 
 meta def try_nonempty_left (c : clause) : tactic (list clause) :=
 on_first_left c $ λprop,
@@ -48,9 +53,9 @@ on_first_right' c $ λhinh,
   end
 
 meta def inhabited_infs : inference := take given, do
-insts ← ↑(nonempty_lookup_left given↣c),
-forM' insts (λc, add_inferred c []),
-forM' [try_nonempty_left, try_nonempty_right, try_inhabited_left, try_inhabited_right] $ λr,
+forM' [try_nonempty_lookup_left,
+       try_nonempty_left, try_nonempty_right,
+       try_inhabited_left, try_inhabited_right] $ λr,
       simp_if_successful given (r given↣c)
 
 end super
