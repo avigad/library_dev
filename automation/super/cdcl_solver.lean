@@ -309,7 +309,7 @@ meta def analyze_conflict' : proof_term → list trail_elem → clause
 | proof (trail_elem.propg v ph l_prf hyp :: es) :=
   let abs_prf := abstract_local proof hyp↣local_uniq_name in
   if has_var abs_prf then
-    analyze_conflict' (elet hyp↣local_pp_name (formula_of_lit v ph) l_prf abs_prf) es
+    analyze_conflict' (app (lam hyp↣local_pp_name binder_info.default (formula_of_lit v ph) abs_prf) l_prf) es
   else
     analyze_conflict' proof es
 | proof (trail_elem.dbl_neg_propg v ph l_prf hyp :: es) :=
