@@ -44,7 +44,7 @@ given ← option.to_monad (rb_map.find passive given_name),
 -- trace_clauses,
 remove_passive given_name,
 selected_lits ← literal_selection given,
-activated_given ← return $ active_cls.mk given_name selected_lits given↣c given↣assertions given↣from_model given↣in_sos,
+activated_given ← return $ active_cls.mk given_name selected_lits given↣c given↣assertions given↣in_sos,
 () : unit ← ↑(when (is_trace_enabled_for `super) (do
   fmt ← pp activated_given, trace (to_fmt "given: " ++ fmt))),
 add_active activated_given,

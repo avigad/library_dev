@@ -27,7 +27,6 @@ meta structure active_cls :=
 (selected : list nat)
 (c : clause)
 (assertions : list expr)
-(from_model : bool)
 (in_sos : bool)
 
 namespace active_cls
@@ -38,7 +37,6 @@ c_fmt ← pp c↣c,
 ass_fmt ← pp (c↣assertions↣for (λa, a↣local_type)),
 return $ c_fmt ++ " <- " ++ ass_fmt ++
        " (selected: " ++ to_fmt c↣selected ++
-       ", model: " ++ to_fmt c↣from_model ++
        ", sos: " ++ to_fmt c↣in_sos ++ ")"
 ⟩
 
@@ -50,7 +48,6 @@ end active_cls
 meta structure passive_cls :=
 (c : clause)
 (assertions : list expr)
-(from_model : bool)
 (in_sos : bool)
 
 namespace passive_cls
@@ -137,6 +134,28 @@ stateT.write { state with active := state↣active↣insert a↣id a }
 meta def get_passive : resolution_prover (rb_map name passive_cls) :=
 liftM passive stateT.read
 
+meta def get_precedence : resolution_prover (list expr) :=
+do state ← stateT.read, return state↣prec
+
+meta def get_term_order : resolution_prover (expr → expr → bool) := do
+state ← stateT.read,
+return $ lpo (prec_gt_of_name_list (map name_of_funsym state↣prec))
+
+private meta def set_precedence (new_prec : list expr) : resolution_prover unit :=
+do state ← stateT.read, stateT.write { state with prec := new_prec }
+
+meta def register_consts_in_precedence (consts : list expr) := do
+p ← get_precedence,
+p_set ← return (rb_map.set_of_list (map name_of_funsym p)),
+new_syms ← return $ list.filter (λc, ¬p_set↣contains (name_of_funsym c)) consts,
+set_precedence (new_syms ++ p)
+
+meta def add_inferred (c : clause) (parents : list active_cls) : resolution_prover unit := do
+c' : clause ← ↑c↣normalize,
+register_consts_in_precedence (contained_funsyms c'↣type)↣values,
+state ← stateT.read,
+stateT.write { state with newly_derived := c' :: state↣newly_derived }
+
 meta def in_sat_solver {A} (cmd : cdcl.solver A) : resolution_prover A := do
 state ← stateT.read,
 result : A × cdcl.state ← ↑(cmd state↣sat_solver),
@@ -145,13 +164,16 @@ return result↣1
 
 meta def mk_sat_var (v : expr) (suggested_ph : bool) : resolution_prover unit :=
 do st ← stateT.read, if st↣sat_hyps↣contains v then return () else do
-hpv ← ↑mk_fresh_name, hnv ← ↑mk_fresh_name,
+hpv ← ↑(mk_local_def `h v),
 univ ← ↑(infer_univ v),
-stateT.modify $ λst, { st with sat_hyps := st↣sat_hyps↣insert v
-  (local_const hpv hpv binder_info.default v,
-   local_const hnv hnv binder_info.default
-               (if univ = level.zero then not_ v else imp v false_)) },
-in_sat_solver $ cdcl.mk_var_core v suggested_ph
+hnv ← ↑(mk_local_def `hn $ if univ = level.zero then not_ v else imp v false_),
+stateT.modify $ λst, { st with sat_hyps := st↣sat_hyps↣insert v (hpv, hnv) },
+in_sat_solver $ cdcl.mk_var_core v suggested_ph,
+match v with
+| (pi _ _ _ _) := do c ← ↑(clause.of_proof hpv), add_inferred c []
+| _ := do cp ← ↑(clause.of_proof hpv), add_inferred cp [],
+          cn ← ↑(clause.of_proof hnv), add_inferred cn []
+end
 
 meta def get_sat_hyp_core (v : expr) (ph : bool) : resolution_prover (option expr) :=
 flip liftM stateT.read $ λst,
@@ -228,7 +250,7 @@ else if ¬ass_v then do
   stateT.modify $ λst, { st with locked := ⟨ id, c'', ass, [], in_sos ⟩ :: st↣locked }
 else do
   stateT.modify $ λstate, { state with passive :=
-    state↣passive↣insert id { c := c'', assertions := ass, from_model := ff, in_sos := in_sos }
+    state↣passive↣insert id { c := c'', assertions := ass, in_sos := in_sos }
   }
 
 meta def remove_passive (id : name) : resolution_prover unit :=
@@ -240,7 +262,7 @@ new_locked ← flip filterM locked (λlc, do
   reason_vals ← mapM sat_eval_assertions lc↣reasons,
   c_val ← sat_eval_assertions lc↣assertions,
   if reason_vals↣for_all (λr, r = ff) ∧ c_val then do
-    stateT.modify $ λst, { st with passive := st↣passive↣insert lc↣id ⟨ lc↣c, lc↣assertions, ff, lc↣in_sos ⟩ },
+    stateT.modify $ λst, { st with passive := st↣passive↣insert lc↣id ⟨ lc↣c, lc↣assertions, lc↣in_sos ⟩ },
     return ff
   else
     return tt
@@ -250,9 +272,7 @@ stateT.modify $ λst, { st with locked := new_locked }
 meta def move_active_to_locked : resolution_prover unit :=
 do active ← get_active, forM' active↣values $ λac, do
   c_val ← sat_eval_assertions ac↣assertions,
-  if ¬c_val ∧ ac↣from_model then do
-     stateT.modify $ λst, { st with active := st↣active↣erase ac↣id }
-  else if ¬c_val ∧ ¬ac↣from_model then do
+  if ¬c_val then do
      stateT.modify $ λst, { st with
        active := st↣active↣erase ac↣id,
        locked := ⟨ ac↣id, ac↣c, ac↣assertions, [], ac↣in_sos ⟩ :: st↣locked
@@ -263,25 +283,13 @@ do active ← get_active, forM' active↣values $ λac, do
 meta def move_passive_to_locked : resolution_prover unit :=
 do passive ← flip liftM stateT.read $ λst, st↣passive, forM' passive↣to_list $ λpc, do
   c_val ← sat_eval_assertions pc↣2↣assertions,
-  if ¬c_val ∧ pc↣2↣from_model then do
-     stateT.modify $ λst, { st with passive := st↣passive↣erase pc↣1 }
-  else if ¬c_val ∧ ¬pc↣2↣from_model then do
+  if ¬c_val then do
     stateT.modify $ λst, { st with
       passive := st↣passive↣erase pc↣1,
       locked := ⟨ pc↣1, pc↣2↣c, pc↣2↣assertions, [], pc↣2↣in_sos ⟩ :: st↣locked
     }
   else
     return ()
-
-meta def add_new_from_model_clauses (old_model : rb_map expr bool) : resolution_prover unit := do
-model ← flip liftM stateT.read (λst, st↣current_model),
-forM' model↣to_list $ λassg, do
-  name ← ↑mk_fresh_name,
-  name ← return $ name <.> "h",
-  hyp ← get_sat_hyp assg↣1 assg↣2,
-  if old_model↣find assg↣1 = some assg↣2 then return () else do
-  c ← ↑(clause.of_proof hyp),
-  stateT.modify $ λst, { st with passive := st↣passive↣insert name ⟨ c, [hyp], tt, ff ⟩ }
 
 meta def do_sat_run : resolution_prover (option expr) :=
 do sat_result ← in_sat_solver $ cdcl.run (return none),
@@ -294,7 +302,6 @@ match sat_result with
     move_locked_to_passive,
     move_active_to_locked,
     move_passive_to_locked,
-    add_new_from_model_clauses old_model,
     return none
 end
 
@@ -309,9 +316,6 @@ red_opt ← flip liftM stateT.read (λst, st↣active↣find id),
 match red_opt with
 | none := return ()
 | some red :=
-  if red↣from_model then do
-    stateT.modify $ λst, { st with active := st↣active↣erase id }
-  else
   let reasons := parents↣for (λp, p↣assertions),
       assertion := red↣assertions in
   if reasons↣for_all $ λr, r↣subset_of assertion then do
@@ -320,28 +324,6 @@ match red_opt with
     stateT.modify $ λst, { st with active := st↣active↣erase id,
                                    locked := ⟨ id, red↣c, red↣assertions, reasons, red↣in_sos ⟩ :: st↣locked }
 end
-
-meta def get_precedence : resolution_prover (list expr) :=
-do state ← stateT.read, return state↣prec
-
-meta def get_term_order : resolution_prover (expr → expr → bool) := do
-state ← stateT.read,
-return $ lpo (prec_gt_of_name_list (map name_of_funsym state↣prec))
-
-private meta def set_precedence (new_prec : list expr) : resolution_prover unit :=
-do state ← stateT.read, stateT.write { state with prec := new_prec }
-
-meta def register_consts_in_precedence (consts : list expr) := do
-p ← get_precedence,
-p_set ← return (rb_map.set_of_list (map name_of_funsym p)),
-new_syms ← return $ list.filter (λc, ¬p_set↣contains (name_of_funsym c)) consts,
-set_precedence (new_syms ++ p)
-
-meta def add_inferred (c : clause) (parents : list active_cls) : resolution_prover unit := do
-c' : clause ← ↑c↣normalize,
-register_consts_in_precedence (contained_funsyms c'↣type)↣values,
-state ← stateT.read,
-stateT.write { state with newly_derived := c' :: state↣newly_derived }
 
 meta def inference :=
 active_cls → resolution_prover unit
