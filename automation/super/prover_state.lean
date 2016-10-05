@@ -82,7 +82,7 @@ active_fmts ← mapM pp $ rb_map.values s↣active,
 passive_fmts ← mapM pp $ rb_map.values s↣passive,
 new_fmts ← mapM pp s↣newly_derived,
 locked_fmts ← mapM pp s↣locked,
-sat_fmts ← mapM pp s↣sat_solver↣given,
+sat_fmts ← mapM pp s↣sat_solver↣clauses,
 prec_fmts ← mapM pp s↣prec,
 return (join_with_nl
   ([to_fmt "active:"] ++ map (append (to_fmt "  ")) active_fmts ++
@@ -192,7 +192,7 @@ end
 meta def add_sat_clause (c : clause) : resolution_prover unit := do
 c : clause ← ↑c↣distinct,
 already_added ← flip liftM stateT.read $ λst, decidable.to_bool $
-                     c↣type ∈ st↣sat_solver↣given↣for (λd, d↣type),
+                     c↣type ∈ st↣sat_solver↣clauses↣for (λd, d↣type),
 if already_added then return () else do
 forM c↣get_lits $ λl, mk_sat_var l↣formula l↣is_neg,
 in_sat_solver $ cdcl.mk_clause c,

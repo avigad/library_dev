@@ -74,7 +74,7 @@ meta structure state :=
 (trail : list trail_elem)
 (vars : rb_map prop_var var_state)
 (unassigned : rb_map prop_var prop_var)
-(given : list clause)
+(clauses : list clause)
 (learned : list learned_clause)
 (watches : rb_map prop_lit watch_map)
 (conflict : option proof_term)
@@ -86,7 +86,7 @@ meta def initial : state := {
   trail := [],
   vars := rb_map.mk _ _,
   unassigned := rb_map.mk _ _,
-  given := [],
+  clauses := [],
   learned := [],
   watches := rb_map.mk _ _,
   conflict := none,
@@ -285,7 +285,7 @@ meta def mk_clause (c : clause) : solver unit := do
 c : clause ← ↑c↣distinct,
 forM c↣get_lits (λl, mk_var l↣formula),
 revert_to_decision_level_zero (),
-stateT.modify $ λst, { st with given := c :: st↣given },
+stateT.modify $ λst, { st with clauses := c :: st↣clauses },
 c_name ← ↑mk_fresh_name,
 set_watches c_name c
 
@@ -401,8 +401,8 @@ end
 
 meta def run : solver result := run' theory_solver ()
 
-meta def solve (given : list clause) : tactic result := do
-res ← (do forM given mk_clause, run theory_solver) state.initial,
+meta def solve (clauses : list clause) : tactic result := do
+res ← (do forM clauses mk_clause, run theory_solver) state.initial,
 return res↣1
 
 end cdcl
