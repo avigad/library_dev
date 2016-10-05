@@ -17,7 +17,7 @@ meta instance : has_to_tactic_format locked_cls :=
 c_fmt ← pp c↣c,
 ass_fmt ← pp (c↣assertions↣for (λa, a↣local_type)),
 reasons_fmt ← pp (c↣reasons↣for (λr, r↣for (λa, a↣local_type))),
-return $ c_fmt ++ " <-- " ++ ass_fmt ++ " (reasons: " ++ reasons_fmt ++ ")"
+return $ c_fmt ++ " <- " ++ ass_fmt ++ " (reasons: " ++ reasons_fmt ++ ")"
 ⟩
 
 end locked_cls
@@ -36,7 +36,7 @@ meta instance : has_to_tactic_format active_cls :=
 ⟨λc, do
 c_fmt ← pp c↣c,
 ass_fmt ← pp (c↣assertions↣for (λa, a↣local_type)),
-return $ c_fmt ++ " <-- " ++ ass_fmt ++
+return $ c_fmt ++ " <- " ++ ass_fmt ++
        " (selected: " ++ to_fmt c↣selected ++
        ", model: " ++ to_fmt c↣from_model ++
        ", sos: " ++ to_fmt c↣in_sos ++ ")"
