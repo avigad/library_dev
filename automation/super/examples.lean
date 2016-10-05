@@ -1,6 +1,18 @@
 import .prover
 open tactic
 
+constant nat_has_dvd : has_dvd nat
+attribute [instance] nat_has_dvd
+
+noncomputable def prime (n : ℕ) := ∀d, dvd d n → d = 1 ∨ d = n
+def dvd_refl (m : ℕ) : dvd m m := sorry
+def dvd_mul (m n k : ℕ) : dvd m n → dvd m (n*k) := sorry
+
+axiom nat_mul_cancel_one (m n : ℕ) : m = m * n → n = 1
+
+example {m n : ℕ} : prime (m * n) → m = 1 ∨ n = 1 :=
+begin with_lemmas dvd_refl dvd_mul nat_mul_cancel_one, super end
+
 example : nat.zero ≠ nat.succ nat.zero := by super
 example (x y : ℕ) : nat.succ x = nat.succ y → x = y := by super
 example (i : Type) (a b c : i) : [a,b,c] = [b,c,a] -> a = b ∧ b = c := by super
@@ -12,9 +24,7 @@ example (m n : ℕ) : 0 + m = 0 + n → m = n :=
 by super with nat.zero_add
 
 example : ∀x y : ℕ, x + y = y + x :=
-begin intros, induction x,
-      super with nat.succ_add nat.zero_add,
-      super with nat.succ_add nat.zero_add end
+begin intros, induction x, super with nat.zero_add, super with nat.succ_add end
 
 example (i) [inhabited i] : nonempty i := by super
 example (i) [nonempty i] : ¬(inhabited i → false) := by super
