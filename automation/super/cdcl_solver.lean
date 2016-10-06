@@ -79,10 +79,11 @@ meta structure state :=
 (watches : rb_map prop_lit watch_map)
 (conflict : option proof_term)
 (unitp_queue : list prop_var)
+(local_false : expr)
 
 namespace state
 
-meta def initial : state := {
+meta def initial (local_false : expr) : state := {
   trail := [],
   vars := rb_map.mk _ _,
   unassigned := rb_map.mk _ _,
@@ -90,7 +91,8 @@ meta def initial : state := {
   learned := [],
   watches := rb_map.mk _ _,
   conflict := none,
-  unitp_queue := []
+  unitp_queue := [],
+  local_false := local_false
 }
 
 meta def watches_for (st : state) (pl : prop_lit) : watch_map :=
@@ -110,6 +112,9 @@ meta instance : has_coe_fam tactic solver :=
 
 meta def fail {A B} [has_to_format B] (b : B) : solver A :=
 solver_of_tactic (tactic.fail b)
+
+meta def get_local_false : solver expr :=
+do st ← stateT.read, return st↣local_false
 
 meta def mk_var_core (v : prop_var) (ph : bool) : solver unit := do
 stateT.modify $ λst, match st↣vars↣find v with
@@ -162,14 +167,14 @@ is_dl0 ← is_decision_level_zero,
 if is_dl0 then return ()
 else do pop_trail_core, revert_to_decision_level_zero ()
 
-meta def formula_of_lit (v : prop_var) (ph : bool) :=
-if ph then v else imp v false_
+meta def formula_of_lit (local_false : expr) (v : prop_var) (ph : bool) :=
+if ph then v else imp v local_false
 
 meta def lookup_var (v : prop_var) : solver (option var_state) :=
 do st ← stateT.read, return $ st↣vars↣find v
 
 meta def add_propagation (v : prop_var) (ph : bool) (just : proof_term) (just_is_dn : bool) : solver unit :=
-do v_st ← lookup_var v, match v_st with
+do v_st ← lookup_var v, local_false ← get_local_false, match v_st with
 | none := fail $ "propagating unknown variable: " ++ v↣to_string
 | some ⟨assg_ph, some proof⟩ :=
     if ph = assg_ph then
@@ -180,7 +185,7 @@ do v_st ← lookup_var v, match v_st with
       set_conflict (app proof just)
 | some ⟨_, none⟩ := do
     hyp_name ← ↑mk_fresh_name,
-    hyp ← return $ local_const hyp_name hyp_name binder_info.default (formula_of_lit v ph),
+    hyp ← return $ local_const hyp_name hyp_name binder_info.default (formula_of_lit local_false v ph),
     if just_is_dn then do
       push_trail $ trail_elem.dbl_neg_propg v ph just hyp
     else do
@@ -189,7 +194,8 @@ end
 
 meta def add_decision (v : prop_var) (ph : bool) := do
 hyp_name ← ↑mk_fresh_name,
-hyp ← return $ local_const hyp_name hyp_name binder_info.default (formula_of_lit v ph),
+local_false ← get_local_false,
+hyp ← return $ local_const hyp_name hyp_name binder_info.default (formula_of_lit local_false v ph),
 push_trail $ trail_elem.dec v ph hyp
 
 meta def lookup_lit (l : clause.literal) : solver (option (bool × proof_hyp)) :=
@@ -299,7 +305,7 @@ match st↣vars↣find v with
   forM' watches↣to_list $ λw, update_watches w↣1 w↣2↣2↣2 w↣2↣1 w↣2↣2↣1
 end
 
-meta def analyze_conflict' : proof_term → list trail_elem → clause
+meta def analyze_conflict' (local_false : expr) : proof_term → list trail_elem → clause
 | proof (trail_elem.dec v ph hyp :: es) :=
   let abs_prf := abstract_local proof hyp↣local_uniq_name in
   if has_var abs_prf then
@@ -309,7 +315,7 @@ meta def analyze_conflict' : proof_term → list trail_elem → clause
 | proof (trail_elem.propg v ph l_prf hyp :: es) :=
   let abs_prf := abstract_local proof hyp↣local_uniq_name in
   if has_var abs_prf then
-    analyze_conflict' (app (lam hyp↣local_pp_name binder_info.default (formula_of_lit v ph) abs_prf) l_prf) es
+    analyze_conflict' (app (lam hyp↣local_pp_name binder_info.default (formula_of_lit local_false v ph) abs_prf) l_prf) es
   else
     analyze_conflict' proof es
 | proof (trail_elem.dbl_neg_propg v ph l_prf hyp :: es) :=
@@ -318,10 +324,10 @@ meta def analyze_conflict' : proof_term → list trail_elem → clause
     analyze_conflict' (app l_prf (lambdas [hyp] proof)) es
   else
     analyze_conflict' proof es
-| proof [] := ⟨0, 0, proof, const ``false []⟩
+| proof [] := ⟨0, 0, proof, local_false, local_false⟩
 
 meta def analyze_conflict (proof : proof_term) : solver clause :=
-do st ← stateT.read, return $ analyze_conflict' proof st↣trail
+do st ← stateT.read, return $ analyze_conflict' st↣local_false proof st↣trail
 
 meta def add_learned (c : clause) : solver unit := do
 prf_abbrev_name ← ↑mk_fresh_name,
@@ -401,8 +407,8 @@ end
 
 meta def run : solver result := run' theory_solver ()
 
-meta def solve (clauses : list clause) : tactic result := do
-res ← (do forM clauses mk_clause, run theory_solver) state.initial,
+meta def solve (local_false : expr) (clauses : list clause) : tactic result := do
+res ← (do forM clauses mk_clause, run theory_solver) (state.initial local_false),
 return res↣1
 
 end cdcl

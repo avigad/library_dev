@@ -18,21 +18,25 @@ meta def inf_whnf_r (c : clause) : tactic (list clause) :=
 on_first_right c $ λha, do
   a' ← whnf ha↣local_type,
   guard $ a' ≠ ha↣local_type,
-  hna ← mk_local_def `hna (imp a' false_),
+  hna ← mk_local_def `hna (imp a' c↣local_false),
   return [([hna], app hna ha)]
 
 set_option eqn_compiler.max_steps 500
 
 meta def inf_false_l (c : clause) : tactic (list clause) :=
 first $ do i ← list.range c↣num_lits,
-  if c↣get_lit 0 = clause.literal.left (const ``false [])
+  if c↣get_lit i = clause.literal.left false_
   then [return []]
   else []
 
 meta def inf_false_r (c : clause) : tactic (list clause) :=
 on_first_right c $ λhf,
-  match hf↣local_type with
-  | (const ``false []) := return [([], hf)]
+  if hf↣local_type = c↣local_false
+  then return [([], hf)]
+  else match hf↣local_type with
+  | const ``false [] := do
+    pr ← mk_app ``false.rec [c↣local_false, hf],
+    return [([], pr)]
   | _ := failed
   end
 
@@ -51,7 +55,7 @@ first $ do i ← list.range c↣num_lits,
 
 meta def inf_not_r (c : clause) : tactic (list clause) :=
 on_first_right c $ λhna,
-  match is_not hna↣local_type with
+  match is_local_not c↣local_false hna↣local_type with
   | some a := do
     ha ← mk_local_def `h a,
     return [([ha], app hna ha)]
@@ -79,9 +83,9 @@ meta def inf_or_r (c : clause) : tactic (list clause) :=
 on_first_right c $ λhab,
   match hab↣local_type with
   | (app (app (const ``or []) a) b) := do
-    hna ← mk_local_def `l (not_ a),
-    hnb ← mk_local_def `r (not_ b),
-    proof ← mk_mapp ``or.elim [some a, some b, some false_, some hab, some hna, some hnb],
+    hna ← mk_local_def `l (imp a c↣local_false),
+    hnb ← mk_local_def `r (imp b c↣local_false),
+    proof ← mk_app ``or.elim [a, b, c↣local_false, hab, hna, hnb],
     return [([hna, hnb], proof)]
   | _ := failed
   end
@@ -107,16 +111,31 @@ on_first_right' c $ λhallb,
   | _ := failed
   end
 
-lemma imp_of_neg {a b} : (a → false) → (a → b) := take hna ha, false.rec _ (hna ha)
+lemma imp_l {F a b} [decidable a] : ((a → b) → F) → ((a → F) → F) :=
+λhabf haf, decidable.by_cases
+    (assume ha :   a, haf ha)
+    (assume hna : ¬a, habf (take ha, absurd ha hna))
+
+lemma imp_l' {F a b} [decidable F] : ((a → b) → F) → ((a → F) → F) :=
+λhabf haf, decidable.by_cases
+    (assume hf :   F, hf)
+    (assume hnf : ¬F, habf (take ha, absurd (haf ha) hnf))
+
+lemma imp_l_c {F a b} : ((a → b) → F) → ((a → F) → F) :=
+λhabf haf, classical.by_cases
+    (assume ha :   a, haf ha)
+    (assume hna : ¬a, habf (take ha, absurd ha hna))
+
 meta def inf_imp_l (c : clause) : tactic (list clause) :=
-on_first_left c $ λab,
-  match ab with
-  | (pi _ _ a b) :=
+on_first_left_dn c $ λhnab,
+  match hnab↣local_type with
+  | (pi _ _ (pi _ _ a b) _) :=
     if b↣has_var then failed else do
-    hna ← mk_local_def `na (imp a false_),
-    pna ← mk_mapp ``imp_of_neg [some a, some b, some hna],
+    hna ← mk_local_def `na (imp a c↣local_false),
+    pf ← first (do r ← [``super.imp_l, ``super.imp_l', ``super.imp_l_c],
+                 [mk_app r [hnab, hna]]),
     hb ← mk_local_def `b b,
-    return [([hna], pna), ([hb], lam `a binder_info.default a hb)]
+    return [([hna], pf), ([hb], app hnab (lam `a binder_info.default a hb))]
   | _ := failed
   end
 
@@ -132,17 +151,23 @@ on_first_left c $ λexp,
   | _ := failed
   end
 
-lemma demorgan {a} {b : a → Prop} : (¬∃x:a, ¬b x) → ∀x, b x :=
-take nenb x, classical.by_contradiction (take nbx, nenb (exists.intro x nbx))
+lemma demorgan' {F a} {b : a → Prop} : ((∀x, b x) → F) → (((∃x, b x → F) → F) → F) :=
+assume hab hnenb,
+  classical.by_cases
+    (assume h : ∃x, ¬b x, begin cases h with x, apply hnenb, existsi x, intros, contradiction end)
+    (assume h : ¬∃x, ¬b x, hab (take x,
+      classical.by_cases
+        (assume bx : b x, bx)
+        (assume nbx : ¬b x, begin assert hf : false, apply h, existsi x, assumption, contradiction end)))
 
 meta def inf_all_l (c : clause) : tactic (list clause) :=
-on_first_left c $ λallb,
-  match allb with
-  | (pi n bi a b) := do
-    enb ← mk_mapp ``Exists [none, some $ lam n binder_info.default a (not_ b)],
-    hnenb ← mk_local_def `h (not_ enb),
-    pallb ← mk_mapp ``super.demorgan [some a, none, some hnenb],
-    return [([hnenb], pallb)]
+on_first_left_dn c $ λhnallb,
+  match hnallb↣local_type with
+  | pi _ _ (pi n bi a b) _ := do
+    enb ← mk_mapp ``Exists [none, some $ lam n binder_info.default a (imp b c↣local_false)],
+    hnenb ← mk_local_def `h (imp enb c↣local_false),
+    pr ← mk_app ``super.demorgan' [hnallb, hnenb],
+    return [([hnenb], pr)]
   | _ := failed
   end
 

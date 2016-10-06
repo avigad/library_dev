@@ -29,6 +29,7 @@ on_right_at' c i $ λhyp,
     lhs ← whnf lhs, rhs ← whnf rhs,
     guard $ env↣is_constructor_app lhs ∧ env↣is_constructor_app rhs,
     pr ← mk_app (lhs↣get_app_fn↣const_name↣get_prefix <.> "no_confusion") [false_, lhs, rhs, hyp],
+    -- FIXME: change to local false ^^
     ty ← infer_type pr, ty ← whnf ty,
     pr ← to_expr `(@eq.mpr _ %%ty rfl %%pr), -- FIXME
     return [([], pr)]
@@ -36,8 +37,8 @@ on_right_at' c i $ λhyp,
   end
 
 example (x y : ℕ) (h : nat.zero = nat.succ nat.zero) (h2 : nat.succ x = nat.succ y) : true := by do
-h ← get_local `h >>= clause.of_proof,
-h2 ← get_local `h2 >>= clause.of_proof,
+h ← get_local `h >>= clause.of_classical_proof,
+h2 ← get_local `h2 >>= clause.of_classical_proof,
 cs ← try_no_confusion_eq_r h 0,
 forM' cs clause.validate,
 cs ← try_no_confusion_eq_r h2 0,

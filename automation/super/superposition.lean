@@ -37,9 +37,9 @@ variable pos : list ℕ
 variable ltr : bool
 variable congr_ax : name
 
-lemma sup_ltr (A a1 a2) (f : A → Type _) : (f a1 → false) → f a2 → a1 = a2 → false :=
+lemma sup_ltr (F A a1 a2) (f : A → Type _) : (f a1 → F) → f a2 → a1 = a2 → F :=
 take hnfa1 hfa2 heq, hnfa1 (heq↣symm ▸ hfa2)
-lemma sup_rtl (A a1 a2) (f : A → Type _) : (f a1 → false) → f a2 → a2 = a1 → false :=
+lemma sup_rtl (F A a1 a2) (f : A → Type _) : (f a1 → F) → f a2 → a2 = a1 → F :=
 take hnfa1 hfa2 heq, hnfa1 (heq ▸ hfa2)
 
 meta def is_eq_dir (e : expr) (ltr : bool) : option (expr × expr) :=
@@ -66,7 +66,8 @@ abs_rwr_ctx ← return $
   lam rwr_ctx_varn binder_info.default eq_type
   (if (qf2↣1↣get_lit i2)↣is_neg
    then replace_position (mk_var 0) atom pos
-   else imp (replace_position (mk_var 0) atom pos) false_),
+   else imp (replace_position (mk_var 0) atom pos) c2↣local_false),
+lf_univ ← infer_univ c1↣local_false,
 univ ← infer_univ eq_type,
 op1 ← qf1↣1↣open_constn i1,
 op2 ← qf2↣1↣open_constn c2↣num_lits,
@@ -74,21 +75,21 @@ hi2 ← (op2↣2↣nth i2)↣to_monad,
 new_atom ← whnf $ app abs_rwr_ctx rwr_to',
 new_hi2 ← return $ local_const hi2↣local_uniq_name `H binder_info.default new_atom,
 new_fin_prf ←
-  return $ app_of_list (const congr_ax [univ]) [eq_type, rwr_from, rwr_to,
+  return $ app_of_list (const congr_ax [lf_univ, univ]) [c1↣local_false, eq_type, rwr_from, rwr_to,
             abs_rwr_ctx, (op2↣1↣close_const hi2)↣proof, new_hi2],
 clause.meta_closure (qf1↣2 ++ qf2↣2) $ (op1↣1↣inst new_fin_prf)↣close_constn (op1↣2 ++ op2↣2↣update i2 new_hi2)
 
 example (i : Type) (a b : i) (p : i → Prop) (H : a = b) (Hpa : p a) : true := by do
-H ← get_local `H >>= clause.of_proof,
-Hpa ← get_local `Hpa >>= clause.of_proof,
+H ← get_local `H >>= clause.of_classical_proof,
+Hpa ← get_local `Hpa >>= clause.of_classical_proof,
 a ← get_local `a,
 try_sup (λx y, ff) H Hpa 0 0 [0] tt ``super.sup_ltr >>= clause.validate,
 to_expr `(trivial) >>= apply
 
 example (i : Type) (a b : i) (p : i → Prop) (H : a = b) (Hpa : p a → false) (Hpb : p b → false) : true := by do
-H ← get_local `H >>= clause.of_proof,
-Hpa ← get_local `Hpa >>= clause.of_proof,
-Hpb ← get_local `Hpb >>= clause.of_proof,
+H ← get_local `H >>= clause.of_classical_proof,
+Hpa ← get_local `Hpa >>= clause.of_classical_proof,
+Hpb ← get_local `Hpb >>= clause.of_classical_proof,
 try_sup (λx y, ff) H Hpa 0 0 [0] tt ``super.sup_ltr >>= clause.validate,
 try_sup (λx y, ff) H Hpb 0 0 [0] ff ``super.sup_rtl >>= clause.validate,
 to_expr `(trivial) >>= apply

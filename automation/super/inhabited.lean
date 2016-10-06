@@ -5,13 +5,15 @@ namespace super
 
 meta def try_nonempty_lookup_left (c : clause) : tactic (list clause) :=
 on_first_left_dn c $ λhnx,
-  match is_not hnx↣local_type with
+  match is_local_not c↣local_false hnx↣local_type with
   | some type := do
     univ ← infer_univ type,
+    lf_univ ← infer_univ c↣local_false,
+    guard $ lf_univ = level.zero,
     inst ← mk_instance (app (const ``nonempty [univ]) type),
     instt ← infer_type inst,
     return [([], app_of_list (const ``nonempty.elim [univ])
-                             [type, false_, inst, hnx])]
+                             [type, c↣local_false, inst, hnx])]
   | _ := failed
   end
 
@@ -28,9 +30,11 @@ meta def try_nonempty_right (c : clause) : tactic (list clause) :=
 on_first_right c $ λhnonempty,
   match hnonempty↣local_type with
   | (app (const ``nonempty [u]) type) := do
-    hnx ← mk_local_def `nx (imp type false_),
+    lf_univ ← infer_univ c↣local_false,
+    guard $ lf_univ = level.zero,
+    hnx ← mk_local_def `nx (imp type c↣local_false),
     return [([hnx], app_of_list (const ``nonempty.elim [u])
-                                [type, false_, hnonempty, hnx])]
+                                [type, c↣local_false, hnonempty, hnx])]
   | _ := failed
   end
 

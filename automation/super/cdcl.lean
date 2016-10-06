@@ -4,7 +4,7 @@ open tactic expr monad super
 private meta def theory_solver_of_tactic (th_solver : tactic unit) : cdcl.solver (option cdcl.proof_term) :=
 do s ← stateT.read, ↑do
 hyps ← return $ s↣trail↣for (λe, e↣hyp),
-subgoal ← mk_meta_var (const ``false []),
+subgoal ← mk_meta_var s↣local_false,
 goals ← get_goals,
 set_goals [subgoal],
 hvs ← forM hyps (λhyp, assertv hyp↣local_pp_name hyp↣local_type hyp),
@@ -19,16 +19,20 @@ else
 
 meta def cdcl_t (th_solver : tactic unit) : tactic unit := do
 intros,
-target_name ← get_unused_name `target none, tgt ← target,
-mk_mapp ``classical.by_contradiction [some tgt] >>= apply, intro target_name,
+local_false_name ← get_unused_name `F none, tgt ← target, tgt_type ← infer_type tgt,
+definev local_false_name tgt_type tgt, local_false ← get_local `F,
+target_name ← get_unused_name `target none,
+assertv target_name (imp tgt local_false) (lam `hf binder_info.default tgt $ mk_var 0),
+change local_false,
 hyps ← local_context,
-gen_clauses ← mapM clause.of_proof hyps,
+gen_clauses ← mapM (clause.of_proof local_false) hyps,
 clauses ← clausify gen_clauses,
-res ← cdcl.solve (theory_solver_of_tactic th_solver) clauses,
+forM clauses (λc, do c_pp ← pp c, clause.validate c <|> fail c_pp),
+res ← cdcl.solve (theory_solver_of_tactic th_solver) local_false clauses,
 match res with
 | (cdcl.result.unsat proof) := exact proof
 | (cdcl.result.sat interp) :=
-  let interp' := do e ← interp↣to_list, [cdcl.formula_of_lit e↣1 e↣2] in
+  let interp' := do e ← interp↣to_list, [if e↣2 = tt then e↣1 else not_ e↣1] in
   do pp_interp ← pp interp',
      fail (to_fmt "satisfying assignment: " ++ pp_interp)
 end
@@ -37,14 +41,16 @@ meta def cdcl : tactic unit := cdcl_t skip
 
 example {a} : a → ¬a → false := by cdcl
 example {a} : a ∨ ¬a := by cdcl
-example {a} {b : Prop} : a → (a → b) → b := by cdcl
+example {a b} : a → (a → b) → b := by cdcl
 example {a b c} : (a → b) → (¬a → b) → (b → c) → b ∧ c := by cdcl
 
 private meta def lit_unification : tactic unit :=
 do ls ← local_context, first $ do l ← ls, [do apply l, assumption]
-example {p : ℕ → Prop} : p 2 ∨ p 4 → (p (2*2) → p (2+0)) → p (1+1) :=
+example {p : ℕ → Type _} : p 2 ∨ p 4 → (p (2*2) → p (2+0)) → p (1+1) :=
 by cdcl_t lit_unification
 
 example {p : ℕ → Prop} :
         list.foldl (λf v, f ∧ (v ∨ ¬v)) true (map p (list.range 5)) :=
 by cdcl
+
+example {a b c : Type _} : (a → b) → (b → c) → (a → c) := by cdcl

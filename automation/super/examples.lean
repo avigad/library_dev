@@ -5,8 +5,8 @@ constant nat_has_dvd : has_dvd nat
 attribute [instance] nat_has_dvd
 
 noncomputable def prime (n : ℕ) := ∀d, dvd d n → d = 1 ∨ d = n
-def dvd_refl (m : ℕ) : dvd m m := sorry
-def dvd_mul (m n k : ℕ) : dvd m n → dvd m (n*k) := sorry
+axiom dvd_refl (m : ℕ) : dvd m m
+axiom dvd_mul (m n k : ℕ) : dvd m n → dvd m (n*k)
 
 axiom nat_mul_cancel_one (m n : ℕ) : m = m * n → n = 1
 

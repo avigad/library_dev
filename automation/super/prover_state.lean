@@ -66,6 +66,7 @@ meta structure resolution_prover_state :=
 (newly_derived : list clause)
 (prec : list expr)
 (locked : list locked_cls)
+(local_false : expr)
 (sat_solver : cdcl.state)
 (current_model : rb_map expr bool)
 (sat_hyps : rb_map expr (expr × expr))
@@ -165,14 +166,13 @@ return result↣1
 meta def mk_sat_var (v : expr) (suggested_ph : bool) : resolution_prover unit :=
 do st ← stateT.read, if st↣sat_hyps↣contains v then return () else do
 hpv ← ↑(mk_local_def `h v),
-univ ← ↑(infer_univ v),
-hnv ← ↑(mk_local_def `hn $ if univ = level.zero then not_ v else imp v false_),
+hnv ← ↑(mk_local_def `hn $ imp v st↣local_false),
 stateT.modify $ λst, { st with sat_hyps := st↣sat_hyps↣insert v (hpv, hnv) },
 in_sat_solver $ cdcl.mk_var_core v suggested_ph,
 match v with
-| (pi _ _ _ _) := do c ← ↑(clause.of_proof hpv), add_inferred c []
-| _ := do cp ← ↑(clause.of_proof hpv), add_inferred cp [],
-          cn ← ↑(clause.of_proof hnv), add_inferred cn []
+| (pi _ _ _ _) := do c ← ↑(clause.of_proof st↣local_false hpv), add_inferred c []
+| _ := do cp ← ↑(clause.of_proof st↣local_false hpv), add_inferred cp [],
+          cn ← ↑(clause.of_proof st↣local_false hnv), add_inferred cn []
 end
 
 meta def get_sat_hyp_core (v : expr) (ph : bool) : resolution_prover (option expr) :=
@@ -206,7 +206,8 @@ match v_st with
 end
 
 meta def sat_eval_assertion (assertion : expr) : resolution_prover bool :=
-match is_not assertion↣local_type with
+do lf ← flip liftM stateT.read $ λst, st↣local_false,
+match is_local_not lf assertion↣local_type with
 | some v := sat_eval_lit v ff
 | none := sat_eval_lit assertion↣local_type tt
 end
@@ -355,14 +356,15 @@ meta def clause_selection_strategy := ℕ → resolution_prover name
 
 namespace resolution_prover_state
 
-meta def empty : resolution_prover_state :=
+meta def empty (local_false : expr) : resolution_prover_state :=
 { active := rb_map.mk _ _, passive := rb_map.mk _ _,
   newly_derived := [], prec := [], age := 0,
-  locked := [], sat_solver := cdcl.state.initial,
+  local_false := local_false,
+  locked := [], sat_solver := cdcl.state.initial local_false,
   current_model := rb_map.mk _ _, sat_hyps := rb_map.mk _ _, needs_sat_run := ff }
 
-meta def initial (clauses : list clause) : tactic resolution_prover_state := do
-after_setup ← forM' clauses (λc, add_inferred c []) empty,
+meta def initial (local_false : expr) (clauses : list clause) : tactic resolution_prover_state := do
+after_setup ← forM' clauses (λc, add_inferred c []) $ empty local_false,
 return after_setup.2
 
 end resolution_prover_state

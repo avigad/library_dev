@@ -16,13 +16,13 @@ meta def get_components (hs : list expr) : list (list expr) :=
 (sort_on (λh : expr × ℕ, h↣2) c)↣for $ λh, h↣1
 
 example (i : Type) (p q : i → Prop) (H : ∀x y, p x → q y → false) : true := by do
-h ← get_local `H >>= clause.of_proof,
+h ← get_local `H >>= clause.of_classical_proof,
 (op, lcs) ← h↣open_constn h↣num_binders,
 guard $ (get_components lcs)↣length = 2,
 triv
 
 example (i : Type) (p : i → i → Prop) (H : ∀x y z, p x y → p y z → false) : true := by do
-h ← get_local `H >>= clause.of_proof,
+h ← get_local `H >>= clause.of_classical_proof,
 (op, lcs) ← h↣open_constn h↣num_binders,
 guard $ (get_components lcs)↣length = 1,
 triv
@@ -46,25 +46,26 @@ else do
       return (op_wo_as↣1↣close_const op↣2, op_wo_as↣2)
   end
 
-meta def mk_splitting_clause' (orig_proof : expr) : list (list expr) → tactic (list expr × expr)
-| [] := return ([], orig_proof)
+meta def mk_splitting_clause' (empty_clause : clause) : list (list expr) → tactic (list expr × expr)
+| [] := return ([], empty_clause↣proof)
 | ([p] :: comps) := do p' : list expr × expr ← mk_splitting_clause' comps, return (p::p'↣1, p'↣2)
 | (comp :: comps) := do
   (hs, p') ← mk_splitting_clause' comps,
-  hnc ← mk_local_def `hnc (pis comp false_)↣not_,
+  hnc ← mk_local_def `hnc (imp (pis comp empty_clause↣local_false) empty_clause↣local_false),
   p'' ← return $ app hnc (lambdas comp p'),
   return (hnc::hs, p'')
 
-meta def mk_splitting_clause (orig_proof : expr) (comps : list (list expr)) : tactic clause := do
-(hs, p) ← mk_splitting_clause' orig_proof comps,
-return $ (clause.mk 0 0 p false_)↣close_constn hs
+meta def mk_splitting_clause (empty_clause : clause) (comps : list (list expr)) : tactic clause := do
+(hs, p) ← mk_splitting_clause' empty_clause comps,
+return $ { empty_clause with proof := p }↣close_constn hs
 
 meta def splitting_inf : inference := take given, do
+lf ← flip liftM stateT.read $ λst, st↣local_false,
 op : clause × list expr ← ↑(given↣c↣open_constn given↣c↣num_binders),
-if list.bor (given↣c↣get_lits↣for $ λl, l↣formula↣is_not↣is_some) then return () else
+if list.bor (given↣c↣get_lits↣for $ λl, (is_local_not lf l↣formula)↣is_some) then return () else
 let comps := get_components op↣2 in
 if comps↣length < 2 then return () else do
-splitting_clause ← ↑(mk_splitting_clause op↣1↣proof comps),
+splitting_clause ← ↑(mk_splitting_clause op↣1 comps),
 ass ← collect_ass_hyps splitting_clause,
 add_sat_clause $ splitting_clause↣close_constn ass,
 remove_redundant given↣id []

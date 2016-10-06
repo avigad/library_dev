@@ -12,7 +12,7 @@ return $ list.bor (do
 
 open tactic
 example (i : Type) (p : i → i → Type) (c : i) (h : ∀ (x : i), p x c → p x c) : true := by do
-h ← get_local `h, hcls ← clause.of_proof h,
+h ← get_local `h, hcls ← clause.of_classical_proof h,
 taut ← is_taut hcls,
 when (¬taut) failed,
 to_expr `(trivial) >>= apply
