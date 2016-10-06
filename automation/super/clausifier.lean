@@ -199,7 +199,21 @@ meta def first_some {a : Type} : list (tactic (option a)) → tactic (option a)
 | [] := return none
 | (x::xs) := do xres ← x, match xres with some y := return (some y) | none := first_some xs end
 
-meta def clausification_rules  : list (clause → tactic (list clause)) :=
+meta def get_clauses_core (rules : list (clause → tactic (list clause)))
+     : list clause → tactic (list clause) | cs :=
+liftM list.join $ do
+forM cs $ λc, do first $
+rules↣for (λr, r c >>= get_clauses_core) ++ [return [c]]
+
+meta def clausification_rules_intuit : list (clause → tactic (list clause)) :=
+[ inf_false_l, inf_false_r, inf_true_l, inf_true_r,
+  inf_not_r,
+  inf_and_l, inf_and_r,
+  inf_or_l, inf_or_r,
+  inf_all_r, inf_ex_l,
+  inf_whnf_l, inf_whnf_r ]
+
+meta def clausification_rules_classical : list (clause → tactic (list clause)) :=
 [ inf_false_l, inf_false_r, inf_true_l, inf_true_r,
   inf_not_r,
   inf_and_l, inf_and_r,
@@ -209,19 +223,31 @@ meta def clausification_rules  : list (clause → tactic (list clause)) :=
   inf_all_l, inf_ex_r,
   inf_whnf_l, inf_whnf_r ]
 
-meta def clausify : list clause → tactic (list clause) | cs :=
-liftM list.join $ do
-forM cs $ λc, do first $
-clausification_rules↣for (λr, r c >>= clausify) ++ [return [c]]
+meta def get_clauses_classical : list clause → tactic (list clause) :=
+get_clauses_core clausification_rules_classical
+meta def get_clauses_intuit : list clause → tactic (list clause) :=
+get_clauses_core clausification_rules_intuit
+
+meta def as_refutation : tactic unit := do
+intros,
+local_false_name ← get_unused_name `F none, tgt ← target, tgt_type ← infer_type tgt,
+definev local_false_name tgt_type tgt, local_false ← get_local `F,
+target_name ← get_unused_name `target none,
+assertv target_name (imp tgt local_false) (lam `hf binder_info.default tgt $ mk_var 0),
+change local_false
+
+meta def clauses_of_context : tactic (list clause) := do
+local_false ← target,
+local_context >>= mapM (clause.of_proof local_false)
 
 meta def clausification_pre : resolution_prover unit :=
-preprocessing_rule $ λnew, ↑(clausify new)
+preprocessing_rule $ λnew, ↑(get_clauses_classical new)
 
 meta def clausification_inf : inference :=
 λgiven, list.foldr orelse (return ()) $
-        do r ← clausification_rules,
+        do r ← clausification_rules_classical,
            [do cs ← ↑(r given↣c),
-               cs' ← ↑(clausify cs),
+               cs' ← ↑(get_clauses_classical cs),
                forM' cs' (λc, add_inferred c [given]),
                remove_redundant given↣id []]
 

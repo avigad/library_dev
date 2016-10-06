@@ -83,15 +83,10 @@ end super
 open super
 
 meta def super (sos_lemmas : list expr) : tactic unit := do
-intros,
-local_false_name ← get_unused_name `F none, tgt ← target, tgt_type ← infer_type tgt,
-definev local_false_name tgt_type tgt, local_false ← get_local `F,
-target_name ← get_unused_name `target none,
-assertv target_name (imp tgt local_false) (lam `hf binder_info.default tgt $ mk_var 0),
-change local_false,
-hyps ← local_context,
-initial_clauses ← mapM (clause.of_proof local_false) (hyps ++ sos_lemmas),
-initial_state ← resolution_prover_state.initial local_false initial_clauses,
+as_refutation, local_false ← target,
+clauses ← clauses_of_context,
+sos_clauses ← mapM (clause.of_proof local_false) sos_lemmas,
+initial_state ← resolution_prover_state.initial local_false (clauses ++ sos_clauses),
 res ← run_prover_loop selection21 (age_weight_clause_selection 6 7)
   default_preprocessing default_inferences
   0 initial_state,

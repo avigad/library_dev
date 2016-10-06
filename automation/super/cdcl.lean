@@ -18,15 +18,8 @@ else
   return none
 
 meta def cdcl_t (th_solver : tactic unit) : tactic unit := do
-intros,
-local_false_name ← get_unused_name `F none, tgt ← target, tgt_type ← infer_type tgt,
-definev local_false_name tgt_type tgt, local_false ← get_local `F,
-target_name ← get_unused_name `target none,
-assertv target_name (imp tgt local_false) (lam `hf binder_info.default tgt $ mk_var 0),
-change local_false,
-hyps ← local_context,
-gen_clauses ← mapM (clause.of_proof local_false) hyps,
-clauses ← clausify gen_clauses,
+as_refutation, local_false ← target,
+clauses ← clauses_of_context, clauses ← get_clauses_classical clauses,
 forM clauses (λc, do c_pp ← pp c, clause.validate c <|> fail c_pp),
 res ← cdcl.solve (theory_solver_of_tactic th_solver) local_false clauses,
 match res with
