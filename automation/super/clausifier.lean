@@ -9,14 +9,14 @@ liftM some tac <|> return none
 
 meta def inf_whnf_l (c : clause) : tactic (list clause) :=
 on_first_left c $ λtype, do
-  type' ← whnf type,
+  type' ← whnf_core transparency.reducible type,
   guard $ type' ≠ type,
   h ← mk_local_def `h type',
   return [([h], h)]
 
 meta def inf_whnf_r (c : clause) : tactic (list clause) :=
 on_first_right c $ λha, do
-  a' ← whnf ha↣local_type,
+  a' ← whnf_core transparency.reducible ha↣local_type,
   guard $ a' ≠ ha↣local_type,
   hna ← mk_local_def `hna (imp a' c↣local_false),
   return [([hna], app hna ha)]
@@ -53,12 +53,21 @@ first $ do i ← list.range c↣num_lits,
   then [return []]
   else []
 
+meta def inf_not_l (c : clause) : tactic (list clause) :=
+on_first_left c $ λtype,
+  match type with
+  | app (const ``not []) a := do
+    hna ← mk_local_def `h (imp a false_),
+    return [([hna], hna)]
+  | _ := failed
+  end
+
 meta def inf_not_r (c : clause) : tactic (list clause) :=
 on_first_right c $ λhna,
-  match is_local_not c↣local_false hna↣local_type with
-  | some a := do
-    ha ← mk_local_def `h a,
-    return [([ha], app hna ha)]
+  match hna↣local_type with
+  | app (const ``not []) a := do
+    hnna ← mk_local_def `h (imp (imp a false_) c↣local_false),
+    return [([hnna], app hnna hna)]
   | _ := failed
   end
 
@@ -212,6 +221,7 @@ filterM (λc, liftM bnot $ is_taut c) $ list.nub_on clause.type clauses
 
 meta def clausification_rules_intuit : list (clause → tactic (list clause)) :=
 [ inf_false_l, inf_false_r, inf_true_l, inf_true_r,
+  inf_not_l, inf_not_r,
   inf_and_l, inf_and_r,
   inf_or_l, inf_or_r,
   inf_ex_l,
@@ -219,7 +229,7 @@ meta def clausification_rules_intuit : list (clause → tactic (list clause)) :=
 
 meta def clausification_rules_classical : list (clause → tactic (list clause)) :=
 [ inf_false_l, inf_false_r, inf_true_l, inf_true_r,
-  inf_not_r,
+  inf_not_l, inf_not_r,
   inf_and_l, inf_and_r,
   inf_or_l, inf_or_r,
   inf_imp_l, inf_all_r,

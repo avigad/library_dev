@@ -1,7 +1,7 @@
 import .clause .prover_state
 import .subsumption .misc_preprocessing
 import .resolution .factoring .clausifier .superposition .equality .splitting
-import .inhabited .simp .datatypes
+import .inhabited .simp .datatypes .defs
 import .selection
 open monad tactic expr
 
@@ -75,6 +75,7 @@ resolution_inf,
 superposition_inf,
 unify_eq_inf,
 simp_inf,
+unfold_def_inf,
 (λg, return ())
 ]
 

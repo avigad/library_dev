@@ -44,6 +44,6 @@ by cdcl_t lit_unification
 
 example {p : ℕ → Prop} :
         list.foldl (λf v, f ∧ (v ∨ ¬v)) true (map p (list.range 5)) :=
-by cdcl
+begin (target >>= whnf >>= change), cdcl end
 
 example {a b c : Type _} : (a → b) → (b → c) → (a → c) := by cdcl
