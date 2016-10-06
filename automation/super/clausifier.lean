@@ -1,5 +1,5 @@
 import .clause .clause_ops
-import .prover_state
+import .prover_state .misc_preprocessing
 open expr list tactic monad decidable
 
 namespace super
@@ -199,18 +199,22 @@ meta def first_some {a : Type} : list (tactic (option a)) → tactic (option a)
 | [] := return none
 | (x::xs) := do xres ← x, match xres with some y := return (some y) | none := first_some xs end
 
-meta def get_clauses_core (rules : list (clause → tactic (list clause)))
+private meta def get_clauses_core' (rules : list (clause → tactic (list clause)))
      : list clause → tactic (list clause) | cs :=
 liftM list.join $ do
 forM cs $ λc, do first $
-rules↣for (λr, r c >>= get_clauses_core) ++ [return [c]]
+rules↣for (λr, r c >>= get_clauses_core') ++ [return [c]]
+
+meta def get_clauses_core (rules : list (clause → tactic (list clause))) (initial : list clause)
+     : tactic (list clause) := do
+clauses ← get_clauses_core' rules initial,
+filterM (λc, liftM bnot $ is_taut c) $ list.nub_on clause.type clauses
 
 meta def clausification_rules_intuit : list (clause → tactic (list clause)) :=
 [ inf_false_l, inf_false_r, inf_true_l, inf_true_r,
-  inf_not_r,
   inf_and_l, inf_and_r,
   inf_or_l, inf_or_r,
-  inf_all_r, inf_ex_l,
+  inf_ex_l,
   inf_whnf_l, inf_whnf_r ]
 
 meta def clausification_rules_classical : list (clause → tactic (list clause)) :=
@@ -231,7 +235,7 @@ get_clauses_core clausification_rules_intuit
 meta def as_refutation : tactic unit := do
 intros,
 local_false_name ← get_unused_name `F none, tgt ← target, tgt_type ← infer_type tgt,
-definev local_false_name tgt_type tgt, local_false ← get_local `F,
+definev local_false_name tgt_type tgt, local_false ← get_local local_false_name,
 target_name ← get_unused_name `target none,
 assertv target_name (imp tgt local_false) (lam `hf binder_info.default tgt $ mk_var 0),
 change local_false
