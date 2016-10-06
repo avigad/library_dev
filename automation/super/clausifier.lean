@@ -243,7 +243,7 @@ meta def get_clauses_intuit : list clause → tactic (list clause) :=
 get_clauses_core clausification_rules_intuit
 
 meta def as_refutation : tactic unit := do
-intros,
+repeat (do intro1, skip),
 local_false_name ← get_unused_name `F none, tgt ← target, tgt_type ← infer_type tgt,
 definev local_false_name tgt_type tgt, local_false ← get_local local_false_name,
 target_name ← get_unused_name `target none,
