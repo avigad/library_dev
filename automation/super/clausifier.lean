@@ -132,8 +132,8 @@ lemma imp_l' {F a b} [decidable F] : ((a → b) → F) → ((a → F) → F) :=
 
 lemma imp_l_c {F a b} : ((a → b) → F) → ((a → F) → F) :=
 λhabf haf, classical.by_cases
-    (assume ha :   a, haf ha)
-    (assume hna : ¬a, habf (take ha, absurd ha hna))
+    (assume hf :   F, hf)
+    (assume hnf : ¬F, habf (take ha, absurd (haf ha) hnf))
 
 meta def inf_imp_l (c : clause) : tactic (list clause) :=
 on_first_left_dn c $ λhnab,

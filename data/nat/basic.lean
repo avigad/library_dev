@@ -51,8 +51,8 @@ by super with nat.eq_zero_or_eq_succ_pred
 
 theorem succ_inj {n m : ℕ} (H : succ n = succ m) : n = m := by super
 
-theorem discriminate {B : Prop} {n : ℕ} (H1: n = 0 → B) (H2 : ∀m, n = succ m → B) : B :=
-begin induction n, super, super end
+theorem discriminate {B : Type _} {n : ℕ} (H1: n = 0 → B) (H2 : ∀m, n = succ m → B) : B :=
+begin cases n, super, super end
 
 theorem two_step_induction_on {P : ℕ → Prop} (a : ℕ) (H1 : P 0) (H2 : P 1)
     (H3 : ∀ (n : ℕ) (IH1 : P n) (IH2 : P (succ n)), P (succ (succ n))) : P a :=
