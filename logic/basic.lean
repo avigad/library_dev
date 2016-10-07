@@ -314,11 +314,11 @@ iff_intro decidable.exists_not_of_not_forall not_forall_of_exists_not
 theorem forall_true_iff : (∀ x : A, true) ↔ true :=
 iff_true_intro (λ h, trivial)
 
-theorem forall_p_iff_p (A : Type u) [inhabited A] (p : Prop) : (∀ x, p) ↔ p :=
+theorem forall_p_iff_p (A : Type u) [inhabited A] (p : Prop) : (∀ x : A, p) ↔ p :=
 iff_intro (λ h, h (inhabited.default A)) (λ hp x, hp)
 
 theorem exists_p_iff_p (A : Type u) [inhabited A] (p : Prop) : (∃ x : A, p) ↔ p :=
-iff_intro (Exists.rec (λ x hpx, hpx)) (λ hp, ⟨inhabited.default A, hp⟩)
+iff_intro (Exists.rec (λ x (hpx : p), hpx)) (λ hp, ⟨default A, hp⟩)
 
 theorem forall_and_distrib (p q : A → Prop) : (∀ x, p x ∧ q x) ↔ (∀ x, p x) ∧ (∀ x, q x) :=
 iff.intro

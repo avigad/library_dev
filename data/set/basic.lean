@@ -97,7 +97,7 @@ theorem subset_empty_iff (s : set A) : s ⊆ ∅ ↔ s = ∅ :=
 iff.intro eq_empty_of_subset_empty (take xeq, begin rewrite xeq, apply subset_refl end)
 
 lemma bounded_forall_empty_iff {p : A → Prop} :
-  (∀ x ∈ ∅, p x) ↔ true :=
+  (∀ x ∈ (∅ : set A), p x) ↔ true :=
 iff.intro (take H, true.intro) (take H x H1, absurd H1 (not_mem_empty _))
 
 /- universal set -/
