@@ -28,13 +28,13 @@ lemma add_succ (n m : ℕ) : n + succ m = succ (n + m) := rfl
 local attribute [simp] nat.add_zero nat.add_succ nat.zero_add nat.succ_add
 
 @[simp] theorem addl_zero_right (n : ℕ) : n ⊕ 0 = n :=
-begin induction n, simp, simp [v_0] end
+begin induction n, simp, simp [ih_1] end
 
 @[simp] theorem addl_succ_right (n m : ℕ) : n ⊕ succ m = succ (n ⊕ m) :=
-begin induction n, simp, simp [v_0] end
+begin induction n, simp, simp [ih_1] end
 
 @[simp] theorem add_eq_addl (x y : ℕ) : x ⊕ y = x + y :=
-begin induction x, simp, simp [v_0] end
+begin induction x, simp, simp [ih_1] end
 
 /- successor and predecessor -/
 
@@ -75,7 +75,7 @@ theorem succ_add_eq_succ_add (n m : ℕ) : succ n + m = n + succ m := by simp
 
 -- TODO(gabriel): shouldn't this simplify the other way around to be consistent with the notation?
 protected theorem add_assoc (n m k : ℕ) : (n + m) + k = n + (m + k) :=
-begin induction k, simp, simp [v_0] end
+begin induction k, simp, simp [ih_1] end
 
 -- TODO(gabriel): add some AC handling to super
 protected theorem add_left_comm (n m k : ℕ) : n + (m + k) = m + (n + k) :=
@@ -125,18 +125,18 @@ local attribute [simp] nat.mul_zero nat.mul_succ
 -- commutativity, distributivity, associativity, identity
 
 protected theorem zero_mul (n : ℕ) : 0 * n = 0 :=
-begin induction n, simp, simp [v_0] end
+begin induction n, simp, simp [ih_1] end
 
 theorem succ_mul (n m : ℕ) : (succ n) * m = (n * m) + m :=
-begin induction m, simp, simp [v_0] end
+begin induction m, simp, simp [ih_1] end
 
 local attribute [simp] nat.zero_mul nat.succ_mul
 
 protected theorem mul_comm (n m : ℕ) : n * m = m * n :=
-begin induction n, simp, simp [v_0] end
+begin induction n, simp, simp [ih_1] end
 
 protected theorem right_distrib (n m k : ℕ) : (n + m) * k = n * k + m * k :=
-begin induction k, simp, simp [v_0] end
+begin induction k, simp, simp [ih_1] end
 
 local attribute [simp] nat.mul_comm nat.right_distrib
 
@@ -146,7 +146,7 @@ begin rewrite nat.mul_comm, simp end
 local attribute [simp] nat.left_distrib
 
 protected theorem mul_assoc (n m k : ℕ) : (n * m) * k = n * (m * k) :=
-begin induction k, simp, simp [v_0] without nat.mul_comm end
+begin induction k, simp, simp [ih_1] without nat.mul_comm end
 
 local attribute [simp] nat.mul_assoc
 
