@@ -1,4 +1,4 @@
-import .clause .prover_state
+import .clause .prover_state data.monad.transformers
 import .subsumption .misc_preprocessing
 import .resolution .factoring .clausifier .superposition .equality .splitting
 import .inhabited .simp .datatypes .defs
@@ -10,20 +10,19 @@ set_option trace.super false
 
 namespace super
 
-meta def trace_clauses : resolution_prover unit := do
-state ← stateT.read,
-↑(trace state)
+meta def trace_clauses : prover unit :=
+do state ← stateT.read, ♯ trace state
 
 meta def run_prover_loop
   (literal_selection : selection_strategy)
   (clause_selection : clause_selection_strategy)
-  (preprocessing_rules : list (resolution_prover unit))
+  (preprocessing_rules : list (prover unit))
   (inference_rules : list inference)
-  : ℕ → resolution_prover (option expr) | i := do
+  : ℕ → prover (option expr) | i := do
 sequence' preprocessing_rules,
 new ← take_newly_derived, forM' new register_as_passive,
-() : unit ← ↑(when (is_trace_enabled_for `super) (forM' new (λn,
-  trace { n with proof := const (mk_simple_name " derived") [] }))),
+♯ when (is_trace_enabled_for `super) $ forM' new $ λn,
+  trace { n with proof := const (mk_simple_name " derived") [] },
 needs_sat_run ← flip liftM stateT.read (λst, st↣needs_sat_run),
 if needs_sat_run then do
   res ← do_sat_run,
@@ -31,7 +30,7 @@ if needs_sat_run then do
   | some proof := return (some proof)
   | none := do
     model ← flip liftM stateT.read (λst, st↣current_model),
-    () : unit ← ↑(when (is_trace_enabled_for `super) $ do
+    ♯ when (is_trace_enabled_for `super) (do
       pp_model ← pp (model↣to_list↣for (λlit, if lit↣2 = tt then lit↣1 else not_ lit↣1)),
       trace $ to_fmt "sat model: " ++ pp_model),
     run_prover_loop i
@@ -45,13 +44,13 @@ given ← option.to_monad (rb_map.find passive given_name),
 remove_passive given_name,
 selected_lits ← literal_selection given,
 activated_given ← return $ active_cls.mk given_name selected_lits given↣c given↣assertions given↣in_sos,
-() : unit ← ↑(when (is_trace_enabled_for `super) (do
-  fmt ← pp activated_given, trace (to_fmt "given: " ++ fmt))),
+♯ when (is_trace_enabled_for `super) (do
+  fmt ← pp activated_given, trace (to_fmt "given: " ++ fmt)),
 add_active activated_given,
 seq_inferences inference_rules activated_given,
 run_prover_loop (i+1)
 
-meta def default_preprocessing : list (resolution_prover unit) :=
+meta def default_preprocessing : list (prover unit) :=
 [
 factor_dup_lits_pre,
 remove_duplicates_pre,
@@ -87,7 +86,7 @@ meta def super (sos_lemmas : list expr) : tactic unit := do
 as_refutation, local_false ← target,
 clauses ← clauses_of_context,
 sos_clauses ← mapM (clause.of_proof local_false) sos_lemmas,
-initial_state ← resolution_prover_state.initial local_false (clauses ++ sos_clauses),
+initial_state ← prover_state.initial local_false (clauses ++ sos_clauses),
 res ← run_prover_loop selection21 (age_weight_clause_selection 6 7)
   default_preprocessing default_inferences
   0 initial_state,

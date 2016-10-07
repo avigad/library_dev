@@ -19,7 +19,7 @@ end
 
 meta def unify_eq_inf : inference := take given, sequence' $ do
 i ← given↣selected,
-[(do u ← ↑(try_unify_eq_l given↣c i), add_inferred u [given]) <|> return ()]
+[(do u ← ♯ try_unify_eq_l given↣c i, add_inferred u [given]) <|> return ()]
 
 meta def has_refl_r (c : clause) : bool :=
 list.bor $ do
@@ -30,7 +30,7 @@ match is_eq literal↣formula with
 | none := []
 end
 
-meta def refl_r_pre : resolution_prover unit :=
+meta def refl_r_pre : prover unit :=
 preprocessing_rule $ take new, return (filter (λc, ¬has_refl_r c) new)
 
 end super

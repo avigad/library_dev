@@ -1,4 +1,4 @@
-import .clause_ops .prover_state
+import .clause_ops .prover_state data.monad.transformers
 open expr tactic monad
 
 namespace super
@@ -19,7 +19,7 @@ return $ list.bor $ do
   end
 
 meta def diff_constr_eq_l_pre := preprocessing_rule $
-filterM (λc, liftM bnot (has_diff_constr_eq_l c))
+filterM (λc, liftM bnot $♯ has_diff_constr_eq_l c)
 
 meta def try_no_confusion_eq_r (c : clause) (i : ℕ) : tactic (list clause) :=
 on_right_at' c i $ λhyp,

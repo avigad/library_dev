@@ -306,15 +306,3 @@ match sort_of_type with
 end
 
 end tactic
-
-class has_coe_fam (A : Type _ → Type _) (B : Type _ → Type _) :=
-(at_point : Π x, A x → B x)
-
-namespace has_coe_fam
-
-instance {A B} [has_coe_fam A B] {x} : has_coe (A x) (B x) :=
-⟨has_coe_fam.at_point _ x⟩
-
-instance id_fam {A} : has_coe_fam A A := ⟨λx, id⟩
-
-end has_coe_fam

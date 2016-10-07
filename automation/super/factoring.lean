@@ -21,9 +21,9 @@ clause.meta_closure qf↣2 $ (at_j↣1↣inst hyp_i)↣close_constn at_j↣2
 meta def try_factor (c : clause) (i j : nat) : tactic clause :=
 if i > j then try_factor' gt c j i else try_factor' gt c i j
 
-meta def try_infer_factor (c : active_cls) (i j : nat) : resolution_prover unit := do
-f ← ↑(try_factor gt c↣c i j),
-ss : bool ← ↑(does_subsume f c↣c),
+meta def try_infer_factor (c : active_cls) (i j : nat) : prover unit := do
+f ← ♯ try_factor gt c↣c i j,
+ss ← ♯ does_subsume f c↣c,
 add_inferred f [c],
 if ss then remove_redundant c↣id [] else return ()
 
@@ -34,6 +34,6 @@ take given, do gt ← get_term_order, sequence' $ do
   return $ try_infer_factor gt given i j <|> return ()
 
 meta def factor_dup_lits_pre := preprocessing_rule $ take new, do
-↑(mapM clause.distinct new)
+♯ mapM clause.distinct new
 
 end super

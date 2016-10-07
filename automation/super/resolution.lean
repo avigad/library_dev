@@ -22,15 +22,15 @@ a_in_op2 ← (op2↣2↣nth i2)↣to_monad,
 clause.meta_closure (qf1.2 ++ qf2.2) $
   (op1↣1↣inst (op2↣1↣close_const a_in_op2)↣proof)↣close_constn (op1↣2 ++ op2↣2↣remove i2)
 
-meta def try_add_resolvent : resolution_prover unit := do
-c' ← ↑(try_resolve gt ac1↣c ac2↣c i1 i2),
+meta def try_add_resolvent : prover unit := do
+c' ← ♯ try_resolve gt ac1↣c ac2↣c i1 i2,
 add_inferred c' [ac1, ac2]
 
-meta def maybe_add_resolvent : resolution_prover unit :=
+meta def maybe_add_resolvent : prover unit :=
 try_add_resolvent gt ac1 ac2 i1 i2 <|> return ()
 
 meta def resolution_left_inf : inference :=
-take given, do active : rb_map name active_cls ← get_active, sequence' $ do
+take given, do active ← get_active, sequence' $ do
   given_i ← given↣selected,
   guard $ clause.literal.is_neg (given↣c↣get_lit given_i),
   other ← rb_map.values active,
@@ -40,7 +40,7 @@ take given, do active : rb_map name active_cls ← get_active, sequence' $ do
   [maybe_add_resolvent gt other given other_i given_i]
 
 meta def resolution_right_inf : inference :=
-take given, do active : rb_map name active_cls ← get_active, sequence' $ do
+take given, do active ← get_active, sequence' $ do
   given_i ← given↣selected,
   guard $ clause.literal.is_pos (given↣c↣get_lit given_i),
   other ← rb_map.values active,

@@ -1,4 +1,4 @@
-import .clause
+import .clause data.monad.transformers
 open tactic expr monad super
 
 namespace cdcl
@@ -101,17 +101,11 @@ meta def watches_for (st : state) (pl : prop_lit) : watch_map :=
 end state
 
 meta def solver := stateT state tactic
-
 meta instance : monad solver := stateT.monad _ _
-
-meta def solver_of_tactic {A} (tac : tactic A) : solver A :=
-take st, do res ← tac, return (res, st)
-
-meta instance : has_coe_fam tactic solver :=
-⟨λa, solver_of_tactic⟩
+meta instance : has_monad_lift tactic solver := monad.monad_transformer_lift (stateT state) tactic
 
 meta def fail {A B} [has_to_format B] (b : B) : solver A :=
-solver_of_tactic (tactic.fail b)
+♯ @tactic.fail A B _ b
 
 meta def get_local_false : solver expr :=
 do st ← stateT.read, return st↣local_false
@@ -184,7 +178,7 @@ do v_st ← lookup_var v, local_false ← get_local_false, match v_st with
     else
       set_conflict (app proof just)
 | some ⟨_, none⟩ := do
-    hyp_name ← ↑mk_fresh_name,
+    hyp_name ← ♯mk_fresh_name,
     hyp ← return $ local_const hyp_name hyp_name binder_info.default (formula_of_lit local_false v ph),
     if just_is_dn then do
       push_trail $ trail_elem.dbl_neg_propg v ph just hyp
@@ -193,7 +187,7 @@ do v_st ← lookup_var v, local_false ← get_local_false, match v_st with
 end
 
 meta def add_decision (v : prop_var) (ph : bool) := do
-hyp_name ← ↑mk_fresh_name,
+hyp_name ← ♯mk_fresh_name,
 local_false ← get_local_false,
 hyp ← return $ local_const hyp_name hyp_name binder_info.default (formula_of_lit local_false v ph),
 push_trail $ trail_elem.dec v ph hyp
@@ -288,11 +282,11 @@ remove_watch n c i₂,
 set_watches n c
 
 meta def mk_clause (c : clause) : solver unit := do
-c : clause ← ↑c↣distinct,
+c ← ♯c↣distinct,
 forM c↣get_lits (λl, mk_var l↣formula),
 revert_to_decision_level_zero (),
 stateT.modify $ λst, { st with clauses := c :: st↣clauses },
-c_name ← ↑mk_fresh_name,
+c_name ← ♯mk_fresh_name,
 set_watches c_name c
 
 meta def unit_propg_var (v : prop_var) : solver unit :=
@@ -330,10 +324,10 @@ meta def analyze_conflict (proof : proof_term) : solver clause :=
 do st ← stateT.read, return $ analyze_conflict' st↣local_false proof st↣trail
 
 meta def add_learned (c : clause) : solver unit := do
-prf_abbrev_name ← ↑mk_fresh_name,
+prf_abbrev_name ← ♯mk_fresh_name,
 c' ← return { c with proof := local_const prf_abbrev_name prf_abbrev_name binder_info.default c↣type },
 stateT.modify $ λst, { st with learned := ⟨c', c↣proof⟩ :: st↣learned },
-c_name ← ↑mk_fresh_name,
+c_name ← ♯mk_fresh_name,
 set_watches c_name c'
 
 meta def backtrack_with : clause → solver unit | conflict_clause := do

@@ -17,10 +17,10 @@ taut ← is_taut hcls,
 when (¬taut) failed,
 to_expr `(trivial) >>= apply
 
-meta def tautology_removal_pre : resolution_prover unit :=
-preprocessing_rule $ λnew, filterM (λc, liftM bnot ↑(is_taut c)) new
+meta def tautology_removal_pre : prover unit :=
+preprocessing_rule $ λnew, filterM (λc, liftM bnot (♯ is_taut c)) new
 
-meta def remove_duplicates_pre : resolution_prover unit :=
+meta def remove_duplicates_pre : prover unit :=
 preprocessing_rule $ λnew,
 return (rb_map.values (rb_map.of_list (list.map (λc:clause, (c↣type, c)) new)))
 

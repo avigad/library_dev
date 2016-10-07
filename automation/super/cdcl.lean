@@ -2,7 +2,7 @@ import .clause .clausifier .cdcl_solver
 open tactic expr monad super
 
 private meta def theory_solver_of_tactic (th_solver : tactic unit) : cdcl.solver (option cdcl.proof_term) :=
-do s ← stateT.read, ↑do
+do s ← stateT.read, ♯do
 hyps ← return $ s↣trail↣for (λe, e↣hyp),
 subgoal ← mk_meta_var s↣local_false,
 goals ← get_goals,
