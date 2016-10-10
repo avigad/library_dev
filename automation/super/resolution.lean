@@ -4,7 +4,7 @@ open tactic monad
 namespace super
 
 variable gt : expr → expr → bool
-variables (ac1 ac2 : active_cls)
+variables (ac1 ac2 : derived_clause)
 variables (c1 c2 : clause)
 variables (i1 i2 : nat)
 
@@ -13,7 +13,8 @@ variables (i1 i2 : nat)
 meta def try_resolve : tactic clause := do
 qf1 ← c1↣open_metan c1↣num_quants,
 qf2 ← c2↣open_metan c2↣num_quants,
-unify (qf1↣1↣get_lit i1)↣formula (qf2↣1↣get_lit i2)↣formula,
+-- FIXME: using default transparency unifies m*n with (x*y*z)*w here ???
+unify_core transparency.reducible (qf1↣1↣get_lit i1)↣formula (qf2↣1↣get_lit i2)↣formula,
 qf1i ← qf1↣1↣inst_mvars,
 guard $ clause.is_maximal gt qf1i i1,
 op1 ← qf1↣1↣open_constn i1,
@@ -24,7 +25,7 @@ clause.meta_closure (qf1.2 ++ qf2.2) $
 
 meta def try_add_resolvent : prover unit := do
 c' ← ♯ try_resolve gt ac1↣c ac2↣c i1 i2,
-add_inferred c' [ac1, ac2]
+inf_score 1 [ac1↣sc, ac2↣sc] >>= mk_derived c' >>= add_inferred
 
 meta def maybe_add_resolvent : prover unit :=
 try_add_resolvent gt ac1 ac2 i1 i2 <|> return ()
@@ -34,7 +35,7 @@ take given, do active ← get_active, sequence' $ do
   given_i ← given↣selected,
   guard $ clause.literal.is_neg (given↣c↣get_lit given_i),
   other ← rb_map.values active,
-  guard $ ¬given↣in_sos ∨ ¬other↣in_sos,
+  guard $ ¬given↣sc↣in_sos ∨ ¬other↣sc↣in_sos,
   other_i ← other↣selected,
   guard $ clause.literal.is_pos (other↣c↣get_lit other_i),
   [maybe_add_resolvent gt other given other_i given_i]
@@ -44,7 +45,7 @@ take given, do active ← get_active, sequence' $ do
   given_i ← given↣selected,
   guard $ clause.literal.is_pos (given↣c↣get_lit given_i),
   other ← rb_map.values active,
-  guard $ ¬given↣in_sos ∨ ¬other↣in_sos,
+  guard $ ¬given↣sc↣in_sos ∨ ¬other↣sc↣in_sos,
   other_i ← other↣selected,
   guard $ clause.literal.is_neg (other↣c↣get_lit other_i),
   [maybe_add_resolvent gt given other given_i other_i]

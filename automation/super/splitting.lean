@@ -67,7 +67,7 @@ let comps := get_components op↣2 in
 if comps↣length < 2 then return () else do
 splitting_clause ← ♯ mk_splitting_clause op↣1 comps,
 ass ← collect_ass_hyps splitting_clause,
-add_sat_clause $ splitting_clause↣close_constn ass,
+add_sat_clause (splitting_clause↣close_constn ass) given↣sc↣sched_default,
 remove_redundant given↣id []
 
 end super

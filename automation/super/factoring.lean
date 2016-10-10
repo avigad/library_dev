@@ -21,19 +21,25 @@ clause.meta_closure qf↣2 $ (at_j↣1↣inst hyp_i)↣close_constn at_j↣2
 meta def try_factor (c : clause) (i j : nat) : tactic clause :=
 if i > j then try_factor' gt c j i else try_factor' gt c i j
 
-meta def try_infer_factor (c : active_cls) (i j : nat) : prover unit := do
+meta def try_infer_factor (c : derived_clause) (i j : nat) : prover unit := do
 f ← ♯ try_factor gt c↣c i j,
 ss ← ♯ does_subsume f c↣c,
-add_inferred f [c],
-if ss then remove_redundant c↣id [] else return ()
+if ss then do
+  f ← mk_derived f c↣sc↣sched_now,
+  add_inferred f,
+  remove_redundant c↣id [f]
+else do
+  inf_score 1 [c↣sc] >>= mk_derived f >>= add_inferred
 
 meta def factor_inf : inference :=
 take given, do gt ← get_term_order, sequence' $ do
-  i ← active_cls.selected given,
+  i ← given↣selected,
   j ← list.range given↣c↣num_lits,
   return $ try_infer_factor gt given i j <|> return ()
 
 meta def factor_dup_lits_pre := preprocessing_rule $ take new, do
-♯ mapM clause.distinct new
+♯ forM new $ λdc, do
+  dist ← dc↣c↣distinct,
+  return { dc with c := dist }
 
 end super

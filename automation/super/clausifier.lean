@@ -254,15 +254,12 @@ meta def clauses_of_context : tactic (list clause) := do
 local_false ← target,
 local_context >>= mapM (clause.of_proof local_false)
 
-meta def clausification_pre : prover unit :=
-preprocessing_rule $ λnew, ♯ get_clauses_classical new
-
 meta def clausification_inf : inference :=
 λgiven, list.foldr orelse (return ()) $
         do r ← clausification_rules_classical,
            [do cs ← ♯ r given↣c,
                cs' ← ♯ get_clauses_classical cs,
-               forM' cs' (λc, add_inferred c [given]),
+               forM' cs' (λc, mk_derived c given↣sc↣sched_now >>= add_inferred),
                remove_redundant given↣id []]
 
 

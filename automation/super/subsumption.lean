@@ -21,15 +21,13 @@ try_subsume_core small_open↣1↣get_lits large_open↣1↣get_lits
 meta def does_subsume (small large : clause) : tactic bool :=
 (try_subsume small large >> return tt) <|> return ff
 
-meta def does_subsume_with_assertions (small large : clause) : prover bool := do
-small_ass ← collect_ass_hyps small,
-large_ass ← collect_ass_hyps large,
-if small_ass↣subset_of large_ass then do
-  ♯ does_subsume small large
+meta def does_subsume_with_assertions (small large : derived_clause) : prover bool := do
+if small↣assertions↣subset_of large↣assertions then do
+  ♯ does_subsume small↣c large↣c
 else
   return ff
 
-meta def any_tt {m : Type → Type} [monad m] (active : rb_map name active_cls) (pred : active_cls → m bool) : m bool :=
+meta def any_tt {m : Type → Type} [monad m] (active : rb_map clause_id derived_clause) (pred : derived_clause → m bool) : m bool :=
 active↣fold (return ff) $ λk a cont, do
   v ← pred a, if v then return tt else cont
 
@@ -37,32 +35,32 @@ meta def any_tt_list {m : Type → Type} [monad m] {A} (pred : A → m bool) : l
 | [] := return ff
 | (x::xs) := do v ← pred x, if v then return tt else any_tt_list xs
 
-meta def forward_subsumption : inference := take given, do
-active ← get_active,
-any_tt active (λa,
-  if a↣id = given↣id then return ff else do
-  ss ← ♯ does_subsume a↣c given↣c,
-  if ss then do
-    remove_redundant given↣id [a],
-    return tt
-  else
-    return ff),
-return ()
+meta def forward_subsumption : inference :=
+take given, do active ← get_active,
+sequence' $ do a ← active↣values,
+  guard $ a↣id ≠ given↣id,
+  return $ do
+    ss ← ♯ does_subsume a↣c given↣c,
+    if ss
+    then remove_redundant given↣id [a]
+    else return ()
 
 meta def forward_subsumption_pre : prover unit := preprocessing_rule $ λnew, do
 active ← get_active, filterM (λn, do
-  n_ass ← collect_ass_hyps n,
   do ss ← any_tt active (λa,
-        if a↣assertions↣subset_of n_ass then do
-          ♯ does_subsume a↣c n
+        if a↣assertions↣subset_of n↣assertions then do
+          ♯ does_subsume a↣c n↣c
         else
+          -- TODO: move to locked
           return ff),
      return (bnot ss)) new
 
-meta def subsumption_interreduction : list clause → prover (list clause)
+meta def subsumption_interreduction : list derived_clause → prover (list derived_clause)
 | (c::cs) := do
-  c_subsumed_by_cs ← any_tt_list (λd, does_subsume_with_assertions d c) cs,
-  if c_subsumed_by_cs then
+  -- TODO: move to locked
+  cs_that_subsume_c ← filterM (λd, does_subsume_with_assertions d c) cs,
+  if ¬cs_that_subsume_c↣empty then
+    -- TODO: update score
     subsumption_interreduction cs
   else do
     cs_not_subsumed_by_c ← filterM (λd, liftM bnot (does_subsume_with_assertions c d)) cs,
@@ -72,11 +70,11 @@ meta def subsumption_interreduction : list clause → prover (list clause)
 
 meta def subsumption_interreduction_pre : prover unit :=
 preprocessing_rule $ λnew,
-let new' := list.sort_on clause.num_lits new in
+let new' := list.sort_on (λc : derived_clause, c↣c↣num_lits) new in
 subsumption_interreduction new'
 
-meta def keys_where_tt {m} [monad m] (active : rb_map name active_cls) (pred : active_cls → m bool) : m (list name) :=
-@rb_map.fold _ _ (m (list name)) active (return []) $ λk a cont, do
+meta def keys_where_tt {m} {K V : Type} [monad m] (active : rb_map K V) (pred : V → m bool) : m (list K) :=
+@rb_map.fold _ _ (m (list K)) active (return []) $ λk a cont, do
   v ← pred a, rest ← cont, return $ if v then k::rest else rest
 
 meta def backward_subsumption : inference := λgiven, do

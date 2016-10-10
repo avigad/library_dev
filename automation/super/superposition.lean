@@ -31,7 +31,7 @@ end
 
 variable gt : expr → expr → bool
 variables (c1 c2 : clause)
-variables (ac1 ac2 : active_cls)
+variables (ac1 ac2 : derived_clause)
 variables (i1 i2 : nat)
 variable pos : list ℕ
 variable ltr : bool
@@ -99,7 +99,8 @@ get_rwr_positions (c↣get_lit i)↣formula
 
 meta def try_add_sup : prover unit :=
 (do c' ← ♯ try_sup gt ac1↣c ac2↣c i1 i2 pos ltr congr_ax,
-    add_inferred c' [ac1,ac2]) <|> return ()
+    inf_score 2 [ac1↣sc, ac2↣sc] >>= mk_derived c' >>= add_inferred)
+  <|> return ()
 
 meta def superposition_back_inf : inference :=
 take given, do active ← get_active, sequence' $ do
@@ -107,7 +108,7 @@ take given, do active ← get_active, sequence' $ do
   guard (given↣c↣get_lit given_i)↣is_pos,
   option.to_monad $ is_eq (given↣c↣get_lit given_i)↣formula,
   other ← rb_map.values active,
-  guard $ ¬given↣in_sos ∨ ¬other↣in_sos,
+  guard $ ¬given↣sc↣in_sos ∨ ¬other↣sc↣in_sos,
   other_i ← other↣selected,
   pos ← rwr_positions other↣c other_i,
   -- FIXME(gabriel): ``sup_ltr fails to resolve at runtime
@@ -118,7 +119,7 @@ meta def superposition_fwd_inf : inference :=
 take given, do active ← get_active, sequence' $ do
   given_i ← given↣selected,
   other ← rb_map.values active,
-  guard $ ¬given↣in_sos ∨ ¬other↣in_sos,
+  guard $ ¬given↣sc↣in_sos ∨ ¬other↣sc↣in_sos,
   other_i ← other↣selected,
   guard (other↣c↣get_lit other_i)↣is_pos,
   option.to_monad $ is_eq (other↣c↣get_lit other_i)↣formula,

@@ -54,6 +54,9 @@ theorem succ_inj {n m : ℕ} (H : succ n = succ m) : n = m := by super
 theorem discriminate {B : Type _} {n : ℕ} (H1: n = 0 → B) (H2 : ∀m, n = succ m → B) : B :=
 begin cases n, super, super end
 
+lemma one_succ_zero : 1 = succ 0 := rfl
+local attribute [simp] one_succ_zero
+
 theorem two_step_induction_on {P : ℕ → Prop} (a : ℕ) (H1 : P 0) (H2 : P 1)
     (H3 : ∀ (n : ℕ) (IH1 : P n) (IH2 : P (succ n)), P (succ (succ n))) : P a :=
 begin assert stronger : P a ∧ P (succ a), induction a, repeat { super } end
@@ -149,9 +152,6 @@ protected theorem mul_assoc (n m k : ℕ) : (n * m) * k = n * (m * k) :=
 begin induction k, simp, simp [ih_1] without nat.mul_comm end
 
 local attribute [simp] nat.mul_assoc
-
-lemma one_succ_zero : 1 = succ 0 := rfl
-local attribute [simp] one_succ_zero
 
 protected theorem mul_one (n : ℕ) : n * 1 = n := by simp
 local attribute [simp] nat.mul_one

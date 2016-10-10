@@ -153,11 +153,11 @@ meta def get_binder (e : expr) (i : nat) :=
 binding_domain (get_binding_body e i)
 
 meta def validate (c : clause) : tactic unit := do
-type' ← infer_type c↣proof,
 concl ← return $ get_binding_body c↣type c↣num_binders,
 unify concl c↣local_false
       <|> (do pp_concl ← pp concl, pp_lf ← pp c↣local_false,
               fail $ to_fmt "wrong local false: " ++ pp_concl ++ " =!= " ++ pp_lf),
+type' ← infer_type c↣proof,
 unify c↣type type' <|> (do pp_ty ← pp c↣type, pp_ty' ← pp type',
                            fail (to_fmt "wrong type: " ++ pp_ty ++ " =!= " ++ pp_ty'))
 

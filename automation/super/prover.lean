@@ -22,7 +22,7 @@ meta def run_prover_loop
 sequence' preprocessing_rules,
 new ← take_newly_derived, forM' new register_as_passive,
 ♯ when (is_trace_enabled_for `super) $ forM' new $ λn,
-  trace { n with proof := const (mk_simple_name " derived") [] },
+  tactic.trace { n with c := { (n↣c) with proof := const (mk_simple_name " derived") [] } },
 needs_sat_run ← flip liftM stateT.read (λst, st↣needs_sat_run),
 if needs_sat_run then do
   res ← do_sat_run,
@@ -42,12 +42,11 @@ given_name ← clause_selection i,
 given ← option.to_monad (rb_map.find passive given_name),
 -- trace_clauses,
 remove_passive given_name,
-selected_lits ← literal_selection given,
-activated_given ← return $ active_cls.mk given_name selected_lits given↣c given↣assertions given↣in_sos,
+given ← literal_selection given,
 ♯ when (is_trace_enabled_for `super) (do
-  fmt ← pp activated_given, trace (to_fmt "given: " ++ fmt)),
-add_active activated_given,
-seq_inferences inference_rules activated_given,
+  fmt ← pp given, trace (to_fmt "given: " ++ fmt)),
+add_active given,
+seq_inferences inference_rules given,
 run_prover_loop (i+1)
 
 meta def default_preprocessing : list (prover unit) :=
@@ -87,7 +86,7 @@ as_refutation, local_false ← target,
 clauses ← clauses_of_context,
 sos_clauses ← mapM (clause.of_proof local_false) sos_lemmas,
 initial_state ← prover_state.initial local_false (clauses ++ sos_clauses),
-res ← run_prover_loop selection21 (age_weight_clause_selection 6 7)
+res ← run_prover_loop selection21 (age_weight_clause_selection 3 4)
   default_preprocessing default_inferences
   0 initial_state,
 match res with

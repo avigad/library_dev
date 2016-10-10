@@ -22,7 +22,9 @@ on_right_at c i $ λh, do
 
 meta def unfold_def_inf : inference := take given, sequence' $ do
 r ← [try_unfold_def_right, try_unfold_def_left],
-i ← given↣selected,
-[inf_if_successful given (r given↣c i)]
+-- NOTE: we cannot restrict to selected literals here
+-- as this might prevent factoring, e.g. _n>0_ ∨ is_pos(0)
+i ← list.range given↣c↣num_lits,
+[inf_if_successful 3 given (r given↣c i)]
 
 end super

@@ -306,3 +306,10 @@ match sort_of_type with
 end
 
 end tactic
+
+namespace nat
+
+def min (m n : ℕ) := if m < n then m else n
+def max (m n : ℕ) := if m > n then m else n
+
+end nat
