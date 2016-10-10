@@ -30,7 +30,8 @@ on_right_at' c i $ λhyp, do
   prf  ← mk_app ``eq.mpr [heqsymm, hyp],
   return [(add_hyps, prf)]
 
-meta def simp_inf : inference := take given, sequence' $ do
+@[super.inf]
+meta def simp_inf : inf_decl := inf_decl.mk 40 $ take given, sequence' $ do
 r ← [try_simplify_right, try_simplify_left],
 i ← list.range given↣c↣num_lits,
 [inf_if_successful 2 given (r given↣c i)]

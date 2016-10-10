@@ -45,7 +45,8 @@ cs ← try_no_confusion_eq_r h2 0,
 forM' cs clause.validate,
 to_expr `(trivial) >>= exact
 
-meta def datatype_infs : inference := take given, do
+@[super.inf]
+meta def datatype_infs : inf_decl := inf_decl.mk 10 $ take given, do
 sequence' (do i ← list.range given↣c↣num_lits, [inf_if_successful 0 given $ try_no_confusion_eq_r given↣c i])
 
 end super

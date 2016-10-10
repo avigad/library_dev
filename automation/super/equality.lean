@@ -17,7 +17,8 @@ opened ← clause.open_constn qf↣1 i,
 clause.meta_closure qf↣2 $ clause.close_constn (opened↣1↣inst refl) opened↣2
 end
 
-meta def unify_eq_inf : inference := take given, sequence' $ do
+@[super.inf]
+meta def unify_eq_inf : inf_decl := inf_decl.mk 40 $ take given, sequence' $ do
 i ← given↣selected,
 [inf_if_successful 0 given (do u ← try_unify_eq_l given↣c i, return [u])]
 

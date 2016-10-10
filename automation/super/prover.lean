@@ -1,8 +1,25 @@
 import .clause .prover_state data.monad.transformers
-import .subsumption .misc_preprocessing
-import .resolution .factoring .clausifier .superposition .equality .splitting
-import .inhabited .simp .datatypes .defs
+import .misc_preprocessing
 import .selection
+
+-- default inferences
+-- 0
+import .clausifier
+-- 10
+import .inhabited
+import .datatypes
+-- 20
+import .subsumption
+-- 30
+import .splitting
+-- 40
+import .factoring
+import .resolution
+import .superposition
+import .equality
+import .simp
+import .defs
+
 open monad tactic expr
 
 declare_trace super
@@ -61,22 +78,6 @@ forward_subsumption_pre,
 return ()
 ]
 
-meta def default_inferences : list inference :=
-[
-clausification_inf,
-inhabited_infs,
-datatype_infs,
-forward_subsumption, backward_subsumption,
-splitting_inf,
-factor_inf,
-resolution_inf,
-superposition_inf,
-unify_eq_inf,
-simp_inf,
-unfold_def_inf,
-(λg, return ())
-]
-
 end super
 
 open super
@@ -86,8 +87,11 @@ as_refutation, local_false ← target,
 clauses ← clauses_of_context,
 sos_clauses ← mapM (clause.of_proof local_false) sos_lemmas,
 initial_state ← prover_state.initial local_false (clauses ++ sos_clauses),
+inf_names ← attribute.get_instances `super.inf,
+infs ← forM inf_names $ λn, eval_expr inf_decl (const n []),
+infs ← return $ list.map inf_decl.inf $ list.sort_on inf_decl.prio infs,
 res ← run_prover_loop selection21 (age_weight_clause_selection 3 4)
-  default_preprocessing default_inferences
+  default_preprocessing infs
   0 initial_state,
 match res with
 | (some empty_clause, st) := apply empty_clause

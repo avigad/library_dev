@@ -35,7 +35,8 @@ meta def any_tt_list {m : Type → Type} [monad m] {A} (pred : A → m bool) : l
 | [] := return ff
 | (x::xs) := do v ← pred x, if v then return tt else any_tt_list xs
 
-meta def forward_subsumption : inference :=
+@[super.inf]
+meta def forward_subsumption : inf_decl := inf_decl.mk 20 $
 take given, do active ← get_active,
 sequence' $ do a ← active↣values,
   guard $ a↣id ≠ given↣id,
@@ -77,7 +78,8 @@ meta def keys_where_tt {m} {K V : Type} [monad m] (active : rb_map K V) (pred : 
 @rb_map.fold _ _ (m (list K)) active (return []) $ λk a cont, do
   v ← pred a, rest ← cont, return $ if v then k::rest else rest
 
-meta def backward_subsumption : inference := λgiven, do
+@[super.inf]
+meta def backward_subsumption : inf_decl := inf_decl.mk 20 $ λgiven, do
 active ← get_active,
 ss ← ♯ keys_where_tt active (λa, does_subsume given↣c a↣c),
 sequence' $ do id ← ss, guard (id ≠ given↣id), [remove_redundant id [given]]

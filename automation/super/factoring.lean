@@ -31,7 +31,8 @@ if ss then do
 else do
   inf_score 1 [c↣sc] >>= mk_derived f >>= add_inferred
 
-meta def factor_inf : inference :=
+@[super.inf]
+meta def factor_inf : inf_decl := inf_decl.mk 40 $
 take given, do gt ← get_term_order, sequence' $ do
   i ← given↣selected,
   j ← list.range given↣c↣num_lits,

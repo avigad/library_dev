@@ -59,7 +59,8 @@ meta def mk_splitting_clause (empty_clause : clause) (comps : list (list expr)) 
 (hs, p) ← mk_splitting_clause' empty_clause comps,
 return $ { empty_clause with proof := p }↣close_constn hs
 
-meta def splitting_inf : inference := take given, do
+@[super.inf]
+meta def splitting_inf : inf_decl := inf_decl.mk 30 $ take given, do
 lf ← flip liftM stateT.read $ λst, st↣local_false,
 op ← ♯ given↣c↣open_constn given↣c↣num_binders,
 if list.bor (given↣c↣get_lits↣for $ λl, (is_local_not lf l↣formula)↣is_some) then return () else

@@ -254,7 +254,8 @@ meta def clauses_of_context : tactic (list clause) := do
 local_false ← target,
 local_context >>= mapM (clause.of_proof local_false)
 
-meta def clausification_inf : inference :=
+@[super.inf]
+meta def clausification_inf : inf_decl := inf_decl.mk 0 $
 λgiven, list.foldr orelse (return ()) $
         do r ← clausification_rules_classical,
            [do cs ← ♯ r given↣c,

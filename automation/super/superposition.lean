@@ -127,7 +127,8 @@ take given, do active ← get_active, sequence' $ do
   [do try_add_sup gt other given other_i given_i pos tt ``super.sup_ltr,
       try_add_sup gt other given other_i given_i pos ff ``super.sup_rtl]
 
-meta def superposition_inf : inference :=
+@[super.inf]
+meta def superposition_inf : inf_decl := inf_decl.mk 40 $
 take given, do gt ← get_term_order,
 superposition_fwd_inf gt given,
 superposition_back_inf gt given
