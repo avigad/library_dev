@@ -144,7 +144,7 @@ meta def collect_props : list expr → tactic (list expr)
   (unify htt prop >> return (h :: props)) <|> return props
 
 meta def unfold_all (ns : list name) : tactic unit :=
-do unfold ns, local_context >>= collect_props >>= monad.mapM' (unfold_at ns)
+do dunfold ns, local_context >>= collect_props >>= monad.mapM' (dunfold_at ns)
 
 meta def head_symbol : expr → name
 | (const n a)      := n

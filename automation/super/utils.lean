@@ -123,14 +123,6 @@ def nub_on' {A B} [decidable_eq B] (f : A → B) : list A → list A
 | [] := []
 | (x::xs) := x :: filter (λy, f x ≠ f y) (nub_on' xs)
 
-def foldr {A B} (f : A → B → B) (b : B) : list A → B
-| [] := b
-| (a::ass) := f a (foldr ass)
-
-def foldl {A B} (f : B → A → B) : B → list A → B
-| b [] := b
-| b (a::ass) := foldl (f b a) ass
-
 private def for_all' {A} (p : A → Prop) [decidable_pred p] : list A → bool
 | (x::xs) := if ¬p x then ff else for_all' xs
 | [] := tt
