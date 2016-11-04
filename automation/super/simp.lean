@@ -9,7 +9,7 @@ ass ← mk_local_def `h tgt,
 exact ass
 
 meta def simplify_capturing_assumptions (type : expr) : tactic (expr × expr × list expr) := do
-(type', heq) ← simplify prove_using_assumption [] type,
+(type', heq) ← simplify default_simplify_config [] type,
 hyps ← return $ contained_lconsts type,
 hyps' ← return $ contained_lconsts_list [type', heq],
 add_hyps ← return $ list.filter (λn : expr, ¬hyps↣contains n↣local_uniq_name) hyps'↣values,

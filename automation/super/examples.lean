@@ -15,7 +15,7 @@ begin with_lemmas dvd_refl dvd_mul nat_mul_cancel_one, super end
 
 example : nat.zero ≠ nat.succ nat.zero := by super
 example (x y : ℕ) : nat.succ x = nat.succ y → x = y := by super
-example (i : Type) (a b c : i) : [a,b,c] = [b,c,a] -> a = b ∧ b = c := by super
+example (i) (a b c : i) : [a,b,c] = [b,c,a] -> a = b ∧ b = c := by super
 
 definition is_positive (n : ℕ) := n > 0
 example (n : ℕ) : n > 0 ↔ is_positive n := by super
@@ -77,7 +77,7 @@ example (i) [nonempty i] (f g : i → i → Prop) :
   ∃x y, ∀z, (f x y → f y z ∧ f z z) ∧ (f x y ∧ g x y → g x z ∧ g z z) :=
 by super
 
-example (person : Type) [nonempty person] (drinks : person → Prop) :
+example (person) [nonempty person] (drinks : person → Prop) :
   ∃canary, drinks canary → ∀other, drinks other := by super
 
 example {p q : ℕ → Prop} {r} : (∀x y, p x ∧ q y ∧ r) -> ∀x, (p x ∧ r ∧ q x) := by super

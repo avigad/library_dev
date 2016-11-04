@@ -68,3 +68,5 @@ meta def intuit : tactic unit := intuit.solve ()
 example (a b) : a → (a → b) → b := by intuit
 example (a b c) : (a → c) → (c → b) → ((a → b) → a) → a := by intuit
 example (a b) : a ∨ ¬a → ((a → b) → a) → a := by intuit
+
+def compose {a b c} : (a → b) → (b → c) → (a → c) := by intuit

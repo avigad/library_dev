@@ -273,13 +273,6 @@ meta def pis : list expr → expr → expr
                pi pp info t (abstract_local (pis es f) uniq)
 | _ f := f
 
-meta def collect_successes {A} : list (tactic A) → tactic (list A)
-| (t::ts) := do
-  x_opt ← (do x ← t, return [x]) <|> return [],
-  xs ← collect_successes ts,
-  return (x_opt ++ xs)
-| [] := return []
-
 namespace stateT
 
 def modify {S} {M : Type → Type} [monad M] (f : S → S) : stateT S M unit :=

@@ -24,16 +24,10 @@ theorem implies_self (h : a) : a := h
 
 theorem implies_intro (h : a) (h₂ : b) : a := h
 
-theorem implies_true_iff (a : Prop) : (a → true) ↔ true :=
-iff_true_intro (implies_intro trivial)
-
 theorem true_implies_iff (a : Prop) : (true → a) ↔ a :=
 iff_intro (assume H, H trivial) implies_intro
 
 theorem implies_false_iff (a : Prop) : (a → false) ↔ ¬ a := iff.rfl
-
-theorem false_implies_iff (a : Prop) : (false → a) ↔ true :=
-iff_true_intro false_elim
 
 /- not -/
 

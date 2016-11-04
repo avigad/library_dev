@@ -194,23 +194,29 @@ do ht ← infer_type h,
 
 /- versions of the simplifier that call themselves recursively -/
 
+-- FIXME(gabriel): figure out how to provide custom tactic to simplifier
+meta def simplify_goal' (t : command) (lemmas : list expr) : command :=
+simp_using lemmas
+meta def simp_core_at' (t : command) (lemmas : list expr) (h : expr) : command :=
+simp_core_at lemmas h
+
 -- simp_add_prove_max_depth l d uses the simplifier as its own prover, recursing up to depth d
 meta def simp_add_prove_max_depth (lemmas : list expr) : ℕ → tactic unit
 | 0        := failed
 | (succ d) := do l ← local_context >>= collect_props,
-                 simplify_goal (simp_add_prove_max_depth d) (l ++ lemmas),
+                 simplify_goal' (simp_add_prove_max_depth d) (l ++ lemmas),
                  triv
 
 meta def strong_simp_add (lemmas : list expr) : tactic unit :=
 do l ← local_context >>= collect_props,
-   simplify_goal (simp_add_prove_max_depth lemmas 10) (l ++ lemmas),
+   simplify_goal' (simp_add_prove_max_depth lemmas 10) (l ++ lemmas),
    try triv
 
 meta def strong_simp : tactic unit :=
 strong_simp_add []
 
 meta def strong_simp_at_add (h : expr) (lemmas : list expr) : tactic unit :=
-do simp_core_at (simp_add_prove_max_depth lemmas 10) lemmas h
+do simp_core_at' (simp_add_prove_max_depth lemmas 10) lemmas h
 
 meta def strong_simp_at (h : expr) : tactic unit :=
 do strong_simp_at_add h []
@@ -1165,7 +1171,6 @@ meta def auto (classical : bool) (use_simp : bool)
 safe_all classical use_simp irules erules nerules simp_lemmas >>
 all_goals
   (try (force classical use_simp irules erules nerules birules berules bnerules simp_lemmas))
-
 
 /- for testing -/
 
