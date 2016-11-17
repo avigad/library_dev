@@ -130,7 +130,7 @@ lemma imp_l' {F a b} [decidable F] : ((a → b) → F) → ((a → F) → F) :=
     (assume hf :   F, hf)
     (assume hnf : ¬F, habf (take ha, absurd (haf ha) hnf))
 
-lemma imp_l_c {F a b} : ((a → b) → F) → ((a → F) → F) :=
+lemma imp_l_c {F : Prop} {a b} : ((a → b) → F) → ((a → F) → F) :=
 λhabf haf, classical.by_cases
     (assume hf :   F, hf)
     (assume hnf : ¬F, habf (take ha, absurd (haf ha) hnf))
