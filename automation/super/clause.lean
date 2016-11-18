@@ -175,13 +175,15 @@ meta def get_lits (c : clause) : list literal :=
 list.map (get_lit c) (range c↣num_lits)
 
 meta def is_maximal (gt : expr → expr → bool) (c : clause) (i : nat) : bool :=
-list.empty (filter (λj, gt (get_lit c j)↣formula (get_lit c i)↣formula) (range c↣num_lits))
+list.empty (list.filter (λj, gt (get_lit c j)↣formula (get_lit c i)↣formula) (range c↣num_lits))
 
 meta def normalize (c : clause) : tactic clause := do
 opened  ← open_constn c (num_binders c),
 lconsts_in_types ← return $ contained_lconsts_list (list.map local_type opened.2),
-quants' ← return $ filter (λlc, rb_map.contains lconsts_in_types (local_uniq_name lc)) opened.2,
-lits' ← return $ filter (λlc, ¬rb_map.contains lconsts_in_types (local_uniq_name lc)) opened.2,
+quants' ← return $ list.filter (λlc, rb_map.contains lconsts_in_types (local_uniq_name lc)) 
+                                                      opened.2,
+lits' ← return $ list.filter (λlc, ¬rb_map.contains lconsts_in_types (local_uniq_name lc)) 
+                                                     opened.2,
 return $ close_constn opened.1 (quants' ++ lits')
 
 meta def whnf_head_lit (c : clause) : tactic clause := do
@@ -203,14 +205,14 @@ else
 -- FIXME: this is most definitely broken with meta-variables that were already in the goal
 meta def sort_and_constify_metas : list expr → tactic (list expr)
 | exprs_with_metas := do
-inst_exprs ← mapM instantiate_mvars exprs_with_metas,
+inst_exprs ← mapm instantiate_mvars exprs_with_metas,
 metas ← return $ inst_exprs >>= get_metas,
 match list.filter (λm, ¬has_meta_var (get_meta_type m)) metas with
 | [] :=
      if list.empty metas then
        return []
      else do
-       forM' metas (λm, do trace (expr.to_string m), t ← infer_type m, trace (expr.to_string t)),
+       for' metas (λm, do trace (expr.to_string m), t ← infer_type m, trace (expr.to_string t)),
        fail "could not sort metas"
 | ((mvar n t) :: _) := do
   t' ← infer_type (mvar n t),

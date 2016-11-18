@@ -144,7 +144,7 @@ meta def collect_props : list expr → tactic (list expr)
   (unify htt prop >> return (h :: props)) <|> return props
 
 meta def unfold_all (ns : list name) : tactic unit :=
-do dunfold ns, local_context >>= collect_props >>= monad.mapM' (dunfold_at ns)
+do dunfold ns, local_context >>= collect_props >>= monad.mapm' (dunfold_at ns)
 
 meta def head_symbol : expr → name
 | (const n a)      := n
@@ -412,7 +412,7 @@ rb_lmap.find db key
 
 meta def intro_rule_database_of_list_name (ns : list name) : tactic (intro_rule_database) :=
 do env ← get_env,
-   rule_list ← monad.forM ns (λ n, do
+   rule_list ← monad.for ns (λ n, do
       e ← mk_const n,
       eval_expr intro_rule e),
    return (initialize_rule_database rule_list)
@@ -427,7 +427,7 @@ run_command attribute.register ``intro_rule_attr
 
 meta def elim_rule_database_of_list_name (ns : list name) : tactic (elim_rule_database) :=
 do env ← get_env,
-   rule_list ← monad.forM ns (λ n, do
+   rule_list ← monad.for ns (λ n, do
       e ← mk_const n,
       eval_expr elim_rule e),
    return (initialize_rule_database rule_list)
@@ -450,7 +450,7 @@ run_command attribute.register ``nelim_rule_attr
 
 meta def bintro_rule_database_of_list_name (ns : list name) : tactic (bintro_rule_database) :=
 do env ← get_env,
-   rule_list ← monad.forM ns (λ n, do
+   rule_list ← monad.for ns (λ n, do
       e ← mk_const n,
       eval_expr bintro_rule e),
    return (initialize_rule_database rule_list)
@@ -465,7 +465,7 @@ run_command attribute.register ``bintro_rule_attr
 
 meta def belim_rule_database_of_list_name (ns : list name) : tactic (belim_rule_database) :=
 do env ← get_env,
-   rule_list ← monad.forM ns (λ n, do
+   rule_list ← monad.for ns (λ n, do
       e ← mk_const n,
       eval_expr belim_rule e),
    return (initialize_rule_database rule_list)
@@ -586,7 +586,7 @@ auto_trace_stepM
 meta def deploy_dests_at (ops : list (name × ℕ)) : expr → tactic unit :=
 λ h : expr,
 auto_trace_stepM
-  (monad.forM' ops (λ p, mk_mapp (p.1) (dest_instance_mapp_args (p.2) h) >>= assert_fresh) >>
+  (monad.for' ops (λ p, mk_mapp (p.1) (dest_instance_mapp_args (p.2) h) >>= assert_fresh) >>
     clear h)
   (λ u, do s ← expr_with_type_to_string h,
            return ("applying destructors " ++ (map prod.fst ops)^.to_string ++ " at " ++ s))
@@ -652,7 +652,7 @@ do ht ← infer_type h >>= whnf_red,
                 cond classical (rule_data.classical r) (rule_data.intuit r) = tt then
              rule_data.tac r h cont
            else failed)) <|>
-   (monad.condM (is_negation ht)
+   (monad.cond (is_negation ht)
      (do dt ← infer_type (binding_domain h),
          first $ list.for (find_rules bnedb (head_symbol dt))
             (λ r, if rule_data.num_subgoals r ≤ max_subgoals ∧
@@ -832,7 +832,7 @@ meta def deploy_imp_classical_elim_at (h : expr) : tactic unit :=
 do ht ← infer_type h >>= whnf_red,
    dt ← infer_type (binding_domain ht),
    if dt ≠ prop then failed
-   else monad.condM (is_negation ht)
+   else monad.cond (is_negation ht)
      failed
      (deploy_elim_at ``imp_classical_elim 3 4 h)
 
@@ -989,14 +989,14 @@ meta def apply_to_metavars_while_universal (h : expr) : tactic expr :=
 apply_to_metavars_while_universal_aux unit.star h
 
 meta def try_instantiate_quantifiers (cont : tactic unit) : tactic unit :=
-do hs ← (local_context >>= monad.filterM has_forall_type),
+do hs ← (local_context >>= monad.filter has_forall_type),
    gt ← target,
    when (hs = []/- ∧ head_symbol gt ≠ `Exists-/) failed,
-   monad.forM' hs
+   monad.for' hs
      (λ h, do h' ← apply_to_metavars_while_universal h,
            assert_fresh h'),
 --   when (head_symbol gt = `Exists) split,
-   monad.forM' hs clear,
+   monad.for' hs clear,
    monad.whenb (is_trace_enabled_for `auto)
      (trace "instantiating quantifiers" >> trace_state >> trace "-----"),
    cont

@@ -47,7 +47,7 @@ sequence' $ do a ← active↣values,
     else return ()
 
 meta def forward_subsumption_pre : prover unit := preprocessing_rule $ λnew, do
-active ← get_active, filterM (λn, do
+active ← get_active, filter (λn, do
   do ss ← any_tt active (λa,
         if a↣assertions↣subset_of n↣assertions then do
           ♯ does_subsume a↣c n↣c
@@ -59,12 +59,12 @@ active ← get_active, filterM (λn, do
 meta def subsumption_interreduction : list derived_clause → prover (list derived_clause)
 | (c::cs) := do
   -- TODO: move to locked
-  cs_that_subsume_c ← filterM (λd, does_subsume_with_assertions d c) cs,
+  cs_that_subsume_c ← filter (λd, does_subsume_with_assertions d c) cs,
   if ¬cs_that_subsume_c↣empty then
     -- TODO: update score
     subsumption_interreduction cs
   else do
-    cs_not_subsumed_by_c ← filterM (λd, liftM bnot (does_subsume_with_assertions c d)) cs,
+    cs_not_subsumed_by_c ← filter (λd, lift bnot (does_subsume_with_assertions c d)) cs,
     cs' ← subsumption_interreduction cs_not_subsumed_by_c,
     return (c::cs')
 | [] := return []

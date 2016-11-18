@@ -273,12 +273,12 @@ meta def pis : list expr → expr → expr
                pi pp info t (abstract_local (pis es f) uniq)
 | _ f := f
 
-namespace stateT
+namespace state_t
 
-def modify {S} {M : Type → Type} [monad M] (f : S → S) : stateT S M unit :=
+def modify {S} {M : Type → Type} [monad M] (f : S → S) : state_t S M unit :=
 do s ← read, write (f s)
 
-end stateT
+end state_t
 
 namespace tactic
 

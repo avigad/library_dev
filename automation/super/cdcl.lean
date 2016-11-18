@@ -2,12 +2,12 @@ import .clause .clausifier .cdcl_solver
 open tactic expr monad super
 
 private meta def theory_solver_of_tactic (th_solver : tactic unit) : cdcl.solver (option cdcl.proof_term) :=
-do s ← stateT.read, ♯do
+do s ← state_t.read, ♯do
 hyps ← return $ s↣trail↣for (λe, e↣hyp),
 subgoal ← mk_meta_var s↣local_false,
 goals ← get_goals,
 set_goals [subgoal],
-hvs ← forM hyps (λhyp, assertv hyp↣local_pp_name hyp↣local_type hyp),
+hvs ← for hyps (λhyp, assertv hyp↣local_pp_name hyp↣local_type hyp),
 solved ← (do th_solver, now, return tt) <|> return ff,
 set_goals goals,
 if solved then do
@@ -20,7 +20,7 @@ else
 meta def cdcl_t (th_solver : tactic unit) : tactic unit := do
 as_refutation, local_false ← target,
 clauses ← clauses_of_context, clauses ← get_clauses_classical clauses,
-forM clauses (λc, do c_pp ← pp c, clause.validate c <|> fail c_pp),
+for clauses (λc, do c_pp ← pp c, clause.validate c <|> fail c_pp),
 res ← cdcl.solve (theory_solver_of_tactic th_solver) local_false clauses,
 match res with
 | (cdcl.result.unsat proof) := exact proof

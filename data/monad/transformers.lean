@@ -29,12 +29,12 @@ instance has_monad_lift_t_refl (m) [monad m] : has_monad_lift_t m m :=
 
 end monad
 
-namespace stateT
+namespace state_t
 
-def stateT_monad_lift (S) (m) [monad m] (A) (f : m A) : stateT S m A :=
+def state_t_monad_lift (S) (m) [monad m] (A) (f : m A) : state_t S m A :=
 take state, do res ← f, return (res, state)
 
-instance (S) : monad.monad_transformer (stateT S) :=
-⟨ stateT.monad S, stateT_monad_lift S ⟩
+instance (S) : monad.monad_transformer (state_t S) :=
+⟨ state_t.monad S, state_t_monad_lift S ⟩
 
-end stateT
+end state_t

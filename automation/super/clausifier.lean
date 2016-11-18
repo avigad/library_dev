@@ -2,10 +2,12 @@ import .clause .clause_ops
 import .prover_state .misc_preprocessing
 open expr list tactic monad decidable
 
+universe variable u
+
 namespace super
 
-meta def try_option {a} (tac : tactic a) : tactic (option a) :=
-liftM some tac <|> return none
+meta def try_option {a : Type (u + 1)} (tac : tactic a) : tactic (option a) :=
+lift some tac <|> return none
 
 meta def inf_whnf_l (c : clause) : tactic (list clause) :=
 on_first_left c $ λtype, do
@@ -210,14 +212,14 @@ meta def first_some {a : Type} : list (tactic (option a)) → tactic (option a)
 
 private meta def get_clauses_core' (rules : list (clause → tactic (list clause)))
      : list clause → tactic (list clause) | cs :=
-liftM list.join $ do
-forM cs $ λc, do first $
+lift list.join $ do
+for cs $ λc, do first $
 rules↣for (λr, r c >>= get_clauses_core') ++ [return [c]]
 
 meta def get_clauses_core (rules : list (clause → tactic (list clause))) (initial : list clause)
      : tactic (list clause) := do
 clauses ← get_clauses_core' rules initial,
-filterM (λc, liftM bnot $ is_taut c) $ list.nub_on clause.type clauses
+filter (λc, lift bnot $ is_taut c) $ list.nub_on clause.type clauses
 
 meta def clausification_rules_intuit : list (clause → tactic (list clause)) :=
 [ inf_false_l, inf_false_r, inf_true_l, inf_true_r,
@@ -252,7 +254,8 @@ change local_false
 
 meta def clauses_of_context : tactic (list clause) := do
 local_false ← target,
-local_context >>= mapM (clause.of_proof local_false)
+l ← local_context,
+monad.for l (clause.of_proof local_false)
 
 @[super.inf]
 meta def clausification_inf : inf_decl := inf_decl.mk 0 $
@@ -260,7 +263,7 @@ meta def clausification_inf : inf_decl := inf_decl.mk 0 $
         do r ← clausification_rules_classical,
            [do cs ← ♯ r given↣c,
                cs' ← ♯ get_clauses_classical cs,
-               forM' cs' (λc, mk_derived c given↣sc↣sched_now >>= add_inferred),
+               for' cs' (λc, mk_derived c given↣sc↣sched_now >>= add_inferred),
                remove_redundant given↣id []]
 
 

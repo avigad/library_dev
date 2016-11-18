@@ -19,7 +19,7 @@ return $ list.bor $ do
   end
 
 meta def diff_constr_eq_l_pre := preprocessing_rule $
-filterM (λc, liftM bnot $♯ has_diff_constr_eq_l c↣c)
+filter (λc, lift bnot $♯ has_diff_constr_eq_l c↣c)
 
 meta def try_no_confusion_eq_r (c : clause) (i : ℕ) : tactic (list clause) :=
 on_right_at' c i $ λhyp,
@@ -40,9 +40,9 @@ example (x y : ℕ) (h : nat.zero = nat.succ nat.zero) (h2 : nat.succ x = nat.su
 h ← get_local `h >>= clause.of_classical_proof,
 h2 ← get_local `h2 >>= clause.of_classical_proof,
 cs ← try_no_confusion_eq_r h 0,
-forM' cs clause.validate,
+for' cs clause.validate,
 cs ← try_no_confusion_eq_r h2 0,
-forM' cs clause.validate,
+for' cs clause.validate,
 to_expr `(trivial) >>= exact
 
 @[super.inf]
