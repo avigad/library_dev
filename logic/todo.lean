@@ -4,12 +4,10 @@
 
 def and_intro {a b : Prop} (ha : a) (hb : b) : and a b := and.intro ha hb
 
-def and_elim_left {a b : Prop} (h : and a b) : a := and.elim_left h
-
+-- keep both
 def and_left := @and.elim_left
 
-def and_elim_right {a b : Prop} (h : and a b) : b := and.elim_right h
-
+-- keep both
 def and_right := @and.elim_right
 
 def or_inl {a b : Prop} (ha : a) : or a b := or.inl ha
@@ -39,6 +37,7 @@ end
    TODO: these are better names for theorems in init.logic.
 -/
 
+-- keep both
 lemma implies_trans {p q r : Prop} (h₁ : implies p q) (h₂ : implies q r) : implies p r :=
 implies.trans h₁ h₂
 
@@ -154,6 +153,10 @@ iff.trans (or_assoc a b c) (iff.trans (or_congr iff.rfl (or_comm _ _))
                                       (iff.symm (or_assoc _ _ _)))
 
 -- similarly, or.resolve_left, or.neg_resolve_left, or.resolve_right, or.neg_resolve_right
+
+def exists_intro := @exists.intro
+
+def exists_elim := @exists.elim
 
 attribute [intro]
 lemma {u} exists_unique_intro {A : Type u} {p : A → Prop} (w : A)
