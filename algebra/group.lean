@@ -42,15 +42,6 @@ section group
   have a⁻¹ = b, from inv_eq_of_mul_eq_one H,
   begin rewrite this^.symm, simp end
 
-  @[simp] theorem mul_inv_cancel_left (a b : A) : a * (a⁻¹ * b) = b :=
-  begin rewrite -mul_assoc, simp end
-
-  @[simp] theorem mul_inv_cancel_right (a b : A) : a * b * b⁻¹ = a :=
-  begin rewrite mul_assoc, simp end
-
-  @[simp] theorem mul_inv (a b : A) : (a * b)⁻¹ = b⁻¹ * a⁻¹ :=
-  inv_eq_of_mul_eq_one (by simp)
-
   theorem eq_of_mul_inv_eq_one {a b : A} (H : a * b⁻¹ = 1) : a = b :=
   calc
     a    = a * b⁻¹ * b : by simp
@@ -74,10 +65,10 @@ section group
   begin subst H, simp end
 
   theorem eq_mul_of_inv_mul_eq {a b c : A} (H : b⁻¹ * a = c) : a = b * c :=
-  begin subst H, simp end
+  begin subst H, simp [mul_inv_cancel_left] end
 
   theorem mul_eq_of_eq_inv_mul {a b c : A} (H : b = a⁻¹ * c) : a * b = c :=
-  begin subst H, simp end
+  begin subst H, simp [mul_inv_cancel_left] end
 
   theorem mul_eq_of_eq_mul_inv {a b c : A} (H : a = c * b⁻¹) : a * b = c :=
   begin subst H, simp end
@@ -95,13 +86,7 @@ end group
 
 run_command do monad.mapm'
     (λ p : name × name, transport_to_additive p.1 p.2)
-    [(``mul_left_cancel, `add_left_cancel),
-     (``mul_right_cancel, `add_right_cancel),
-     (``inv_mul_cancel_left, `neg_add_cancel_left),
-     (``inv_mul_cancel_right, `neg_add_cancel_right),
-     (``inv_eq_of_mul_eq_one, `neg_eq_of_add_eq_zero),
-     (``one_inv, `zero_inv),
-     (``inv_inv, `neg_neg),
+    [(``one_inv, `zero_inv),
      (``left_inverse_inv, `left_inverse_neg),
      (``inv_inj, `neg_inj),
      (``inv_eq_inv_iff_eq, `neg_eq_neg_iff_eq),
@@ -111,9 +96,6 @@ run_command do monad.mapm'
      (``eq_inv_iff_eq_inv, `eq_neg_iff_eq_neg),
      (``eq_inv_of_mul_eq_one, `eq_neg_of_add_eq_zero),
      (``mul_right_inv, `add_right_inv),
-     (``mul_inv_cancel_left, `add_neg_cancel_left),
-     (``mul_inv_cancel_right, `add_neg_cancel_right),
-     (``mul_inv, `neg_add),
      (``eq_of_mul_inv_eq_one, `eq_of_add_neg_eq_zero),
      (``eq_mul_inv_of_mul_eq, `eq_add_neg_of_add_eq),
      (``eq_inv_mul_of_mul_eq, `eq_neg_add_of_add_eq),
@@ -136,44 +118,14 @@ section add_group
 --  attribute [reducible]
 --  protected definition algebra.sub (a b : A) : A := a + -b
 
-  @[instance] def add_group_has_sub : has_sub A :=
-  has_sub.mk (λ a b, a + -b)
-
-  theorem sub_eq_add_neg (a b : A) : a - b = a + -b := rfl
-
   local attribute [simp] sub_eq_add_neg
 
   -- TODO: maybe none of these are necessary any more...
   -- Or mabe add_group_has_sub *shouldn't* be a simp rule, and these should be?
-  theorem sub_self (a : A) : a - a = 0 := by simp
 
-  theorem sub_add_cancel (a b : A) : a - b + b = a := by simp
-
-  theorem add_sub_cancel (a b : A) : a + b - b = a := by simp
-
-  theorem add_sub_assoc (a b c : A) : a + b - c = a + (b - c) := by simp
-
-  theorem eq_of_sub_eq_zero {a b : A} (H : a - b = 0) : a = b :=
-  eq_of_add_neg_eq_zero H
 
   theorem eq_iff_sub_eq_zero (a b : A) : a = b ↔ a - b = 0 :=
   iff.intro (assume h, by simp [h]) (assume h, eq_of_sub_eq_zero h)
-
-  theorem zero_sub (a : A) : 0 - a = -a := by simp
-
-  theorem sub_zero (a : A) : a - 0 = a := by simp
-
-  theorem sub_neg_eq_add (a b : A) : a - (-b) = a + b :=
-  by simp
-
-  theorem neg_sub (a b : A) : -(a - b) = b - a :=
-  by simp
-
-  theorem add_sub (a b c : A) : a + (b - c) = a + b - c :=
-  by simp
-
-  theorem sub_add_eq_sub_sub_swap (a b c : A) : a - (b + c) = a - c - b :=
-  by simp
 
   theorem sub_eq_iff_eq_add (a b c : A) : a - b = c ↔ a = c + b :=
   iff.intro (assume H, eq_add_of_add_neg_eq H) (assume H, add_neg_eq_of_eq_add H)
@@ -186,18 +138,6 @@ section add_group
     a = b ↔ a - b = 0   : eq_iff_sub_eq_zero a b
       ... = (c - d = 0) : by rewrite H
       ... ↔ c = d       : iff.symm (eq_iff_sub_eq_zero c d)
-
-  theorem eq_sub_of_add_eq {a b c : A} (H : a + c = b) : a = b - c :=
-  begin rewrite -H, simp end
-
-  theorem sub_eq_of_eq_add {a b c : A} (H : a = c + b) : a - b = c :=
-  begin rewrite H, simp end
-
-  theorem eq_add_of_sub_eq {a b c : A} (H : a - c = b) : a = b + c :=
-  begin rewrite -H, simp end
-
-  theorem add_eq_of_eq_sub {a b c : A} (H : a = c - b) : a + b = c :=
-  begin rewrite H, simp end
 
   theorem left_inverse_sub_add_left (c : A) : function.left_inverse (λ x, x - c) (λ x, x + c) :=
   take x, add_sub_cancel x c
@@ -213,56 +153,6 @@ section add_group
       function.left_inverse (λ x, - c + x) (λ x, c + x) :=
   take x, neg_add_cancel_left c x
 end add_group
-
-section add_comm_group
-  variable [s : add_comm_group A]
-  include s
-
-  local attribute [simp] sub_eq_add_neg
-
-  theorem sub_add_eq_sub_sub (a b c : A) : a - (b + c) = a - b - c :=
-  by simp
-
-  theorem neg_add_eq_sub (a b : A) : -a + b = b - a :=
-  by simp
-
-  -- TODO: this doesn't work in a begin ... end block -- can't find instance
-  theorem neg_add' (a b : A) : -(a + b) = -a + -b :=
-  eq_of_sub_eq_zero (by simp)
-
-  theorem sub_add_eq_add_sub (a b c : A) : a - b + c = a + c - b :=
-  by simp
-
-  theorem sub_sub (a b c : A) : a - b - c = a - (b + c) :=
-  by simp
-
-  theorem add_sub_add_left_eq_sub (a b c : A) : (c + a) - (c + b) = a - b :=
-  by simp
-
-  theorem eq_sub_of_add_eq' {a b c : A} (H : c + a = b) : a = b - c :=
-  begin rewrite -H, simp end
-
-  theorem sub_eq_of_eq_add' {a b c : A} (H : a = b + c) : a - b = c :=
-  begin rewrite H, simp end
-
-  theorem eq_add_of_sub_eq' {a b c : A} (H : a - b = c) : a = b + c :=
-  begin rewrite -H, simp end
-
-  theorem add_eq_of_eq_sub' {a b c : A} (H : b = c - a) : a + b = c :=
-  begin rewrite H, simp, rewrite [add_comm c, add_neg_cancel_left] end
-
-  theorem sub_sub_self (a b : A) : a - (a - b) = b :=
-  begin simp, rewrite [add_comm b, add_neg_cancel_left] end
-
-  theorem add_sub_comm (a b c d : A) : a + b - (c + d) = (a - c) + (b - d) :=
-  by simp
-
-  theorem sub_eq_sub_add_sub (a b c : A) : a - b = c - b + (a - c) :=
-  by simp
-
-  theorem neg_neg_sub_neg (a b : A) : - (-a - -b) = a - b :=
-  by simp
-end add_comm_group
 
 
 /-
