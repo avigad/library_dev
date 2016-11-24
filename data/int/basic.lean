@@ -47,12 +47,12 @@ def neg_of_nat : ℕ → ℤ
 
 def sub_nat_nat (m n : ℕ) : ℤ :=
 match (n - m : nat) with
-| 0        := ↑(m - n)  -- m ≥ n
+| 0        := of_nat (m - n)  -- m ≥ n
 | (succ k) := -[1+ k]         -- m < n, and n - m = succ k
 end
 
 -- TODO: this should be handled by the equation generator
-lemma sub_nat_nat_of_sub_eq_zero {m n : ℕ} (h : n - m = 0) : sub_nat_nat m n = ↑(m - n) :=
+lemma sub_nat_nat_of_sub_eq_zero {m n : ℕ} (h : n - m = 0) : sub_nat_nat m n = of_nat (m - n) :=
 begin unfold sub_nat_nat, rw [h, sub_nat_nat._match_1.equations.eqn_1] end
 
 lemma sub_nat_nat_of_sub_eq_succ {m n k : ℕ} (h : n - m = succ k) : sub_nat_nat m n = -[1+ k] :=
@@ -63,20 +63,22 @@ protected definition neg : ℤ → ℤ
 | -[1+ n]    := succ n
 
 protected definition add : ℤ → ℤ → ℤ
-| (of_nat m) (of_nat n) := ↑(m + n)
+| (of_nat m) (of_nat n) := of_nat (m + n)
 | (of_nat m) -[1+ n]    := sub_nat_nat m (succ n)
 | -[1+ m]    (of_nat n) := sub_nat_nat n (succ m)
 | -[1+ m]    -[1+ n]    := -[1+ succ (m + n)]
 
 protected definition mul : ℤ → ℤ → ℤ
-| (of_nat m) (of_nat n) := ↑(m * n)
+| (of_nat m) (of_nat n) := of_nat (m * n)
 | (of_nat m) -[1+ n]    := neg_of_nat (m * succ n)
 | -[1+ m]    (of_nat n) := neg_of_nat (succ m * n)
-| -[1+ m]    -[1+ n]    := ↑(succ m * succ n)
+| -[1+ m]    -[1+ n]    := of_nat (succ m * succ n)
 
 instance : has_neg ℤ := ⟨int.neg⟩
 instance : has_add ℤ := ⟨int.add⟩
 instance : has_mul ℤ := ⟨int.mul⟩
+
+-- TODO: maybe this should all be made local attributes?
 
 @[simp] lemma of_nat_add_of_nat (m n : nat) : of_nat m + of_nat n = of_nat (m + n) := rfl
 @[simp] lemma of_nat_add_neg_succ_of_nat (m n : nat) :
@@ -86,15 +88,20 @@ instance : has_mul ℤ := ⟨int.mul⟩
 @[simp] lemma neg_succ_of_nat_add_neg_succ_of_nat (m n : nat) :
                 -[1+ m] + -[1+ n] = -[1+ succ (m + n)] := rfl
 
-lemma neg_of_nat_of_succ (n : nat) : neg_of_nat (succ n) = -[1+ n] := rfl
-
 @[simp] lemma of_nat_mul_of_nat   (m n : nat) : of_nat m * of_nat n = of_nat (m * n) := rfl
 @[simp] lemma of_nat_mul_neg_succ_of_nat (m n : nat) :
                 of_nat m * -[1+ n] = neg_of_nat (m * succ n) := rfl
 @[simp] lemma neg_succ_of_nat_of_nat (m n : nat) :
                 -[1+ m] * of_nat n = neg_of_nat (succ m * n) := rfl
 @[simp] lemma mul_neg_succ_of_nat_neg_succ_of_nat (m n : nat) :
-               -[1+ m] * -[1+ n] = succ m * succ n := rfl
+               -[1+ m] * -[1+ n] = of_nat (succ m * succ n) := rfl
+
+@[simp] lemma neg_of_nat_zero : -(of_nat 0) = 0 := rfl
+@[simp] lemma neg_of_nat_of_succ (n : ℕ) : -(of_nat (succ n)) = -[1+ n] := rfl
+@[simp] lemma neg_neg_of_nat_succ (n : ℕ) : -(-[1+ n]) = of_nat (succ n) := rfl
+
+--@[simp] lemma neg_of_nat_of_succ (n : nat) : neg_of_nat (succ n) = -[1+ n] := rfl
+
 
 /- some basic functions and properties -/
 
@@ -128,12 +135,15 @@ theorem of_nat_succ (n : ℕ) : of_nat (succ n) = of_nat n + 1 := rfl
 
 theorem of_nat_mul (n m : ℕ) : of_nat (n * m) = of_nat n * of_nat m := rfl
 
-theorem sub_nat_nat_of_ge {m n : ℕ} (h : m ≥ n) : sub_nat_nat m n = ↑(m - n) :=
+theorem sub_nat_nat_of_ge {m n : ℕ} (h : m ≥ n) : sub_nat_nat m n = of_nat (m - n) :=
 sub_nat_nat_of_sub_eq_zero (sub_eq_zero_of_le h)
 
 theorem sub_nat_nat_of_lt {m n : ℕ} (h : m < n) : sub_nat_nat m n = -[1+ pred (n - m)] :=
 have n - m = succ (pred (n - m)), from eq.symm (succ_pred_eq_of_pos (nat.sub_pos_of_lt h)),
 by rewrite sub_nat_nat_of_sub_eq_succ this
+
+theorem sub_nat_of_lt' {m n : ℕ} (h : m < n) : sub_nat_nat m n = neg_of_nat (n - m) :=
+by rewrite [sub_nat_nat_of_lt h, -neg_of_nat_of_succ, succ_pred_eq_of_pos (nat.sub_pos_of_lt h)]
 
 definition nat_abs (a : ℤ) : ℕ := int.cases_on a id succ
 
@@ -190,7 +200,7 @@ begin
   cases h with h' h',
   { rw [sub_nat_nat_of_ge h'],
     assert h₂ : k ≤ m + n, exact (le_trans h' (le_add_left _ _)),
-    rw [sub_nat_nat_of_ge h₂], simp [int_coe_eq],
+    rw [sub_nat_nat_of_ge h₂], simp,
     rw nat.add_sub_assoc h' },
   rw [sub_nat_nat_of_lt h'], simp, rw [succ_pred_eq_of_pos (nat.sub_pos_of_lt h')],
   transitivity, rw [-nat.sub_add_cancel (le_of_lt h')],
@@ -202,7 +212,7 @@ private lemma sub_nat_nat_add_neg_succ_of_nat (m n k : ℕ) :
 begin
   note h := le_or_gt n m,
   cases h with h' h',
-  { rw [sub_nat_nat_of_ge h'], simp [int_coe_eq], rw [sub_nat_nat_sub h', add_comm] },
+  { rw [sub_nat_nat_of_ge h'], simp, rw [sub_nat_nat_sub h', add_comm] },
   assert h₂ : m < n + succ k, exact nat.lt_of_lt_of_le h' (le_add_right _ _),
   assert h₃ : m ≤ n + k, exact le_of_succ_le_succ h₂,
   rw [sub_nat_nat_of_lt h', sub_nat_nat_of_lt h₂], simp,
@@ -235,13 +245,64 @@ protected theorem add_assoc : ∀ a b c : ℤ, a + b + c = a + (b + c)
                                          int.add_comm -[1+ k] ]
 | -[1+ m]    -[1+ n]    -[1+ k]    := by simp [add_succ, neg_of_nat_of_succ]
 
+/- negation -/
+
+@[simp] lemma sub_nat_self : ∀ n, sub_nat_nat n n = 0
+| 0        := rfl
+| (succ m) := begin rw [sub_nat_nat_of_sub_eq_zero, nat.sub_self], rw nat.sub_self end
+
+protected theorem add_left_inv : ∀ a : ℤ, -a + a = 0
+| (of_nat 0)        := by simp
+| (of_nat (succ m)) := by simp
+| -[1+ m]           := by simp
+
+/- multiplication -/
+
+protected theorem mul_comm : ∀ a b : ℤ, a * b = b * a
+| (of_nat m) (of_nat n) := by simp
+| (of_nat m) -[1+ n]    := by simp
+| -[1+ m]    (of_nat n) := by simp
+| -[1+ m]    -[1+ n]    := by simp
+
+@[simp] private lemma of_nat_mul_neg_of_nat (m : ℕ) :
+   ∀ n, of_nat m * neg_of_nat n = neg_of_nat (m * n)
+| 0        := by simp
+| (succ n) := by simp [neg_of_nat.equations.eqn_2]
+
+@[simp] private lemma of_nat_mul_neg_of_nat (m n : ℕ) :
+    neg_of_nat m * of_nat n = neg_of_nat (m * n) :=
+begin rw int.mul_comm, simp end
+
+@[simp] private lemma neg_succ_of_nat_mul_neg_of_nat (m : ℕ) :
+  ∀ n, -[1+ m] * neg_of_nat n = of_nat (succ m * n)
+| 0        := by simp
+| (succ n) := by simp [neg_of_nat.equations.eqn_2
+]
+@[simp] private lemma neg_succ_of_nat_mul_neg_of_nat (m n : ℕ) :
+  neg_of_nat n * -[1+ m] = of_nat (n * succ m) :=
+begin rw int.mul_comm, simp end
+
+protected theorem mul_assoc : ∀ a b c : ℤ, a * b * c = a * (b * c)
+| (of_nat m) (of_nat n) (of_nat k) := by simp
+| (of_nat m) (of_nat n) -[1+ k]    := by simp
+| (of_nat m) -[1+ n]    (of_nat k) := by simp
+| (of_nat m) -[1+ n]   -[1+ k]     := by simp
+| -[1+ m]    (of_nat n) (of_nat k) := by simp
+| -[1+ m]    (of_nat n) -[1+ k]    := by simp
+| -[1+ m]    -[1+ n]    (of_nat k) := by simp
+| -[1+ m]    -[1+ n]   -[1+ k]     := by simp
+
+protected theorem mul_one : ∀ (a : ℤ), a * 1 = a
+| (of_nat m) := begin unfold one, simp end
+| -[1+ m]    := begin unfold one, simp end
+
+protected theorem one_mul (a : ℤ) : 1 * a = a :=
+int.mul_comm a 1 ▸ int.mul_one a
+
 
 end int
 
 /-
-/- negation -/
-
-protected theorem add_left_inv (a : ℤ) : -a + a = 0 := sorry
 
 /- nat abs -/
 
@@ -261,65 +322,8 @@ end
 
 /- multiplication -/
 
-
-local attribute left_distrib right_distrib [simp]
-theorem equiv_mul_prep {xa ya xb yb xn yn xm ym : ℕ}
-  (H1 : xa + yb = ya + xb) (H2 : xn + ym = yn + xm) : xa*xn+ya*yn+(xb*ym+yb*xm) = xa*yn+ya*xn+(xb*xm+yb*ym) :=
-nat.add_right_cancel (
-calc xa*xn+ya*yn + (xb*ym+yb*xm) + (yb*xn+xb*yn + (xb*xn+yb*yn))
-         = (xa + yb)*xn + (ya + xb)*yn  + (xb*(xn + ym)) + (yb*(yn + xm)) : by simp_nohyps
-     ... = (ya + xb)*xn + (xa + yb)*yn  + (xb*(yn + xm)) + (yb*(xn + ym)) : by simp
-     ... = xa*yn+ya*xn + (xb*xm+yb*ym) + (yb*xn+xb*yn + (xb*xn+yb*yn))    : by simp_nohyps)
-
-theorem pmul_congr {p p' q q' : ℕ × ℕ} : p ≡ p' → q ≡ q' → pmul p q ≡ pmul p' q' := equiv_mul_prep
-
-theorem pmul_comm (p q : ℕ × ℕ) : pmul p q = pmul q p :=
-by unfold pmul; simp
-
-protected theorem mul_comm (a b : ℤ) : a * b = b * a :=
-eq_of_repr_equiv_repr
-  ((calc
-    repr (a * b) = pmul (repr a) (repr b) : repr_mul
-      ... = pmul (repr b) (repr a) : pmul_comm
-      ... = repr (b * a) : repr_mul) ▸ !equiv.refl)
-
-private theorem pmul_assoc_prep {p1 p2 q1 q2 r1 r2 : ℕ} :
-  ((p1*q1+p2*q2)*r1+(p1*q2+p2*q1)*r2, (p1*q1+p2*q2)*r2+(p1*q2+p2*q1)*r1) =
-   (p1*(q1*r1+q2*r2)+p2*(q1*r2+q2*r1), p1*(q1*r2+q2*r1)+p2*(q1*r1+q2*r2)) :=
-by simp
-
-theorem pmul_assoc (p q r: ℕ × ℕ) : pmul (pmul p q) r = pmul p (pmul q r) := pmul_assoc_prep
-
-protected theorem mul_assoc (a b c : ℤ) : (a * b) * c = a * (b * c) :=
-eq_of_repr_equiv_repr
-  ((calc
-    repr (a * b * c) = pmul (repr (a * b)) (repr c) : repr_mul
-      ... = pmul (pmul (repr a) (repr b)) (repr c) : repr_mul
-      ... = pmul (repr a) (pmul (repr b) (repr c)) : pmul_assoc
-      ... = pmul (repr a) (repr (b * c)) : repr_mul
-      ... = repr (a * (b * c)) : repr_mul) ▸ !equiv.refl)
-
-protected theorem mul_one : Π (a : ℤ), a * 1 = a
-| (of_nat m) := !int.zero_add -- zero_add happens to be def. = to this thm
-| -[1+ m]    := !nat.zero_add ▸ rfl
-
-protected theorem one_mul (a : ℤ) : 1 * a = a :=
-int.mul_comm a 1 ▸ int.mul_one a
-
-private theorem mul_distrib_prep {a1 a2 b1 b2 c1 c2 : ℕ} :
- ((a1+b1)*c1+(a2+b2)*c2,     (a1+b1)*c2+(a2+b2)*c1) =
- (a1*c1+a2*c2+(b1*c1+b2*c2), a1*c2+a2*c1+(b1*c2+b2*c1)) :=
-by simp
-
 protected theorem right_distrib (a b c : ℤ) : (a + b) * c = a * c + b * c :=
-eq_of_repr_equiv_repr
-  (calc
-    repr ((a + b) * c) = pmul (repr (a + b)) (repr c) : repr_mul
-      ... ≡ pmul (padd (repr a) (repr b)) (repr c)    : pmul_congr !repr_add equiv.refl
-      ... = padd (pmul (repr a) (repr c)) (pmul (repr b) (repr c)) : mul_distrib_prep
-      ... = padd (repr (a * c)) (pmul (repr b) (repr c))           : repr_mul
-      ... = padd (repr (a * c)) (repr (b * c))                     : repr_mul
-      ... ≡ repr (a * c + b * c)                                   : repr_add)
+sorry
 
 protected theorem left_distrib (a b c : ℤ) : a * (b + c) = a * b + a * c :=
 calc
