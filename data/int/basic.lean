@@ -34,6 +34,12 @@ namespace int
 -- TODO: should these be only local, until the ring instance is declared?
 instance : has_zero ℤ := ⟨of_nat 0⟩
 instance : has_one ℤ := ⟨of_nat 1⟩
+/-
+private def int_has_zero : has_zero ℤ := ⟨of_nat 0⟩
+private def int_has_one : has_one ℤ := ⟨of_nat 1⟩
+
+local attribute [instance] int_has_zero int_has_one
+-/
 
 theorem of_nat_zero : of_nat (0 : nat) = (0 : int) := rfl
 
@@ -78,6 +84,14 @@ protected def mul : ℤ → ℤ → ℤ
 instance : has_neg ℤ := ⟨int.neg⟩
 instance : has_add ℤ := ⟨int.add⟩
 instance : has_mul ℤ := ⟨int.mul⟩
+
+/-
+private def int_has_neg : has_neg ℤ := ⟨int.neg⟩
+private def int_has_add : has_add ℤ := ⟨int.add⟩
+private def int_has_mul : has_mul ℤ := ⟨int.mul⟩
+
+local attribute [instance] int_has_neg int_has_add int_has_mul
+-/
 
 -- TODO: should these be simplification rules? which way should they be oriented?
 --       should of_nat n be replaced by ↑(n)
@@ -196,7 +210,8 @@ begin
   note h := le_or_gt k n,
   cases h with h' h',
   { rw [sub_nat_nat_of_ge h'],
-    assert h₂ : k ≤ m + n, exact (le_trans h' (le_add_left _ _)),
+    -- TODO: I had to change k ≤ m + n to nat.le k (m + n)
+    assert h₂ : nat.le k (m + n), exact (le_trans h' (le_add_left _ _)),
     rw [sub_nat_nat_of_ge h₂], simp,
     rw nat.add_sub_assoc h' },
   rw [sub_nat_nat_of_lt h'], simp, rw [succ_pred_eq_of_pos (nat.sub_pos_of_lt h')],
@@ -211,7 +226,8 @@ begin
   cases h with h' h',
   { rw [sub_nat_nat_of_ge h'], simp, rw [sub_nat_nat_sub h', add_comm] },
   assert h₂ : m < n + succ k, exact nat.lt_of_lt_of_le h' (le_add_right _ _),
-  assert h₃ : m ≤ n + k, exact le_of_succ_le_succ h₂,
+  -- TODO: here, too
+  assert h₃ : nat.le m (n + k), exact le_of_succ_le_succ h₂,
   rw [sub_nat_nat_of_lt h', sub_nat_nat_of_lt h₂], simp,
   rw [-add_succ, succ_pred_eq_of_pos (nat.sub_pos_of_lt h'), add_succ, succ_sub h₃, pred_succ],
   rw [add_comm n, nat.add_sub_assoc (le_of_lt h')]
@@ -325,7 +341,8 @@ begin
       rw [sub_nat_nat_of_lt h, sub_nat_nat_of_lt h'],
       simp [succ_pred_eq_of_pos (nat.sub_pos_of_lt h)],
       rw [-succ_pred_eq_of_pos (nat.sub_pos_of_lt h')]},
-    assert h' : m * k ≤ m * n,
+    -- TODO: here again, I had to change ≤ to nat.le
+    assert h' : nat.le (m * k) (m * n),
       exact mul_le_mul_left _ h,
     rw [sub_nat_nat_of_ge h, sub_nat_nat_of_ge h'], simp
   },

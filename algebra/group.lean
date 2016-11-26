@@ -18,10 +18,6 @@ section group
   take a, inv_inv a
   variable {A}
 
-  theorem inv_inj {a b : A} (h : a⁻¹ = b⁻¹) : a = b :=
-  have a = a⁻¹⁻¹, by simp,
-  begin rewrite this, apply inv_eq_of_mul_eq_one, simp [h] end
-
   theorem inv_eq_inv_iff_eq (a b : A) : a⁻¹ = b⁻¹ ↔ a = b :=
   iff_intro inv_inj (begin intro h, simp [h] end)
 
@@ -88,7 +84,6 @@ run_command do monad.mapm'
     (λ p : name × name, transport_to_additive p.1 p.2)
     [(``one_inv, `zero_inv),
      (``left_inverse_inv, `left_inverse_neg),
-     (``inv_inj, `neg_inj),
      (``inv_eq_inv_iff_eq, `neg_eq_neg_iff_eq),
      (``inv_eq_one_iff_eq_one, `neg_eq_zero_iff_eq_zero),
      (``eq_one_of_inv_eq_one, `eq_zero_of_neg_eq_zero),
@@ -105,9 +100,7 @@ run_command do monad.mapm'
      (``mul_eq_of_eq_inv_mul, `add_eq_of_eq_neg_add),
      (``mul_eq_of_eq_mul_inv, `add_eq_of_eq_add_neg),
      (``mul_eq_iff_eq_inv_mul, `add_eq_iff_eq_neg_add),
-     (``mul_eq_iff_eq_mul_inv, `add_eq_iff_eq_add_neg),
-     (``group.to_left_cancel_semigroup, `add_group.to_left_cancel_add_semigroup),
-     (``group.to_right_cancel_semigroup, `add_group.to_right_cancel_add_semigroup)
+     (``mul_eq_iff_eq_mul_inv, `add_eq_iff_eq_add_neg)
      -- (``mul_eq_one_of_mul_eq_one, `add_eq_zero_of_add_eq_zero)   not needed for commutative groups
      -- (``muleq_one_iff_mul_eq_one, `add_eq_zero_iff_add_eq_zero)
 ]

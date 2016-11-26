@@ -116,47 +116,11 @@ end comm_semiring
 
 /- ring -/
 
-theorem ring.mul_zero [s : ring A] (a : A) : a * 0 = 0 :=
-have a * 0 + 0 = a * 0 + a * 0, from calc
-  a * 0 + 0 = a * (0 + 0)   : by simp
-        ... = a * 0 + a * 0 : by rewrite left_distrib,
-show a * 0 = 0, from (add_left_cancel this)^.symm
-
-theorem ring.zero_mul [s : ring A] (a : A) : 0 * a = 0 :=
-have 0 * a + 0 = 0 * a + 0 * a, from calc
-  0 * a + 0 = (0 + 0) * a   : by simp
-        ... = 0 * a + 0 * a : by rewrite right_distrib,
-show 0 * a = 0, from  (add_left_cancel this)^.symm
-
-@[instance] def ring.to_semiring [s : ring A] : semiring A :=
-{ s with
-  mul_zero := ring.mul_zero,
-  zero_mul := ring.zero_mul }
-
 section
   variables [ring A] (a b c d e : A)
 
-  @[simp] theorem neg_mul_eq_neg_mul : - a * b = - (a * b) :=
-  eq_neg_of_add_eq_zero begin rewrite -right_distrib, simp end
-
-  @[simp] theorem mul_neg_eq_neg_mul_symm : a * - b = - (a * b) :=
-  eq_neg_of_add_eq_zero begin rewrite -left_distrib, simp end
-
-  -- TODO: delete these?
-  theorem neg_mul_neg : -a * -b = a * b :=
-  by simp
-
-  theorem neg_mul_comm : -a * b = a * -b :=
-  by simp
-
   theorem neg_eq_neg_one_mul : -a = -1 * a :=
   by simp
-
-  @[simp] theorem mul_sub_left_distrib : a * (b - c) = a * b - a * c :=
-  by simp [sub_eq_add_neg, left_distrib]
-
-  @[simp] theorem mul_sub_right_distrib : (a - b) * c = a * c - b * c :=
-  by simp [@sub_eq_add_neg A, @right_distrib A]
 
   theorem mul_add_eq_mul_add_iff_sub_mul_add_eq : a * e + c = b * e + d ↔ (a - b) * e + c = d :=
   calc
