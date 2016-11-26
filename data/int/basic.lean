@@ -22,24 +22,23 @@ notation `ℤ` := int
 instance coe_nat_to_int : has_coe nat int :=
 ⟨int.of_nat⟩
 
-theorem int_coe_eq (n : ℕ) : ↑n = int.of_nat n := rfl
+theorem int_coe_eq (n : ℕ) : ↑n = int.of_nat n :=
+rfl
 
 notation `-[1+ ` n `]` := int.neg_succ_of_nat n
 
--- TODO: should this work? Instead, we do it lower down.
--- instance decidable_eq int := by tactic.mk_dec_eq_instance
+instance : decidable_eq int :=
+by tactic.mk_dec_eq_instance
 
 namespace int
 
--- TODO: should these be only local, until the ring instance is declared?
-instance : has_zero ℤ := ⟨of_nat 0⟩
-instance : has_one ℤ := ⟨of_nat 1⟩
-/-
-private def int_has_zero : has_zero ℤ := ⟨of_nat 0⟩
-private def int_has_one : has_one ℤ := ⟨of_nat 1⟩
+protected def zero : ℤ := of_nat 0
+protected def one  : ℤ := of_nat 1
 
-local attribute [instance] int_has_zero int_has_one
--/
+-- TODO: should these be only local, until the ring instance is declared?
+-- Leo: no, they should not be local.
+instance : has_zero ℤ := ⟨int.zero⟩
+instance : has_one ℤ := ⟨int.one⟩
 
 theorem of_nat_zero : of_nat (0 : nat) = (0 : int) := rfl
 
@@ -95,6 +94,8 @@ local attribute [instance] int_has_neg int_has_add int_has_mul
 
 -- TODO: should these be simplification rules? which way should they be oriented?
 --       should of_nat n be replaced by ↑(n)
+-- Leo: The arith normalizer will push them inside. I'm tryint o minimize the number of [simp] rules that will
+-- conflict with the arith normalizer.
 theorem of_nat_add (n m : ℕ) : of_nat (n + m) = of_nat n + of_nat m := rfl
 theorem of_nat_mul (n m : ℕ) : of_nat (n * m) = of_nat n * of_nat m := rfl
 theorem of_nat_succ (n : ℕ) : of_nat (succ n) = of_nat n + 1 := rfl
@@ -142,15 +143,6 @@ theorem neg_succ_of_nat_inj {m n : ℕ} (h : neg_succ_of_nat m = neg_succ_of_nat
 int.no_confusion h id
 
 theorem neg_succ_of_nat_eq (n : ℕ) : -[1+ n] = -(n + 1) := rfl
-
--- TODO: can this be done automatically?
-instance : decidable_eq int
-| (int.of_nat m) (int.of_nat n) := if h : m = n then decidable.is_true (congr_arg _ h)
-                                   else decidable.is_false (λ h', h (of_nat_inj h'))
-| (int.of_nat m) -[1+ n]        := decidable.is_false (begin intro h, contradiction end)
-| -[1+ m]        (int.of_nat n) := decidable.is_false (begin intro h, contradiction end)
-| -[1+ m]        -[1+ n]        := if h : m = n then decidable.is_true (congr_arg _ h)
-                                   else decidable.is_false (λ h', h (neg_succ_of_nat_inj h'))
 
 private theorem sub_nat_nat_of_ge {m n : ℕ} (h : m ≥ n) : sub_nat_nat m n = of_nat (m - n) :=
 sub_nat_nat_of_sub_eq_zero (sub_eq_zero_of_le h)
@@ -210,8 +202,7 @@ begin
   note h := le_or_gt k n,
   cases h with h' h',
   { rw [sub_nat_nat_of_ge h'],
-    -- TODO: I had to change k ≤ m + n to nat.le k (m + n)
-    assert h₂ : nat.le k (m + n), exact (le_trans h' (le_add_left _ _)),
+    assert h₂ : k ≤ m + n, exact (le_trans h' (le_add_left _ _)),
     rw [sub_nat_nat_of_ge h₂], simp,
     rw nat.add_sub_assoc h' },
   rw [sub_nat_nat_of_lt h'], simp, rw [succ_pred_eq_of_pos (nat.sub_pos_of_lt h')],
@@ -226,8 +217,7 @@ begin
   cases h with h' h',
   { rw [sub_nat_nat_of_ge h'], simp, rw [sub_nat_nat_sub h', add_comm] },
   assert h₂ : m < n + succ k, exact nat.lt_of_lt_of_le h' (le_add_right _ _),
-  -- TODO: here, too
-  assert h₃ : nat.le m (n + k), exact le_of_succ_le_succ h₂,
+  assert h₃ : m ≤ n + k, exact le_of_succ_le_succ h₂,
   rw [sub_nat_nat_of_lt h', sub_nat_nat_of_lt h₂], simp,
   rw [-add_succ, succ_pred_eq_of_pos (nat.sub_pos_of_lt h'), add_succ, succ_sub h₃, pred_succ],
   rw [add_comm n, nat.add_sub_assoc (le_of_lt h')]
@@ -311,8 +301,8 @@ protected theorem mul_assoc : ∀ a b c : ℤ, a * b * c = a * (b * c)
 | -[1+ m]    -[1+ n]   -[1+ k]     := by simp
 
 protected theorem mul_one : ∀ (a : ℤ), a * 1 = a
-| (of_nat m) := begin unfold one, simp end
-| -[1+ m]    := begin unfold one, simp end
+| (of_nat m) := show of_nat m * of_nat 1 = of_nat m, by simp
+| -[1+ m]    := show -[1+ m] * of_nat 1 = -[1+ m], by simp
 
 protected theorem one_mul (a : ℤ) : 1 * a = a :=
 int.mul_comm a 1 ▸ int.mul_one a
@@ -341,8 +331,7 @@ begin
       rw [sub_nat_nat_of_lt h, sub_nat_nat_of_lt h'],
       simp [succ_pred_eq_of_pos (nat.sub_pos_of_lt h)],
       rw [-succ_pred_eq_of_pos (nat.sub_pos_of_lt h')]},
-    -- TODO: here again, I had to change ≤ to nat.le
-    assert h' : nat.le (m * k) (m * n),
+    assert h' : m * k ≤ m * n,
       exact mul_le_mul_left _ h,
     rw [sub_nat_nat_of_ge h, sub_nat_nat_of_ge h'], simp
   },
@@ -350,18 +339,15 @@ begin
   subst h₀, simp [h₂, int.zero_mul]
 end
 
--- TODO: here is a nice instance of the "zero problem": without h,
--- simp and rewrite don't work
 private theorem neg_of_nat_add (m n : ℕ) :
   neg_of_nat m + neg_of_nat n = neg_of_nat (m + n) :=
 begin
-  assert h : nat.zero = 0, exact rfl,
   cases m,
     cases n,
-      simp [h],
-      simp [h],
+      simp,
+      simp,
   cases n,
-    simp [h],
+    simp,
     simp [nat.succ_add]
 end
 
@@ -404,10 +390,10 @@ protected theorem distrib_left : ∀ a b c : ℤ, a * (b + c) = a * b + a * c
 protected theorem distrib_right (a b c : ℤ) : (a + b) * c = a * c + b * c :=
 begin rw [int.mul_comm, int.distrib_left], simp [int.mul_comm] end
 
-instance : ring int :=
+instance : comm_ring int :=
 { add            := int.add,
   add_assoc      := int.add_assoc,
-  zero           := 0,
+  zero           := int.zero,
   zero_add       := int.zero_add,
   add_zero       := int.add_zero,
   neg            := int.neg,
@@ -419,10 +405,9 @@ instance : ring int :=
   one_mul        := int.one_mul,
   mul_one        := int.mul_one,
   left_distrib   := int.distrib_left,
-  right_distrib  := int.distrib_right }
+  right_distrib  := int.distrib_right,
+  mul_comm       := int.mul_comm }
 
--- TODO: we can declare int to be a commutative ring when we have them.
---, mul_comm       := int.mul_comm }
 
 -- TODO: for an integral domain, we also need these:
 protected theorem zero_ne_one : (0 : int) ≠ 1 :=

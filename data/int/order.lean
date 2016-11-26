@@ -8,71 +8,24 @@ and transfer the results.
 -/
 import .basic
 
---open nat
+example : nat.zero = 0 :=
+by simp
 
--- TODO: are these unification hints the right way to go?
-
-@[unify]
-definition nat_zero_hint : unification_hint :=
-{ pattern     := nat.zero ≟ (0 : nat),
-  constraints := [] }
-
-example : nat.zero = 0 := by simp
-
-@[unify]
-definition int_zero_hint (n : ℕ) (s : has_zero ℤ) : unification_hint :=
-{ pattern     := @zero int s ≟ int.of_nat n,
-  constraints := [n ≟ (0 : nat)] }
+@[simp] lemma of_nat_zero_eq_zero : int.of_nat 0 = 0 :=
+rfl
 
 example : 0 = int.of_nat 0 := by simp
 
--- We should probably hide of_nat from the user and rely on ↑n as much as possible, but this
--- unification hint will fix any leaks.
-
-@[unify]
-definition coe_nat_int_hint (n m : ℕ) : unification_hint :=
-{ pattern     := ↑n ≟ int.of_nat m,
-  constraints := [n ≟ m] }
+@[simp] lemma of_nat_eq_coe (n : ℕ) : int.of_nat n = ↑n :=
+rfl
 
 example (n : ℕ) : ↑n = int.of_nat n := by simp
-
-section
-universe variable uu
-variable α : Type
-
-@[unify]
-definition zero_hint (s t : has_zero α) : unification_hint :=
-{ pattern     := @zero α s ≟ @zero α t,
-  constraints := [] }
-
-@[unify]
-definition one_hint (s t : has_one α) : unification_hint :=
-{ pattern     := @one α s ≟ @one α t,
-  constraints := [] }
-
-@[unify]
-definition add_hint (a b c d : α) (s t : has_add α) : unification_hint :=
-{ pattern     := @add α s a b ≟ @add α t c d,
-  constraints := [a ≟ c, b ≟ d] }
-
-@[unify]
-definition mul_hint (a b c d : α) (s t : has_mul α) : unification_hint :=
-{ pattern     := @mul α s a b ≟ @mul α t c d,
-  constraints := [a ≟ c, b ≟ d] }
-
-@[unify]
-definition neg_hint (a b : α) (s t : has_neg α) : unification_hint :=
-{ pattern     := @neg α s a ≟ @neg α t b,
-  constraints := [a ≟ b] }
-
-end
 
 example (a : ℤ) : a + 0 = a := int.add_zero a
 
 example (a : ℤ) : a + 0 = a := by rw [add_zero a]
 
 example (a : ℤ) : a + 0 = a := by rw [int.add_zero a]
-
 
 namespace int
 
@@ -131,6 +84,9 @@ end
 theorem of_nat_le_of_nat_iff (m n : ℕ) : of_nat m ≤ of_nat n ↔ m ≤ n :=
 iff.intro le_of_of_nat_le_of_nat of_nat_le_of_nat_of_le
 
+-- Leo: Disable of_nat_eq_coe to avoid loop with int_coe_eq
+local attribute [-simp] of_nat_eq_coe
+
 theorem lt_add_succ (a : ℤ) (n : ℕ) : a < a + nat.succ n :=
 le.intro (show a + 1 + n = a + nat.succ n, by simp [int_coe_eq])
 
@@ -174,15 +130,14 @@ match le.elim h₁, le.elim h₂ with
     have of_nat (n + m) = 0, from add_left_cancel this,
     have n + m = 0, from of_nat_inj this,
     have n = 0, from nat.eq_zero_of_add_eq_zero_right this,
-    show a = b, begin rw [-hn, this, add_zero a] end
-
+    show a = b, begin rw [-hn, this, of_nat_zero, add_zero a] end
 end
 
 protected theorem lt_irrefl (a : ℤ) : ¬ a < a :=
 (suppose a < a,
   match lt.elim this with
   | ⟨n, (hn : a + nat.succ n = a)⟩ :=
-      have a + nat.succ n = a + 0, by simp [hn],
+      have a + nat.succ n = a + 0, by rw [hn, add_zero],
       have nat.succ n = 0, from of_nat_inj (add_left_cancel this),
       show false, from nat.succ_ne_zero _ this
   end)
@@ -206,7 +161,7 @@ iff.intro
     match le.elim aleb with
     | ⟨n, (hn : a + n = b)⟩ :=
         have n ≠ 0,
-          from (suppose n = 0, aneb (begin rw [-hn, this, int_coe_eq, int.add_zero] end)),
+          from (suppose n = 0, aneb (begin rw [-hn, this, int_coe_eq, of_nat_zero, add_zero] end)),
         have n = nat.succ (nat.pred n),
           from eq.symm (nat.succ_pred_eq_of_pos (nat_pos_of_ne_zero this)),
         lt.intro (begin rewrite this at hn, exact hn end)
@@ -221,7 +176,7 @@ iff.intro
         match le.elim h with
         | ⟨n, (hn : a + n = b)⟩ :=
             have n ≠ 0, from
-              (suppose n = 0, ‹a ≠ b› begin rw [-hn, this, int_coe_eq, int.add_zero] end),
+              (suppose n = 0, ‹a ≠ b› begin rw [-hn, this, int_coe_eq, of_nat_zero, add_zero] end),
             have n = nat.succ (nat.pred n),
               from eq.symm (nat.succ_pred_eq_of_pos (nat_pos_of_ne_zero this)),
             or.inl (lt.intro (begin rewrite this at hn, exact hn end))
@@ -248,14 +203,15 @@ iff.mpr (int.lt_iff_le_and_ne _ _)
 protected theorem mul_nonneg {a b : ℤ} (ha : 0 ≤ a) (hb : 0 ≤ b) : 0 ≤ a * b :=
 match le.elim ha, le.elim hb with
 | ⟨n, hn⟩, ⟨m, hm⟩ :=
-    le.intro (show 0 + ↑n * ↑m = a * b, begin rw [-hn, -hm], simp end)
+    le.intro (show 0 + ↑n * ↑m = a * b, begin rw [-hn, -hm], repeat {rw zero_add} end)
 end
 
 protected theorem mul_pos {a b : ℤ} (ha : 0 < a) (hb : 0 < b) : 0 < a * b :=
 match lt.elim ha, lt.elim hb with
 | ⟨n, hn⟩, ⟨m, hm⟩ :=
     lt.intro (show 0 + ↑(nat.succ (nat.succ n * m + n)) = a * b,
-      begin rw [-hn, -hm], simp, rw [-of_nat_mul], simp [nat.mul_succ, nat.succ_add] end)
+      begin rw [-hn, -hm], repeat {rw of_nat_zero},
+            simp [int_coe_eq], rw [-of_nat_mul], simp [nat.mul_succ, nat.succ_add] end)
 end
 
 protected theorem zero_lt_one : (0 : ℤ) < 1 := trivial
