@@ -28,15 +28,8 @@ section group
   theorem eq_one_of_inv_eq_one (a : A) : a⁻¹ = 1 → a = 1 :=
   iff.mp (inv_eq_one_iff_eq_one a)
 
-  theorem eq_inv_of_eq_inv {a b : A} (h : a = b⁻¹) : b = a⁻¹ :=
-  by simp [h]
-
   theorem eq_inv_iff_eq_inv (a b : A) : a = b⁻¹ ↔ b = a⁻¹ :=
   iff.intro eq_inv_of_eq_inv eq_inv_of_eq_inv
-
-  theorem eq_inv_of_mul_eq_one {a b : A} (H : a * b = 1) : a = b⁻¹ :=
-  have a⁻¹ = b, from inv_eq_of_mul_eq_one H,
-  begin rewrite this^.symm, simp end
 
   theorem eq_of_mul_inv_eq_one {a b : A} (H : a * b⁻¹ = 1) : a = b :=
   calc
@@ -45,29 +38,6 @@ section group
 
 
   --TODO: with luck, we can delete all these soon
-  theorem eq_mul_inv_of_mul_eq {a b c : A} (H : a * c = b) : a = b * c⁻¹ :=
-  begin subst H, simp end
-
-  theorem eq_inv_mul_of_mul_eq {a b c : A} (H : b * a = c) : a = b⁻¹ * c :=
-  begin subst H, simp end
-
-  theorem inv_mul_eq_of_eq_mul {a b c : A} (H : b = a * c) : a⁻¹ * b = c :=
-  begin subst H, simp end
-
-  theorem mul_inv_eq_of_eq_mul {a b c : A} (H : a = c * b) : a * b⁻¹ = c :=
-  begin subst H, simp end
-
-  theorem eq_mul_of_mul_inv_eq {a b c : A} (H : a * c⁻¹ = b) : a = b * c :=
-  begin subst H, simp end
-
-  theorem eq_mul_of_inv_mul_eq {a b c : A} (H : b⁻¹ * a = c) : a = b * c :=
-  begin subst H, simp [mul_inv_cancel_left] end
-
-  theorem mul_eq_of_eq_inv_mul {a b c : A} (H : b = a⁻¹ * c) : a * b = c :=
-  begin subst H, simp [mul_inv_cancel_left] end
-
-  theorem mul_eq_of_eq_mul_inv {a b c : A} (H : a = c * b⁻¹) : a * b = c :=
-  begin subst H, simp end
 
   theorem mul_eq_iff_eq_inv_mul (a b c : A) : a * b = c ↔ b = a⁻¹ * c :=
   iff.intro eq_inv_mul_of_mul_eq mul_eq_of_eq_inv_mul
@@ -82,27 +52,18 @@ end group
 
 run_command do monad.mapm'
     (λ p : name × name, transport_to_additive p.1 p.2)
-    [(``one_inv, `zero_inv),
-     (``left_inverse_inv, `left_inverse_neg),
-     (``inv_eq_inv_iff_eq, `neg_eq_neg_iff_eq),
-     (``inv_eq_one_iff_eq_one, `neg_eq_zero_iff_eq_zero),
-     (``eq_one_of_inv_eq_one, `eq_zero_of_neg_eq_zero),
-     (``eq_inv_of_eq_inv, `eq_neg_of_eq_neg),
-     (``eq_inv_iff_eq_inv, `eq_neg_iff_eq_neg),
-     (``eq_inv_of_mul_eq_one, `eq_neg_of_add_eq_zero),
-     (``mul_right_inv, `add_right_inv),
-     (``eq_of_mul_inv_eq_one, `eq_of_add_neg_eq_zero),
-     (``eq_mul_inv_of_mul_eq, `eq_add_neg_of_add_eq),
-     (``eq_inv_mul_of_mul_eq, `eq_neg_add_of_add_eq),
-     (``inv_mul_eq_of_eq_mul, `neg_add_eq_of_eq_add),
-     (``mul_inv_eq_of_eq_mul, `add_neg_eq_of_eq_add),
-     (``eq_mul_of_mul_inv_eq, `eq_add_of_add_neg_eq),
-     (``mul_eq_of_eq_inv_mul, `add_eq_of_eq_neg_add),
-     (``mul_eq_of_eq_mul_inv, `add_eq_of_eq_add_neg),
-     (``mul_eq_iff_eq_inv_mul, `add_eq_iff_eq_neg_add),
-     (``mul_eq_iff_eq_mul_inv, `add_eq_iff_eq_add_neg)
-     -- (``mul_eq_one_of_mul_eq_one, `add_eq_zero_of_add_eq_zero)   not needed for commutative groups
-     -- (``muleq_one_iff_mul_eq_one, `add_eq_zero_iff_add_eq_zero)
+    [(`one_inv, `zero_inv),
+     (`left_inverse_inv, `left_inverse_neg),
+     (`inv_eq_inv_iff_eq, `neg_eq_neg_iff_eq),
+     (`inv_eq_one_iff_eq_one, `neg_eq_zero_iff_eq_zero),
+     (`eq_one_of_inv_eq_one, `eq_zero_of_neg_eq_zero),
+     (`eq_inv_iff_eq_inv, `eq_neg_iff_eq_neg),
+     (`mul_right_inv, `add_right_inv),
+     (`eq_of_mul_inv_eq_one, `eq_of_add_neg_eq_zero),
+     (`mul_eq_iff_eq_inv_mul, `add_eq_iff_eq_neg_add),
+     (`mul_eq_iff_eq_mul_inv, `add_eq_iff_eq_add_neg)
+     -- (`mul_eq_one_of_mul_eq_one, `add_eq_zero_of_add_eq_zero)   not needed for commutative groups
+     -- (`muleq_one_iff_mul_eq_one, `add_eq_zero_iff_add_eq_zero)
 ]
 
 section add_group

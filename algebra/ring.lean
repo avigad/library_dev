@@ -9,27 +9,6 @@ open eq
 universe variable uu
 variable {A : Type uu}
 
-section semiring
-  variables [semiring A] (a b c : A)
-
-  theorem one_add_one_eq_two : 1 + 1 = (2 : A) := rfl
-
-  theorem ne_zero_of_mul_ne_zero_right {a b : A} (h : a * b ≠ 0) : a ≠ 0 :=
-  suppose a = 0,
-  have a * b = 0, by rewrite [this, zero_mul],
-  h this
-
-  theorem ne_zero_of_mul_ne_zero_left {a b : A} (h : a * b ≠ 0) : b ≠ 0 :=
-  suppose b = 0,
-  have a * b = 0, by rewrite [this, mul_zero],
-  h this
-
-  local attribute [simp] right_distrib
-
-  theorem distrib_three_right (a b c d : A) : (a + b + c) * d = a * d + b * d + c * d :=
-  by simp
-end semiring
-
 /- comm semiring -/
 
 section comm_semiring
@@ -153,27 +132,10 @@ section
   end
 end
 
-class comm_ring (A : Type uu) extends ring A, comm_semigroup A
-
-@[instance] def comm_ring.to_comm_semiring [s : comm_ring A] : comm_semiring A :=
-{ s with
-  mul_zero := mul_zero,
-  zero_mul := zero_mul }
-
 section
   variables [comm_ring A] (a b c d e : A)
 
   local attribute [simp] left_distrib right_distrib
-
-  theorem mul_self_sub_mul_self_eq : a * a - b * b = (a + b) * (a - b) :=
-  sorry -- by simp [@sub_eq_add_neg A]
-
-  theorem mul_self_sub_one_eq : a * a - 1 = (a + 1) * (a - 1) :=
-  sorry -- by simp
-
-  theorem add_mul_self_eq : (a + b) * (a + b) = a*a + 2*a*b + b*b :=
-  calc (a + b)*(a + b) = a*a + (1+1)*a*b + b*b : sorry -- by simp
-               ...     = a*a + 2*a*b + b*b     : sorry -- by rewrite one_add_one_eq_two
 
   theorem dvd_add {a b c : A} (h₁ : a ∣ b) (h₂ : a ∣ c) : a ∣ b + c :=
   dvd_elim h₁ (λ d hd, dvd_elim h₂ (λ e he, dvd_intro (d + e) (by simp [hd, he])))
@@ -218,28 +180,9 @@ end
 
 /- integral domains -/
 
-class no_zero_divisors (A : Type uu) extends has_mul A, has_zero A :=
-(eq_zero_or_eq_zero_of_mul_eq_zero : ∀a b, mul a b = zero → a = zero ∨ b = zero)
-
-theorem eq_zero_or_eq_zero_of_mul_eq_zero {A : Type uu} [no_zero_divisors A] {a b : A}
-    (h : a * b = 0) :
-  a = 0 ∨ b = 0 :=
-no_zero_divisors.eq_zero_or_eq_zero_of_mul_eq_zero a b h
-
-theorem eq_zero_of_mul_self_eq_zero {A : Type uu} [no_zero_divisors A] {a : A} (h : a * a = 0) :
-  a = 0 :=
-or.elim (eq_zero_or_eq_zero_of_mul_eq_zero h) (assume h', h') (assume h', h')
-
-class integral_domain (A : Type uu) extends comm_ring A, no_zero_divisors A,
-    zero_ne_one_class A
-
 section
   variables [s : integral_domain A] (a b c d e : A)
   include s
-
-  theorem mul_ne_zero {a b : A} (h1 : a ≠ 0) (h2 : b ≠ 0) : a * b ≠ 0 :=
-  suppose a * b = 0,
-  or.elim (eq_zero_or_eq_zero_of_mul_eq_zero this) (assume h3, h1 h3) (assume h4, h2 h4)
 
   theorem eq_of_mul_eq_mul_right_of_ne_zero {a b c : A} (ha : a ≠ 0) (h : b * a = c * a) : b = c :=
   have b * a - c * a = 0, from (eq_iff_sub_eq_zero _ _)^.mp h,
@@ -254,42 +197,6 @@ section
   (eq_iff_sub_eq_zero _ _)^.mpr this
 
   -- TODO: do we want the iff versions?
-
-  theorem eq_zero_of_mul_eq_self_right {a b : A} (h₁ : b ≠ 1) (h₂ : a * b = a) : a = 0 :=
-  have b - 1 ≠ 0, from
-    suppose b - 1 = 0,
-    have b = 1, from eq_of_sub_eq_zero this,
-    h₁ this,
-  have a * b - a = 0, by simp [h₂, sub_self],
-  have a * (b - 1) = 0, begin rewrite [mul_sub_left_distrib, mul_one], apply this end,
-    show a = 0, from (eq_zero_or_eq_zero_of_mul_eq_zero this)^.resolve_right ‹b - 1 ≠ 0›
-
-  theorem eq_zero_of_mul_eq_self_left {a b : A} (h₁ : b ≠ 1) (h₂ : b * a = a) : a = 0 :=
-  eq_zero_of_mul_eq_self_right h₁ (begin rewrite mul_comm at h₂, exact h₂ end)
-
-  theorem mul_self_eq_mul_self_iff (a b : A) : a * a = b * b ↔ a = b ∨ a = -b :=
-  sorry
-  /-
-  iff.intro
-    (suppose a * a = b * b,
-      have (a - b) * (a + b) = 0,
-        by rewrite [mul_comm, -mul_self_sub_mul_self_eq, this, sub_self],
-      have a - b = 0 ∨ a + b = 0, from !eq_zero_or_eq_zero_of_mul_eq_zero this,
-      or.elim this
-        (suppose a - b = 0, or.inl (eq_of_sub_eq_zero this))
-        (suppose a + b = 0, or.inr (eq_neg_of_add_eq_zero this)))
-    (suppose a = b ∨ a = -b, or.elim this
-      (suppose a = b,  by rewrite this)
-      (suppose a = -b, by rewrite [this, neg_mul_neg]))
-  -/
-
-  theorem mul_self_eq_one_iff (a : A) : a * a = 1 ↔ a = 1 ∨ a = -1 :=
-  sorry
-  /-
-  have a * a = 1 * 1 ↔ a = 1 ∨ a = -1, from mul_self_eq_mul_self_iff a 1,
-  by rewrite mul_one at this; exact this
-  -/
-  -- TODO: c - b * c → c = 0 ∨ b = 1 and variants
 
   theorem dvd_of_mul_dvd_mul_left {a b c : A} (Ha : a ≠ 0) (Hdvd : (a * b ∣ a * c)) : (b ∣ c) :=
   sorry
