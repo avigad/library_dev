@@ -20,12 +20,15 @@ variables {a b c d : Prop}
 
 /- implies -/
 
+theorem contrapos {a b : Prop} (h : a → b) : ¬ b → ¬ a :=
+λ hnb ha, hnb (h ha)
+
 theorem implies_self (h : a) : a := h
 
 theorem implies_intro (h : a) (h₂ : b) : a := h
 
 theorem true_implies_iff (a : Prop) : (true → a) ↔ a :=
-iff_intro (assume H, H trivial) implies_intro
+iff.intro (assume H, H trivial) implies_intro
 
 theorem implies_false_iff (a : Prop) : (a → false) ↔ ¬ a := iff.rfl
 
@@ -51,10 +54,10 @@ decidable.by_contradiction (not_not_of_not_implies h)
 /- and -/
 
 theorem not_and_of_not_left (b : Prop) : ¬a → ¬(a ∧ b) :=
-contrapos and_left
+contrapos and.left
 
 theorem not_and_of_not_right (a : Prop) {b : Prop} : ¬b → ¬(a ∧ b) :=
-contrapos and_right
+contrapos and.right
 
 theorem and_implies_left (h : a → b) : a ∧ c → b ∧ c :=
 and_implies h implies_self
@@ -72,13 +75,13 @@ theorem and_of_and_of_imp_right (h₁ : c ∧ a) (h : a → b) : c ∧ b :=
 and_implies_right h h₁
 
 theorem and_imp_iff (a b c : Prop) : (a ∧ b → c) ↔ (a → b → c) :=
-iff_intro (λ h a b, h ⟨a, b⟩) and.rec
+iff.intro (λ h a b, h ⟨a, b⟩) and.rec
 
 theorem and_not_self_iff (a : Prop) : a ∧ ¬ a ↔ false :=
-iff_intro (assume h, (h↣right) (h↣left)) (assume h, h↣elim)
+iff.intro (assume h, (h↣right) (h↣left)) (assume h, h↣elim)
 
 theorem not_and_self_iff (a : Prop) : ¬ a ∧ a ↔ false :=
-iff_intro (assume ⟨hna, ha⟩, hna ha) false_elim
+iff.intro (assume ⟨hna, ha⟩, hna ha) false.elim
 
 /- or -/
 
@@ -91,80 +94,80 @@ or.imp_left h h₁
 theorem or_of_or_of_implies_right (h₁ : c ∨ a) (h : a → b) : c ∨ b :=
 or.imp_right h h₁
 
-theorem or_elim3 (h : a ∨ b ∨ c) (ha : a → d) (hb : b → d) (hc : c → d) : d :=
-or_elim h ha (assume h₂, or.elim h₂ hb hc)
+theorem or.elim3 (h : a ∨ b ∨ c) (ha : a → d) (hb : b → d) (hc : c → d) : d :=
+or.elim h ha (assume h₂, or.elim h₂ hb hc)
 
 theorem or_resolve_right (h₁ : a ∨ b) (h₂ : ¬a) : b :=
-or_elim h₁ (not_elim h₂) implies_self
+or.elim h₁ (not_elim h₂) implies_self
 
 theorem or_resolve_left (h₁ : a ∨ b) (h₂ : ¬b) : a :=
-or_resolve_right (or_symm h₁) h₂
+or_resolve_right h₁^.symm h₂
 
 theorem or_implies_distrib (a b c : Prop) : ((a ∨ b) → c) ↔ ((a → c) ∧ (b → c)) :=
 iff.intro
-  (λh, and_intro (implies_trans or_inl h) (implies_trans or_inr h))
+  (λh, and.intro (implies.trans or.inl h) (implies.trans or.inr h))
   (and.rec or.rec)
 
 theorem or_iff_right_of_imp (ha : a → b) : (a ∨ b) ↔ b :=
-iff.intro (or.rec ha implies_self) or_inr
+iff.intro (or.rec ha implies_self) or.inr
 
 theorem or_iff_left_of_imp (hb : b → a) : (a ∨ b) ↔ a :=
-iff.intro (or.rec implies_self hb) or_inl
+iff.intro (or.rec implies_self hb) or.inl
 
 theorem or_iff_or (h1 : a ↔ c) (h2 : b ↔ d) : (a ∨ b) ↔ (c ∨ d) :=
 iff.intro (or.imp (iff.mp h1) (iff.mp h2)) (or.imp (iff.mpr h1) (iff.mpr h2))
 
 theorem decidable.or_not_self_iff (a : Prop) [decidable a] : a ∨ ¬ a ↔ true :=
-iff_intro (assume h, trivial) (assume h, decidable.em a)
+iff.intro (assume h, trivial) (assume h, decidable.em a)
 
 theorem decidable.not_or_self_iff (a : Prop) [decidable a] : ¬ a ∨ a ↔ true :=
-iff_intro (assume h, trivial) (assume h, or_symm (decidable.em a))
+iff.intro (assume h, trivial) (assume h, (decidable.em a)^.symm)
 
 /- distributivity -/
 
 theorem and_distrib (a b c : Prop) : a ∧ (b ∨ c) ↔ (a ∧ b) ∨ (a ∧ c) :=
 iff.intro
   (and.rec (λh, or.imp (and.intro h) (and.intro h)))
-  (or.rec (and_implies_right or_inl) (and_implies_right or_inr))
+  (or.rec (and_implies_right or.inl) (and_implies_right or.inr))
 
 theorem and_distrib_right (a b c : Prop) : (a ∨ b) ∧ c ↔ (a ∧ c) ∨ (b ∧ c) :=
 iff.trans (iff.trans and.comm (and_distrib c a b)) (or_iff_or and.comm and.comm)
 
 theorem or_distrib (a b c : Prop) : a ∨ (b ∧ c) ↔ (a ∨ b) ∧ (a ∨ c) :=
-iff_intro
-  (or.rec (λh, and_intro (or_inl h) (or_inl h)) (and_implies or_inr or_inr))
-  (and.rec (or.rec (implies_trans or_inl implies_intro)
-           (implies_trans and.intro or.imp_right)))
+iff.intro
+  (or.rec (λh, and.intro (or.inl h) (or.inl h)) (and_implies or.inr or.inr))
+  (and.rec (or.rec (implies.trans or.inl implies_intro)
+           (implies.trans and.intro or.imp_right)))
 
 theorem or_distrib_right (a b c : Prop) : (a ∧ b) ∨ c ↔ (a ∨ c) ∧ (b ∨ c) :=
-iff.trans (iff.trans (or_comm _ _) (or_distrib c a b))
-          (and_congr (or_comm _ _) (or_comm _ _))
+iff.trans (iff.trans or.comm (or_distrib c a b))
+          (and_congr or.comm or.comm)
 
 /- iff -/
 
 definition iff_def : (a ↔ b) = ((a → b) ∧ (b → a)) := rfl
 
 theorem implies_iff {a : Prop} (n : Prop) (ha : a) : (a → b) ↔ b :=
-iff_intro (λf, f ha) implies_intro
+iff.intro (λf, f ha) implies_intro
 
 theorem decidable.not_or_of_implies [decidable a] (h : a → b) : ¬ a ∨ b :=
-if ha : a then or_inr (h ha) else or_inl ha
+if ha : a then or.inr (h ha) else or.inl ha
 
 theorem implies_of_not_or (h : ¬ a ∨ b) : a → b :=
 assume ha,
-or_elim h (assume hna, absurd ha hna) (assume hb, hb)
+or.elim h (assume hna, absurd ha hna) (assume hb, hb)
 
 theorem decidable.implies_iff_not_or (a b : Prop) [decidable a] : (a → b) ↔ (¬ a ∨ b) :=
-iff_intro decidable.not_or_of_implies implies_of_not_or
+iff.intro decidable.not_or_of_implies implies_of_not_or
 
 theorem not_implies_of_and_not (h : a ∧ ¬ b) : ¬ (a → b) :=
-assume h₁, and_right h (h₁ (and_left h))
+assume h₁, and.right h (h₁ (and.left h))
 
 theorem decidable.and_not_of_not_implies [decidable a] (h : ¬ (a → b)) : a ∧ ¬ b :=
 ⟨decidable.of_not_implies h, not_of_not_implies h⟩
 
 theorem decidable.not_implies_iff_and_not (a b : Prop) [decidable a] : ¬(a → b) ↔ a ∧ ¬b :=
-iff_intro decidable.and_not_of_not_implies not_implies_of_and_not
+iff.intro decidable.and_not_of_not_implies not_implies_of_and_not
 
 theorem decidable.peirce (a b : Prop) [decidable a] : ((a → b) → a) → a :=
 if ha : a then λ h, ha else λ h, h (λ h', absurd h' ha)
@@ -172,31 +175,31 @@ if ha : a then λ h, ha else λ h, h (λ h', absurd h' ha)
 /- de morgan's laws -/
 
 theorem not_and_of_not_or_not (h : ¬ a ∨ ¬ b) : ¬ (a ∧ b) :=
-assume ⟨ha, hb⟩, or_elim h (assume hna, hna ha) (assume hnb, hnb hb)
+assume ⟨ha, hb⟩, or.elim h (assume hna, hna ha) (assume hnb, hnb hb)
 
 theorem decidable.not_or_not_of_not_and [decidable a] (h : ¬ (a ∧ b)) : ¬ a ∨ ¬ b :=
 if ha : a then
-  or_inr (show ¬ b, from assume hb, h ⟨ha, hb⟩)
+  or.inr (show ¬ b, from assume hb, h ⟨ha, hb⟩)
 else
-  or_inl ha
+  or.inl ha
 
 theorem decidable.not_or_not_of_not_and' [decidable b] (h : ¬ (a ∧ b)) : ¬ a ∨ ¬ b :=
 if hb : b then
-  or_inl (show ¬ a, from assume ha, h ⟨ha, hb⟩)
+  or.inl (show ¬ a, from assume ha, h ⟨ha, hb⟩)
 else
-  or_inr hb
+  or.inr hb
 
 theorem decidable.not_and_iff (a b : Prop) [decidable a] : ¬ (a ∧ b) ↔ ¬a ∨ ¬b :=
-iff_intro decidable.not_or_not_of_not_and not_and_of_not_or_not
+iff.intro decidable.not_or_not_of_not_and not_and_of_not_or_not
 
 theorem not_or_of_not_and_not (h : ¬ a ∧ ¬ b) : ¬ (a ∨ b) :=
-assume h₁, or_elim h₁ (assume ha, and_left h ha) (assume hb, and_right h hb)
+assume h₁, or.elim h₁ (assume ha, and.left h ha) (assume hb, and.right h hb)
 
 theorem not_and_not_of_not_or (h : ¬ (a ∨ b)) : ¬ a ∧ ¬ b :=
-and_intro (assume ha, h (or_inl ha)) (assume hb, h (or_inr hb))
+and.intro (assume ha, h (or.inl ha)) (assume hb, h (or.inr hb))
 
 theorem not_or_iff (a b : Prop) : ¬ (a ∨ b) ↔ ¬ a ∧ ¬ b :=
-iff_intro not_and_not_of_not_or not_or_of_not_and_not
+iff.intro not_and_not_of_not_or not_or_of_not_and_not
 
 theorem decidable.or_iff_not_and_not (a b : Prop) [decidable a] [decidable b] :
   a ∨ b ↔ ¬ (¬a ∧ ¬b) :=
@@ -281,7 +284,7 @@ theorem exists_implies_of_forall_implies (h : ∀ x, p x → b) : (∃ x, p x) �
 Exists.rec h
 
 theorem exists_implies_distrib (p : A → Prop) (b : Prop) : ((∃ x, p x) → b) ↔ (∀ x, p x → b) :=
-iff_intro forall_implies_of_exists_implies exists_implies_of_forall_implies
+iff.intro forall_implies_of_exists_implies exists_implies_of_forall_implies
 
 theorem forall_not_of_not_exists (h : ¬ ∃ x, p x) : ∀ x, ¬ p x :=
 forall_implies_of_exists_implies h
@@ -303,16 +306,16 @@ assume h₁, match h with ⟨x, hnpx⟩ := hnpx (h₁ x) end
 theorem decidable.not_forall_iff_exists_not (p : A → Prop)
     [decidable (∃ x, ¬ p x)] [∀ x, decidable (p x)] :
   (¬ ∀ x, p x) ↔ (∃ x, ¬ p x) :=
-iff_intro decidable.exists_not_of_not_forall not_forall_of_exists_not
+iff.intro decidable.exists_not_of_not_forall not_forall_of_exists_not
 
 theorem forall_true_iff : (∀ x : A, true) ↔ true :=
 iff_true_intro (λ h, trivial)
 
 theorem forall_p_iff_p (A : Type u) [inhabited A] (p : Prop) : (∀ x : A, p) ↔ p :=
-iff_intro (λ h, h (inhabited.default A)) (λ hp x, hp)
+iff.intro (λ h, h (inhabited.default A)) (λ hp x, hp)
 
 theorem exists_p_iff_p (A : Type u) [inhabited A] (p : Prop) : (∃ x : A, p) ↔ p :=
-iff_intro (Exists.rec (λ x (hpx : p), hpx)) (λ hp, ⟨default A, hp⟩)
+iff.intro (Exists.rec (λ x (hpx : p), hpx)) (λ hp, ⟨default A, hp⟩)
 
 theorem forall_and_distrib (p q : A → Prop) : (∀ x, p x ∧ q x) ↔ (∀ x, p x) ∧ (∀ x, q x) :=
 iff.intro
@@ -321,13 +324,13 @@ iff.intro
 
 theorem exists_or_distrib (p q : A → Prop) : (∃ x, p x ∨ q x) ↔ (∃ x, p x) ∨ (∃ x, q x) :=
 iff.intro
-  (assume ⟨x, hpq⟩, or_elim hpq (assume hpx, or_inl (exists.intro x hpx))
-                               (assume hqx, or_inr (exists.intro x hqx)))
+  (assume ⟨x, hpq⟩, or.elim hpq (assume hpx, or.inl (exists.intro x hpx))
+                               (assume hqx, or.inr (exists.intro x hqx)))
   (assume hepq,
-    or_elim hepq
+    or.elim hepq
       (assume hepx,
-         match hepx : _ → ∃ x, p x ∨ q x with ⟨x, hpx⟩  := ⟨x, or_inl hpx⟩ end)
-      (assume ⟨x, hqx⟩, ⟨x, or_inr hqx⟩))
+         match hepx : _ → ∃ x, p x ∨ q x with ⟨x, hpx⟩  := ⟨x, or.inl hpx⟩ end)
+      (assume ⟨x, hqx⟩, ⟨x, or.inr hqx⟩))
 
 end quantifiers
 
@@ -404,7 +407,7 @@ assume ⟨x, hrx, hpx⟩, h x hrx hpx
 
 theorem bexists_implies_distrib (r p : A → Prop) (b : Prop) :
   ((∃ x (hrx : r x), p x) → b) ↔ (∀ x (hrx : r x), p x → b) :=
-iff_intro bforall_implies_of_bexists_implies bexists_implies_of_bforall_implies
+iff.intro bforall_implies_of_bexists_implies bexists_implies_of_bforall_implies
 
 theorem bforall_not_of_not_bexists (h : ¬ ∃ x (hrx : r x), p x) : ∀ x (hrx : r x), ¬ p x :=
 bforall_implies_of_bexists_implies h
@@ -428,7 +431,7 @@ assume h₁, match h with ⟨x, hrx, hnpx⟩ := hnpx (h₁ x hrx) end
 theorem decidable.not_bforall_iff_bexists_not (r p : A → Prop)
     [decidable (∃ x (hrx : r x), ¬ p x)] [∀ x, decidable (p x)] :
   (¬ ∀ x (hrx : r x), p x) ↔ (∃ x (hrx : r x), ¬ p x) :=
-iff_intro decidable.bexists_not_of_not_bforall not_bforall_of_bexists_not
+iff.intro decidable.bexists_not_of_not_bforall not_bforall_of_bexists_not
 
 theorem bforall_true_iff (r : A → Prop): (∀ x (hrx : r x), true) ↔ true :=
 iff_true_intro (λ h hrx, trivial)
@@ -441,13 +444,13 @@ iff.intro
 theorem bexists_or_distrib (r p q : A → Prop) :
   (∃ x (hrx : r x), p x ∨ q x) ↔ (∃ x (hrx : r x), p x) ∨ (∃ x (hrx : r x), q x) :=
 iff.intro
-  (assume ⟨x, hrx, hpq⟩, or_elim hpq (assume hpx, or_inl (exists.intro x (exists.intro hrx hpx)))
-                               (assume hqx, or_inr (exists.intro x (exists.intro hrx hqx))))
+  (assume ⟨x, hrx, hpq⟩, or.elim hpq (assume hpx, or.inl (exists.intro x (exists.intro hrx hpx)))
+                               (assume hqx, or.inr (exists.intro x (exists.intro hrx hqx))))
   (assume hepq,
-    or_elim hepq
+    or.elim hepq
       (assume hepx,
-         match hepx : _ → ∃ x (hrx : r x), p x ∨ q x with ⟨x, hrx, hpx⟩ := ⟨x, hrx, or_inl hpx⟩ end)
-      (assume ⟨x, hrx, hqx⟩, ⟨x, hrx, or_inr hqx⟩))
+         match hepx : _ → ∃ x (hrx : r x), p x ∨ q x with ⟨x, hrx, hpx⟩ := ⟨x, hrx, or.inl hpx⟩ end)
+      (assume ⟨x, hrx, hqx⟩, ⟨x, hrx, or.inr hqx⟩))
 
 end bounded_quantifiers
 

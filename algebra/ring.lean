@@ -18,32 +18,30 @@ section comm_semiring
   has_dvd.mk (λ a b, ∃ c, b = a * c)
 
   -- TODO: this used to not have c explicit, but that seems to be important
-  --       for use with tactics, similar to exists_intro
-  theorem dvd_intro {a b : A} (c : A) (h : a * c = b) : a ∣ b :=
-  exists_intro c h^.symm
+  --       for use with tactics, similar to exist.intro
+  theorem dvd.intro {a b : A} (c : A) (h : a * c = b) : a ∣ b :=
+  exists.intro c h^.symm
 
-  def dvd_of_mul_right_eq := @dvd_intro
+  def dvd_of_mul_right_eq := @dvd.intro
 
-  theorem dvd_intro_left {a b : A} (c : A) (h : c * a = b) : a ∣ b :=
-  dvd_intro _ (begin rewrite mul_comm at h, apply h end)
+  theorem dvd.intro_left {a b : A} (c : A) (h : c * a = b) : a ∣ b :=
+  dvd.intro _ (begin rewrite mul_comm at h, apply h end)
 
-  def dvd_of_mul_left_eq := @dvd_intro_left
+  def dvd_of_mul_left_eq := @dvd.intro_left
 
   theorem exists_eq_mul_right_of_dvd {a b : A} (h : a ∣ b) : ∃ c, b = a * c := h
 
-  theorem dvd_elim {P : Prop} {a b : A} (H₁ : a ∣ b) (H₂ : ∀ c, b = a * c → P) : P :=
-  exists_elim H₁ H₂
-
-  def dvd.elim := @dvd_elim
+  theorem dvd.elim {P : Prop} {a b : A} (H₁ : a ∣ b) (H₂ : ∀ c, b = a * c → P) : P :=
+  exists.elim H₁ H₂
 
   theorem exists_eq_mul_left_of_dvd {a b : A} (h : a ∣ b) : ∃ c, b = c * a :=
-  dvd_elim h (take c, assume H1 : b = a * c, exists.intro c (eq.trans H1 (mul_comm a c)))
+  dvd.elim h (take c, assume H1 : b = a * c, exists.intro c (eq.trans H1 (mul_comm a c)))
 
   theorem dvd.elim_left {P : Prop} {a b : A} (h₁ : a ∣ b) (h₂ : ∀ c, b = c * a → P) : P :=
   exists.elim (exists_eq_mul_left_of_dvd h₁) (take c, assume h₃ : b = c * a, h₂ c h₃)
 
   @[simp] theorem dvd_refl : a ∣ a :=
-  dvd_intro 1 (by simp)
+  dvd.intro 1 (by simp)
 
   theorem dvd_trans {a b c : A} (h₁ : a ∣ b) (h₂ : b ∣ c) : a ∣ c :=
   match h₁, h₂ with
@@ -54,26 +52,26 @@ section comm_semiring
   def dvd.trans := @dvd_trans
 
   theorem eq_zero_of_zero_dvd {a : A} (h : 0 ∣ a) : a = 0 :=
-  dvd_elim h (take c, assume H' : a = 0 * c, eq.trans H' (zero_mul c))
+  dvd.elim h (take c, assume H' : a = 0 * c, eq.trans H' (zero_mul c))
 
-  @[simp] theorem dvd_zero : a ∣ 0 := dvd_intro 0 (by simp)
+  @[simp] theorem dvd_zero : a ∣ 0 := dvd.intro 0 (by simp)
 
-  @[simp] theorem one_dvd : 1 ∣ a := dvd_intro a (by simp)
+  @[simp] theorem one_dvd : 1 ∣ a := dvd.intro a (by simp)
 
-  @[simp] theorem dvd_mul_right : a ∣ a * b := dvd_intro b rfl
+  @[simp] theorem dvd_mul_right : a ∣ a * b := dvd.intro b rfl
 
-  @[simp] theorem dvd_mul_left : a ∣ b * a := dvd_intro b (by simp)
+  @[simp] theorem dvd_mul_left : a ∣ b * a := dvd.intro b (by simp)
 
   theorem dvd_mul_of_dvd_left {a b : A} (h : a ∣ b) (c : A) : a ∣ b * c :=
-  dvd_elim h (λ c h', by tactic.simp_using_hs)
+  dvd.elim h (λ c h', by tactic.simp_using_hs)
 
   theorem dvd_mul_of_dvd_right {a b : A} (h : a ∣ b) (c : A) : a ∣ c * b :=
   begin rewrite mul_comm, exact dvd_mul_of_dvd_left h _ end
 
   theorem mul_dvd_mul {a b c d : A} (dvd_ab : a ∣ b) (dvd_cd : c ∣ d) : a * c ∣ b * d :=
-  dvd_elim dvd_ab (take e, assume beq,
-    dvd_elim dvd_cd (take f, assume deq,
-      dvd_intro (e *f) (by tactic.simp_using_hs)))
+  dvd.elim dvd_ab (take e, assume beq,
+    dvd.elim dvd_cd (take f, assume deq,
+      dvd.intro (e *f) (by tactic.simp_using_hs)))
 
 /-
   -- TODO: this should work, but doesn't.
@@ -82,15 +80,15 @@ section comm_semiring
   theorem mul_dvd_mul' {a b c d : A} (dvd_ab : a ∣ b) (dvd_cd : c ∣ d) : a * c ∣ b * d :=
   match dvd_ab, dvd_cd with
   | ⟨e, (he : b = a * e)⟩, ⟨f, (hf : d = c * f)⟩ :=
-    begin subst he, subst hf, apply (@dvd_intro A _ _ _ (e * f)), simp end
+    begin subst he, subst hf, apply (@dvd.intro A _ _ _ (e * f)), simp end
   end
 -/
 
   theorem dvd_of_mul_right_dvd {a b c : A} (h : a * b ∣ c) : a ∣ c :=
-  dvd_elim h (begin intros, tactic.simp_using_hs end)
+  dvd.elim h (begin intros, tactic.simp_using_hs end)
 
   theorem dvd_of_mul_left_dvd {a b c : A} (h : a * b ∣ c) : b ∣ c :=
-  dvd_elim h (λ d ceq, dvd_intro (a * d) (by tactic.simp_using_hs))
+  dvd.elim h (λ d ceq, dvd.intro (a * d) (by tactic.simp_using_hs))
 end comm_semiring
 
 /- ring -/
@@ -138,18 +136,18 @@ section
   local attribute [simp] left_distrib right_distrib
 
   theorem dvd_add {a b c : A} (h₁ : a ∣ b) (h₂ : a ∣ c) : a ∣ b + c :=
-  dvd_elim h₁ (λ d hd, dvd_elim h₂ (λ e he, dvd_intro (d + e) (by simp [hd, he])))
+  dvd.elim h₁ (λ d hd, dvd.elim h₂ (λ e he, dvd.intro (d + e) (by simp [hd, he])))
 
   theorem dvd_neg_iff_dvd : (a ∣ -b) ↔ (a ∣ b) :=
   iff.intro
     (suppose a ∣ -b,
       dvd.elim this
         (take c, suppose -b = a * c,
-          dvd_intro (-c) (by simp [this^.symm])))
+          dvd.intro (-c) (by simp [this^.symm])))
     (suppose a ∣ b,
       dvd.elim this
         (take c, suppose b = a * c,
-          dvd_intro (-c) (by simp [this^.symm])))
+          dvd.intro (-c) (by simp [this^.symm])))
 
   theorem dvd_neg_of_dvd : (a ∣ b) → (a ∣ -b) :=
   iff.mpr (dvd_neg_iff_dvd a b)
@@ -162,11 +160,11 @@ section
     (suppose -a ∣ b,
       dvd.elim this
         (take c, suppose b = -a * c,
-          dvd_intro (-c) (by simp [this])))
+          dvd.intro (-c) (by simp [this])))
     (suppose a ∣ b,
       dvd.elim this
         (take c, suppose b = a * c,
-          dvd_intro (-c) (by simp [this])))
+          dvd.intro (-c) (by simp [this])))
 
   theorem neg_dvd_of_dvd : a ∣ b → -a ∣ b :=
   iff.mpr (neg_dvd_iff_dvd a b)
@@ -205,7 +203,7 @@ section
     (take d,
       suppose a * c = a * b * d,
       have b * d = c, from eq_of_mul_eq_mul_left Ha begin rewrite -mul.assoc, symmetry, exact this end,
-      dvd_intro this)
+      dvd.intro this)
   -/
 
   theorem dvd_of_mul_dvd_mul_right {a b c : A} (Ha : a ≠ 0) (Hdvd : (b * a ∣ c * a)) : (b ∣ c) :=
@@ -216,7 +214,7 @@ section
       suppose c * a = b * a * d,
       have b * d * a = c * a, from by rewrite [mul.right_comm, -this],
       have b * d = c, from eq_of_mul_eq_mul_right Ha this,
-      dvd_intro this)
+      dvd.intro this)
   -/
 end
 

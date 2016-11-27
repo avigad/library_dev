@@ -19,7 +19,7 @@ section group
   variable {A}
 
   theorem inv_eq_inv_iff_eq (a b : A) : a⁻¹ = b⁻¹ ↔ a = b :=
-  iff_intro inv_inj (begin intro h, simp [h] end)
+  iff.intro inv_inj (begin intro h, simp [h] end)
 
   theorem inv_eq_one_iff_eq_one (a : A) : a⁻¹ = 1 ↔ a = 1 :=
   have a⁻¹ = 1⁻¹ ↔ a = 1, from inv_eq_inv_iff_eq a 1,
@@ -36,9 +36,6 @@ section group
     a    = a * b⁻¹ * b : by simp
      ... = b           : begin rewrite H, simp end
 
-
-  --TODO: with luck, we can delete all these soon
-
   theorem mul_eq_iff_eq_inv_mul (a b c : A) : a * b = c ↔ b = a⁻¹ * c :=
   iff.intro eq_inv_mul_of_mul_eq mul_eq_of_eq_inv_mul
 
@@ -47,8 +44,6 @@ section group
 end group
 
 /- transport versions to additive -/
-
--- TODO: `` notation doesn't seem to detect errors
 
 run_command do monad.mapm'
     (λ p : name × name, transport_to_additive p.1 p.2)
@@ -69,14 +64,7 @@ run_command do monad.mapm'
 section add_group
   variable [add_group A]
 
---  attribute [reducible]
---  protected definition algebra.sub (a b : A) : A := a + -b
-
   local attribute [simp] sub_eq_add_neg
-
-  -- TODO: maybe none of these are necessary any more...
-  -- Or mabe add_group_has_sub *shouldn't* be a simp rule, and these should be?
-
 
   theorem eq_iff_sub_eq_zero (a b : A) : a = b ↔ a - b = 0 :=
   iff.intro (assume h, by simp [h]) (assume h, eq_of_sub_eq_zero h)

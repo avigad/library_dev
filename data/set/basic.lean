@@ -11,7 +11,7 @@ Authors Jeremy Avigad, Leonardo de Moura
 -- QUESTION: should we just use classical logic here? Or keep "decidable" hypotheses throughout?
 -/
 import logic.basic
-open function tactic
+open function tactic set
 
 universe variable uA
 variable {A : Type uA}
@@ -88,7 +88,7 @@ classical.by_contradiction
     show false, from h (eq_empty_of_forall_not_mem this))
 
 theorem empty_subset (s : set A) : ∅ ⊆ s :=
-take x, assume h, false_elim h
+take x, assume h, false.elim h
 
 theorem eq_empty_of_subset_empty {s : set A} (H : s ⊆ ∅) : s = ∅ :=
 subset_antisymm @H (@empty_subset _ s)
@@ -316,7 +316,7 @@ ext (λ x, eq.subst (eq.symm (mem_insert_eq x a s))
 
 theorem insert_comm (x y : A) (s : set A) : insert x (insert y s) = insert y (insert x s) :=
 ext (take a,
-  begin rewrite [mem_insert_eq, mem_insert_eq, mem_insert_eq, mem_insert_eq, or_left_comm] end)
+  begin rw [mem_insert_eq, mem_insert_eq, mem_insert_eq, mem_insert_eq, or.left_comm] end)
 
 -- useful in proofs by induction
 theorem forall_of_forall_insert {P : A → Prop} {a : A} {s : set A} (h : ∀ x, x ∈ insert a s → P x) :
@@ -475,12 +475,12 @@ ext (take x, iff.intro (assume H, and.intro trivial H) (assume H, and.right H))
 
 /- powerset -/
 
-theorem mem_powerset {x s : set A} (H : x ⊆ s) : x ∈ 𝒫 s := @H
+theorem mem_powerset {x s : set A} (H : x ⊆ s) : x ∈ powerset s := @H
 
 -- TODO: remove @ when subset is corrected in init
-theorem subset_of_mem_powerset {x s : set A} (h : x ∈ 𝒫 s) : x ⊆ s := @h
+theorem subset_of_mem_powerset {x s : set A} (h : x ∈ powerset s) : x ⊆ s := @h
 
-theorem mem_powerset_iff (x s : set A) : x ∈ 𝒫 s ↔ x ⊆ s := iff.rfl
+theorem mem_powerset_iff (x s : set A) : x ∈ powerset s ↔ x ⊆ s := iff.rfl
 
 /- function image -/
 
@@ -576,8 +576,8 @@ lemma bounded_forall_image_of_bounded_forall {f : A → B} {s : set A} {p : B �
 begin
   intros x' Hx,
   cases Hx with x Hx,
-  cases Hx with Hx eq,
-  rewrite (eq_symm eq),
+  cases Hx with Hx Heq,
+  rw Heq^.symm,
   apply H,
   assumption
 end
@@ -591,13 +591,13 @@ lemma image_insert_eq {f : A → B} {a : A} {s : set A} :
 begin
   apply set.ext,
   intro x, apply iff.intro, all_goals (do intro `h, skip),
-  { cases h with y hy, cases hy with hy eq, rewrite (eq_symm eq), cases hy with y_eq,
+  { cases h with y hy, cases hy with hy heq, rewrite heq^.symm, cases hy with y_eq,
     { rewrite y_eq, apply mem_insert },
     { apply mem_insert_of_mem, apply mem_image_of_mem, assumption } },
   { cases h with eq hx,
     { rewrite eq, apply mem_image_of_mem, apply mem_insert },
-    { cases hx with y hy, cases hy with hy eq,
-      rewrite (eq_symm eq), apply mem_image_of_mem, apply mem_insert_of_mem, assumption } }
+    { cases hx with y hy, cases hy with hy heq,
+      rw heq^.symm, apply mem_image_of_mem, apply mem_insert_of_mem, assumption } }
 end
 
 end image
