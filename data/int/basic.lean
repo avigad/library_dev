@@ -8,8 +8,19 @@ The integers, with addition, multiplication, and subtraction.
 import ..nat.sub
 open nat
 
--- TODO: better name (we use "pos" rather than "zero_lt")
-def nat.succ_pos := zero_lt_succ
+-- TODO: where to put these?
+meta def simp_coe_attr : user_attribute :=
+{ name     := `simp.coe,
+  descr    := "rules for pushing coercions inwards"}
+
+run_command attribute.register ``simp_coe_attr
+
+meta def simp_coe_out_attr : user_attribute :=
+{ name     := `simp.coe_out,
+  descr    := "rules for pushing coercions outwards"}
+
+run_command attribute.register ``simp_coe_out_attr
+
 
 /- the type, coercions, and notation -/
 
@@ -19,11 +30,7 @@ inductive int : Type
 
 notation `ℤ` := int
 
-instance coe_nat_to_int : has_coe nat int :=
-⟨int.of_nat⟩
-
-theorem int_coe_eq (n : ℕ) : ↑n = int.of_nat n :=
-rfl
+instance : has_coe nat int := ⟨int.of_nat⟩
 
 notation `-[1+ ` n `]` := int.neg_succ_of_nat n
 
@@ -32,11 +39,11 @@ by tactic.mk_dec_eq_instance
 
 namespace int
 
+protected theorem coe_nat_eq (n : ℕ) : ↑n = int.of_nat n := rfl
+
 protected def zero : ℤ := of_nat 0
 protected def one  : ℤ := of_nat 1
 
--- TODO: should these be only local, until the ring instance is declared?
--- Leo: no, they should not be local.
 instance : has_zero ℤ := ⟨int.zero⟩
 instance : has_one ℤ := ⟨int.one⟩
 
@@ -84,18 +91,6 @@ instance : has_neg ℤ := ⟨int.neg⟩
 instance : has_add ℤ := ⟨int.add⟩
 instance : has_mul ℤ := ⟨int.mul⟩
 
-/-
-private def int_has_neg : has_neg ℤ := ⟨int.neg⟩
-private def int_has_add : has_add ℤ := ⟨int.add⟩
-private def int_has_mul : has_mul ℤ := ⟨int.mul⟩
-
-local attribute [instance] int_has_neg int_has_add int_has_mul
--/
-
--- TODO: should these be simplification rules? which way should they be oriented?
---       should of_nat n be replaced by ↑(n)
--- Leo: The arith normalizer will push them inside. I'm tryint o minimize the number of [simp] rules that will
--- conflict with the arith normalizer.
 theorem of_nat_add (n m : ℕ) : of_nat (n + m) = of_nat n + of_nat m := rfl
 theorem of_nat_mul (n m : ℕ) : of_nat (n * m) = of_nat n * of_nat m := rfl
 theorem of_nat_succ (n : ℕ) : of_nat (succ n) = of_nat n + 1 := rfl
@@ -103,6 +98,19 @@ theorem of_nat_succ (n : ℕ) : of_nat (succ n) = of_nat n + 1 := rfl
 theorem neg_of_nat_zero : -(of_nat 0) = 0 := rfl
 theorem neg_of_nat_of_succ (n : ℕ) : -(of_nat (succ n)) = -[1+ n] := rfl
 theorem neg_neg_of_nat_succ (n : ℕ) : -(-[1+ n]) = of_nat (succ n) := rfl
+
+theorem of_nat_eq_coe (n : ℕ) : of_nat n = ↑n := rfl
+theorem neg_succ_of_nat_coe (n : ℕ) : -[1+ n] = -↑(n + 1) := rfl
+
+@[simp.coe] protected theorem coe_nat_add (m n : ℕ) : (↑(m + n) : ℤ) = ↑m + ↑n := rfl
+@[simp.coe] protected theorem coe_nat_mul (m n : ℕ) : (↑(m * n) : ℤ) = ↑m * ↑n := rfl
+@[simp.coe] protected theorem coe_nat_zero : ↑(0 : ℕ) = (0 : ℤ) := rfl
+@[simp.coe] protected theorem coe_nat_one : ↑(1 : ℕ) = (1 : ℤ) := rfl
+@[simp.coe] protected theorem coe_nat_succ (n : ℕ) : (↑(succ n) : ℤ) = ↑n + 1 := rfl
+
+@[simp.coe_out] protected theorem coe_nat_add_out (m n : ℕ) : ↑m + ↑n = (m + n : ℤ) := rfl
+@[simp.coe_out] protected theorem coe_nat_mul_out (m n : ℕ) : ↑m * ↑n = (↑(m * n) : ℤ) := rfl
+@[simp.coe_out] protected theorem coe_nat_add_one_out (n : ℕ) : ↑n + (1 : ℤ) = ↑(succ n) := rfl
 
 /- these are only for internal use -/
 
@@ -129,17 +137,19 @@ local attribute [simp] of_nat_add_of_nat of_nat_mul_of_nat neg_of_nat_zero neg_o
 
 /- some basic functions and properties -/
 
--- TODO: decide which names to use
-theorem of_nat_inj {m n : ℕ} (h : of_nat m = of_nat n) : m = n :=
+theorem of_nat.inj {m n : ℕ} (h : of_nat m = of_nat n) : m = n :=
 int.no_confusion h id
 
-theorem eq_of_of_nat_eq_of_nat {m n : ℕ} (h : of_nat m = of_nat n) : m = n :=
-of_nat_inj h
+protected theorem coe_nat.inj {m n : ℕ} (h : ↑m = ↑n) : m = n :=
+of_nat.inj h
 
 theorem of_nat_eq_of_nat_iff (m n : ℕ) : of_nat m = of_nat n ↔ m = n :=
-iff.intro of_nat_inj (congr_arg _)
+iff.intro of_nat.inj (congr_arg _)
 
-theorem neg_succ_of_nat_inj {m n : ℕ} (h : neg_succ_of_nat m = neg_succ_of_nat n) : m = n :=
+protected theorem coe_nat_eq_coe_nat_iff (m n : ℕ) : (↑m : ℤ) = ↑n ↔ m = n :=
+of_nat_eq_of_nat_iff m n
+
+theorem neg_succ_of_nat.inj {m n : ℕ} (h : neg_succ_of_nat m = neg_succ_of_nat n) : m = n :=
 int.no_confusion h id
 
 theorem neg_succ_of_nat_eq (n : ℕ) : -[1+ n] = -(n + 1) := rfl
@@ -408,10 +418,8 @@ instance : comm_ring int :=
   right_distrib  := int.distrib_right,
   mul_comm       := int.mul_comm }
 
-
--- TODO: for an integral domain, we also need these:
 protected theorem zero_ne_one : (0 : int) ≠ 1 :=
-assume h : 0 = 1, succ_ne_zero _ (of_nat_inj h)^.symm
+assume h : 0 = 1, succ_ne_zero _ (of_nat.inj h)^.symm
 
 /-
 protected theorem eq_zero_or_eq_zero_of_mul_eq_zero : ∀ {a b : ℤ}, a * b = 0 → a = 0 ∨ b = 0

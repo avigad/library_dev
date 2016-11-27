@@ -8,6 +8,9 @@ Subtraction on the natural numbers, as well as min, max, and distance.
 
 namespace nat
 
+-- better name (we use "pos" rather than "zero_lt")
+def succ_pos := zero_lt_succ
+
 /- subtraction -/
 
 attribute [simp]
