@@ -129,8 +129,6 @@ describing their conclusions.
 - `right_comm`
 - `mul_left_cancel`
 - `mul_right_cancel`
-- `add_left_cancel`
-- `add_right_cancel`
 - `inj`  (injective)
 
 
