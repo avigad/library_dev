@@ -137,19 +137,19 @@ local attribute [simp] of_nat_add_of_nat of_nat_mul_of_nat neg_of_nat_zero neg_o
 
 /- some basic functions and properties -/
 
-theorem of_nat.inj {m n : ℕ} (h : of_nat m = of_nat n) : m = n :=
+protected theorem of_nat_inj {m n : ℕ} (h : of_nat m = of_nat n) : m = n :=
 int.no_confusion h id
 
-protected theorem coe_nat.inj {m n : ℕ} (h : ↑m = ↑n) : m = n :=
-of_nat.inj h
+protected theorem coe_nat_inj {m n : ℕ} (h : (↑m : ℤ) = ↑n) : m = n :=
+int.of_nat_inj h
 
 theorem of_nat_eq_of_nat_iff (m n : ℕ) : of_nat m = of_nat n ↔ m = n :=
-iff.intro of_nat.inj (congr_arg _)
+iff.intro int.of_nat_inj (congr_arg _)
 
 protected theorem coe_nat_eq_coe_nat_iff (m n : ℕ) : (↑m : ℤ) = ↑n ↔ m = n :=
 of_nat_eq_of_nat_iff m n
 
-theorem neg_succ_of_nat.inj {m n : ℕ} (h : neg_succ_of_nat m = neg_succ_of_nat n) : m = n :=
+theorem neg_succ_of_nat_inj {m n : ℕ} (h : neg_succ_of_nat m = neg_succ_of_nat n) : m = n :=
 int.no_confusion h id
 
 theorem neg_succ_of_nat_eq (n : ℕ) : -[1+ n] = -(n + 1) := rfl
@@ -419,7 +419,7 @@ instance : comm_ring int :=
   mul_comm       := int.mul_comm }
 
 protected theorem zero_ne_one : (0 : int) ≠ 1 :=
-assume h : 0 = 1, succ_ne_zero _ (of_nat.inj h)^.symm
+assume h : 0 = 1, succ_ne_zero _ (int.of_nat_inj h)^.symm
 
 /-
 protected theorem eq_zero_or_eq_zero_of_mul_eq_zero : ∀ {a b : ℤ}, a * b = 0 → a = 0 ∨ b = 0

@@ -58,9 +58,9 @@ match nat.le.elim h with
 | ⟨k, (hk : m + k = n)⟩ := le.intro (by rw [-hk])
 end
 
-theorem le_of_coe_nat_le_coe_nat {m n : ℕ} (h : ↑m ≤ ↑n) : m ≤ n :=
+theorem le_of_coe_nat_le_coe_nat {m n : ℕ} (h : (↑m : ℤ) ≤ ↑n) : m ≤ n :=
 le.elim h (take k, assume hk : ↑m + ↑k = ↑n,
-  have m + k = n, from coe_nat.inj ((int.coe_nat_add m k)^.trans hk),
+  have m + k = n, from int.coe_nat_inj ((int.coe_nat_add m k)^.trans hk),
   nat.le.intro this)
 
 theorem coe_nat_le_coe_nat_iff (m n : ℕ) : (↑m : ℤ) ≤ ↑n ↔ m ≤ n :=
@@ -82,7 +82,7 @@ exists.elim (lt.dest h) h'
 theorem coe_nat_lt_coe_nat_iff (n m : ℕ) : (↑n : ℤ) < ↑m ↔ n < m :=
 by rw [lt_iff_add_one_le, -int.coe_nat_succ, coe_nat_le_coe_nat_iff]
 
-theorem lt_of_coe_nat_lt_coe_nat {m n : ℕ} (h : ↑m < ↑n) : m < n :=
+theorem lt_of_coe_nat_lt_coe_nat {m n : ℕ} (h : (↑m : ℤ) < ↑n) : m < n :=
 (coe_nat_lt_coe_nat_iff  _ _)^.mp h
 
 theorem coe_nat_lt_coe_nat_of_lt {m n : ℕ} (h : m < n) : (↑m : ℤ) < ↑n :=
@@ -103,7 +103,7 @@ le.elim h₁ (take n, assume hn : a + n = b,
 le.elim h₂ (take m, assume hm : b + m = a,
   have a + ↑(n + m) = a + 0, by rw [int.coe_nat_add, -add_assoc, hn, hm, add_zero a],
   have (↑(n + m) : ℤ) = 0, from add_left_cancel this,
-  have n + m = 0, from coe_nat.inj this,
+  have n + m = 0, from int.coe_nat_inj this,
   have n = 0, from nat.eq_zero_of_add_eq_zero_right this,
   show a = b, begin rw [-hn, this, int.coe_nat_zero, add_zero a] end))
 
@@ -111,7 +111,7 @@ protected theorem lt_irrefl (a : ℤ) : ¬ a < a :=
 suppose a < a,
 lt.elim this (take n, assume hn : a + nat.succ n = a,
   have a + nat.succ n = a + 0, by rw [hn, add_zero],
-  have nat.succ n = 0, from int.coe_nat.inj (add_left_cancel this),
+  have nat.succ n = 0, from int.coe_nat_inj (add_left_cancel this),
   show false, from nat.succ_ne_zero _ this)
 
 protected theorem ne_of_lt {a b : ℤ} (h : a < b) : a ≠ b :=

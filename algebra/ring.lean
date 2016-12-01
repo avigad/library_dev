@@ -63,10 +63,10 @@ section comm_semiring
   @[simp] theorem dvd_mul_left : a ∣ b * a := dvd.intro b (by simp)
 
   theorem dvd_mul_of_dvd_left {a b : A} (h : a ∣ b) (c : A) : a ∣ b * c :=
-  dvd.elim h (λ c h', by tactic.simp_using_hs)
+  dvd.elim h (λ d h', begin rw [h', mul_assoc], apply dvd_mul_right end)
 
   theorem dvd_mul_of_dvd_right {a b : A} (h : a ∣ b) (c : A) : a ∣ c * b :=
-  begin rewrite mul_comm, exact dvd_mul_of_dvd_left h _ end
+  begin rw mul_comm, exact dvd_mul_of_dvd_left h _ end
 
   theorem mul_dvd_mul {a b c d : A} (dvd_ab : a ∣ b) (dvd_cd : c ∣ d) : a * c ∣ b * d :=
   dvd.elim dvd_ab (take e, assume beq,
@@ -85,10 +85,10 @@ section comm_semiring
 -/
 
   theorem dvd_of_mul_right_dvd {a b c : A} (h : a * b ∣ c) : a ∣ c :=
-  dvd.elim h (begin intros, tactic.simp_using_hs end)
+  dvd.elim h (begin intros d h₁, rw [h₁, mul_assoc], apply dvd_mul_right end)
 
   theorem dvd_of_mul_left_dvd {a b c : A} (h : a * b ∣ c) : b ∣ c :=
-  dvd.elim h (λ d ceq, dvd.intro (a * d) (by tactic.simp_using_hs))
+  dvd.elim h (λ d ceq, dvd.intro (a * d) (by simp [ceq]))
 end comm_semiring
 
 /- ring -/
@@ -104,10 +104,6 @@ section
     a * e + c = b * e + d ↔ a * e + c = d + b * e : by simp
       ... ↔ a * e + c - b * e = d : iff.symm (sub_eq_iff_eq_add _ _ _)
       ... ↔ (a - b) * e + c = d   : begin simp [@sub_eq_add_neg A, @right_distrib A] end
-
-  theorem mul_add_eq_mul_add_of_sub_mul_add_eq : (a - b) * e + c = d → a * e + c = b * e + d :=
-  sorry
---  begin intro h, simp [h^.symm], rewrite (add_comm (b * e)), rewrite sub_add_cancel end
 
   theorem sub_mul_add_eq_of_mul_add_eq_mul_add : a * e + c = b * e + d → (a - b) * e + c = d :=
   assume h,
@@ -196,8 +192,8 @@ section
 
   -- TODO: do we want the iff versions?
 
-  theorem dvd_of_mul_dvd_mul_left {a b c : A} (Ha : a ≠ 0) (Hdvd : (a * b ∣ a * c)) : (b ∣ c) :=
-  sorry
+--  theorem dvd_of_mul_dvd_mul_left {a b c : A} (Ha : a ≠ 0) (Hdvd : (a * b ∣ a * c)) : (b ∣ c) :=
+--  sorry
   /-
   dvd.elim Hdvd
     (take d,
@@ -206,8 +202,8 @@ section
       dvd.intro this)
   -/
 
-  theorem dvd_of_mul_dvd_mul_right {a b c : A} (Ha : a ≠ 0) (Hdvd : (b * a ∣ c * a)) : (b ∣ c) :=
-  sorry
+--  theorem dvd_of_mul_dvd_mul_right {a b c : A} (Ha : a ≠ 0) (Hdvd : (b * a ∣ c * a)) : (b ∣ c) :=
+--  sorry
   /-
   dvd.elim Hdvd
     (take d,
