@@ -64,7 +64,7 @@ example (i) (c : i) (p : i → Prop) (f g : i → i) :
 p c → (∀x, p x → p (f x)) → (∀x, p x → f x = g x) → f (f c) = g (g c) :=
 by super
 
-example (i) (p q : i → i → Prop) (a b c d : i) :
+lemma ex (i) (p q : i → i → Prop) (a b c d : i) :
   (∀x y z, p x y ∧ p y z → p x z) →
   (∀x y z, q x y ∧ q y z → q x z) →
   (∀x y, q x y → q y x) →

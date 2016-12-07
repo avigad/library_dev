@@ -5,7 +5,7 @@ namespace super
 
 meta def prove_using_assumption : tactic unit := do
 tgt ← target,
-ass ← mk_local_def `h tgt,
+ass ← mk_local_def' `h tgt,
 exact ass
 
 meta def simplify_capturing_assumptions (type : expr) : tactic (expr × expr × list expr) := do
@@ -18,7 +18,7 @@ return (type', heq, add_hyps)
 meta def try_simplify_left (c : clause) (i : ℕ) : tactic (list clause) :=
 on_left_at c i $ λtype, do
   (type', heq, add_hyps) ← simplify_capturing_assumptions type,
-  hyp ← mk_local_def `h type',
+  hyp ← mk_local_def' `h type',
   prf  ← mk_app ``eq.mpr [heq, hyp],
   return [(hyp::add_hyps, prf)]
 

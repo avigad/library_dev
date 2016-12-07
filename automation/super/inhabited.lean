@@ -21,7 +21,7 @@ meta def try_nonempty_left (c : clause) : tactic (list clause) :=
 on_first_left c $ λprop,
   match prop with
   | (app (const ``nonempty [u]) type) := do
-    x ← mk_local_def `x type,
+    x ← mk_local_def' `x type,
     return [([x], app_of_list (const ``nonempty.intro [u]) [type, x])]
   | _ := failed
   end
@@ -32,7 +32,7 @@ on_first_right c $ λhnonempty,
   | (app (const ``nonempty [u]) type) := do
     lf_univ ← infer_univ c↣local_false,
     guard $ lf_univ = level.zero,
-    hnx ← mk_local_def `nx (imp type c↣local_false),
+    hnx ← mk_local_def' `nx (imp type c↣local_false),
     return [([hnx], app_of_list (const ``nonempty.elim [u])
                                 [type, c↣local_false, hnonempty, hnx])]
   | _ := failed
@@ -42,7 +42,7 @@ meta def try_inhabited_left (c : clause) : tactic (list clause) :=
 on_first_left c $ λprop,
   match prop with
   | (app (const ``inhabited [u]) type) := do
-    x ← mk_local_def `x type,
+    x ← mk_local_def' `x type,
     return [([x], app_of_list (const ``inhabited.mk [u]) [type, x])]
   | _ := failed
   end

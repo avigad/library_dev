@@ -204,11 +204,13 @@ register_consts_in_precedence (contained_funsyms c'↣c↣type)↣values,
 state ← state_t.read,
 state_t.write { state with newly_derived := c' :: state↣newly_derived }
 
+
+
 -- FIXME: what if we've seen the variable before, but with a weaker score?
 meta def mk_sat_var (v : expr) (suggested_ph : bool) (suggested_ev : score) : prover unit :=
 do st ← state_t.read, if st↣sat_hyps↣contains v then return () else do
-hpv ← ♯ mk_local_def `h v,
-hnv ← ♯ mk_local_def `hn $ imp v st↣local_false,
+hpv ← ♯ mk_local_def' `h v,
+hnv ← ♯ mk_local_def' `hn $ imp v st↣local_false,
 state_t.modify $ λst, { st with sat_hyps := st↣sat_hyps↣insert v (hpv, hnv) },
 in_sat_solver $ cdcl.mk_var_core v suggested_ph,
 match v with

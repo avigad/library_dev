@@ -13,14 +13,14 @@ meta def inf_whnf_l (c : clause) : tactic (list clause) :=
 on_first_left c $ λtype, do
   type' ← whnf_core transparency.reducible type,
   guard $ type' ≠ type,
-  h ← mk_local_def `h type',
+  h ← mk_local_def' `h type',
   return [([h], h)]
 
 meta def inf_whnf_r (c : clause) : tactic (list clause) :=
 on_first_right c $ λha, do
   a' ← whnf_core transparency.reducible ha↣local_type,
   guard $ a' ≠ ha↣local_type,
-  hna ← mk_local_def `hna (imp a' c↣local_false),
+  hna ← mk_local_def' `hna (imp a' c↣local_false),
   return [([hna], app hna ha)]
 
 set_option eqn_compiler.max_steps 500
@@ -59,7 +59,7 @@ meta def inf_not_l (c : clause) : tactic (list clause) :=
 on_first_left c $ λtype,
   match type with
   | app (const ``not []) a := do
-    hna ← mk_local_def `h (imp a false_),
+    hna ← mk_local_def' `h (imp a false_),
     return [([hna], hna)]
   | _ := failed
   end
@@ -68,7 +68,7 @@ meta def inf_not_r (c : clause) : tactic (list clause) :=
 on_first_right c $ λhna,
   match hna↣local_type with
   | app (const ``not []) a := do
-    hnna ← mk_local_def `h (imp (imp a false_) c↣local_false),
+    hnna ← mk_local_def' `h (imp (imp a false_) c↣local_false),
     return [([hnna], app hnna hna)]
   | _ := failed
   end
@@ -77,8 +77,8 @@ meta def inf_and_l (c : clause) : tactic (list clause) :=
 on_first_left c $ λab,
   match ab with
   | (app (app (const ``and []) a) b) := do
-    ha ← mk_local_def `l a,
-    hb ← mk_local_def `r b,
+    ha ← mk_local_def' `l a,
+    hb ← mk_local_def' `r b,
     pab ← mk_mapp ``and.intro [some a, some b, some ha, some hb],
     return [([ha, hb], pab)]
   | _ := failed
@@ -94,8 +94,8 @@ meta def inf_or_r (c : clause) : tactic (list clause) :=
 on_first_right c $ λhab,
   match hab↣local_type with
   | (app (app (const ``or []) a) b) := do
-    hna ← mk_local_def `l (imp a c↣local_false),
-    hnb ← mk_local_def `r (imp b c↣local_false),
+    hna ← mk_local_def' `l (imp a c↣local_false),
+    hnb ← mk_local_def' `r (imp b c↣local_false),
     proof ← mk_app ``or.elim [a, b, c↣local_false, hab, hna, hnb],
     return [([hna, hnb], proof)]
   | _ := failed
@@ -105,8 +105,8 @@ meta def inf_or_l (c : clause) : tactic (list clause) :=
 on_first_left c $ λab,
   match ab with
   | (app (app (const ``or []) a) b) := do
-    ha ← mk_local_def `l a,
-    hb ← mk_local_def `l b,
+    ha ← mk_local_def' `l a,
+    hb ← mk_local_def' `l b,
     pa ← mk_mapp ``or.inl [some a, some b, some ha],
     pb ← mk_mapp ``or.inr [some a, some b, some hb],
     return [([ha], pa), ([hb], pb)]
@@ -117,7 +117,7 @@ meta def inf_all_r (c : clause) : tactic (list clause) :=
 on_first_right' c $ λhallb,
   match hallb↣local_type with
   | (pi n bi a b) := do
-    ha ← mk_local_def `x a,
+    ha ← mk_local_def' `x a,
     return [([ha], app hallb ha)]
   | _ := failed
   end
@@ -142,10 +142,10 @@ on_first_left_dn c $ λhnab,
   match hnab↣local_type with
   | (pi _ _ (pi _ _ a b) _) :=
     if b↣has_var then failed else do
-    hna ← mk_local_def `na (imp a c↣local_false),
+    hna ← mk_local_def' `na (imp a c↣local_false),
     pf ← first (do r ← [``super.imp_l, ``super.imp_l', ``super.imp_l_c],
                  [mk_app r [hnab, hna]]),
-    hb ← mk_local_def `b b,
+    hb ← mk_local_def' `b b,
     return [([hna], pf), ([hb], app hnab (lam `a binder_info.default a hb))]
   | _ := failed
   end
@@ -154,9 +154,9 @@ meta def inf_ex_l (c : clause) : tactic (list clause) :=
 on_first_left c $ λexp,
   match exp with
   | (app (app (const ``Exists [u]) dom) pred) := do
-    hx ← mk_local_def `x dom,
+    hx ← mk_local_def' `x dom,
     predx ← whnf $ app pred hx,
-    hpx ← mk_local_def `hpx predx,
+    hpx ← mk_local_def' `hpx predx,
     return [([hx,hpx], app_of_list (const ``exists.intro [u])
                        [dom, pred, hx, hpx])]
   | _ := failed
@@ -176,7 +176,7 @@ on_first_left_dn c $ λhnallb,
   match hnallb↣local_type with
   | pi _ _ (pi n bi a b) _ := do
     enb ← mk_mapp ``Exists [none, some $ lam n binder_info.default a (imp b c↣local_false)],
-    hnenb ← mk_local_def `h (imp enb c↣local_false),
+    hnenb ← mk_local_def' `h (imp enb c↣local_false),
     pr ← mk_app ``super.demorgan' [hnallb, hnenb],
     return [([hnenb], pr)]
   | _ := failed
@@ -188,8 +188,8 @@ skolemized ← on_first_right' qf $ λhexp,
   match hexp↣local_type with
   | (app (app (const ``Exists [u]) d) p) := do
     sk_sym_name_pp ← get_unused_name `sk (some 1),
-    inh_lc ← mk_local `w binder_info.implicit d,
-    sk_sym ← mk_local_def sk_sym_name_pp (pis (ctx ++ [inh_lc]) d),
+    inh_lc ← mk_local' `w binder_info.implicit d,
+    sk_sym ← mk_local_def' sk_sym_name_pp (pis (ctx ++ [inh_lc]) d),
     sk_p ← whnf_core transparency.none $ app p (app_of_list sk_sym (ctx ++ [inh_lc])),
     sk_ax ← mk_mapp ``Exists [some (local_type sk_sym),
       some (lambdas [sk_sym] (pis (ctx ++ [inh_lc]) (imp hexp↣local_type sk_p)))],

@@ -51,7 +51,7 @@ meta def mk_splitting_clause' (empty_clause : clause) : list (list expr) → tac
 | ([p] :: comps) := do p' ← mk_splitting_clause' comps, return (p::p'↣1, p'↣2)
 | (comp :: comps) := do
   (hs, p') ← mk_splitting_clause' comps,
-  hnc ← mk_local_def `hnc (imp (pis comp empty_clause↣local_false) empty_clause↣local_false),
+  hnc ← mk_local_def' `hnc (imp (pis comp empty_clause↣local_false) empty_clause↣local_false),
   p'' ← return $ app hnc (lambdas comp p'),
   return (hnc::hs, p'')
 

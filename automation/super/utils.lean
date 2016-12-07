@@ -51,12 +51,12 @@ meta def expr_size : expr → nat
 | (elet _ t v b) := 1 + expr_size v + expr_size b
 | (macro _ _ _) := 1
 
-meta def mk_local (pp_name : name) (bi : binder_info) (type : expr) : tactic expr := do
+meta def mk_local' (pp_name : name) (bi : binder_info) (type : expr) : tactic expr := do
 uniq_name ← mk_fresh_name,
 return $ local_const uniq_name pp_name bi type
 
-meta def mk_local_def (pp_name : name) (type : expr) : tactic expr :=
-mk_local pp_name binder_info.default type
+meta def mk_local_def' (pp_name : name) (type : expr) : tactic expr :=
+mk_local' pp_name binder_info.default type
 
 namespace option
 
@@ -138,10 +138,6 @@ xs↣for_all (λx, x ∈ ys)
 
 def filter_maximal {A} (gt : A → A → bool) (l : list A) : list A :=
 filter (λx, l↣for_all (λy, ¬gt y x)) l
-
-def taken {A} : ℕ → list A → list A
-| (n+1) (x::xs) := x :: taken n xs
-| _ _ := []
 
 def empty {A} (l : list A) : bool :=
 match l with
