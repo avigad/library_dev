@@ -1,6 +1,7 @@
 import .clause .prover_state data.monad.transformers
 import .misc_preprocessing
 import .selection
+import .trim
 
 -- default inferences
 -- 0
@@ -82,7 +83,7 @@ end super
 
 open super
 
-meta def super (sos_lemmas : list expr) : tactic unit := do
+meta def super (sos_lemmas : list expr) : tactic unit := with_trim $ do
 as_refutation, local_false ← target,
 clauses ← clauses_of_context,
 sos_clauses ← monad.for sos_lemmas (clause.of_proof local_false),

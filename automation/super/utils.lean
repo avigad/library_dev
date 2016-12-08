@@ -1,5 +1,15 @@
 open tactic expr list
 
+namespace unsigned
+def succ (i : unsigned) := of_nat i^.to_nat^.succ
+instance : has_zero unsigned := ⟨of_nat 0⟩
+end unsigned
+
+meta def declaration.value : declaration → expr
+| (declaration.defn n ls t v h tr) := v
+| (declaration.thm n ls t v) := v^.get
+| _ := default expr
+
 namespace expr
 
 meta instance ordering_fallback : has_ordering expr :=
@@ -257,7 +267,7 @@ meta def lambdas : list expr → expr → expr
   let abs := abstract_local (lambdas es f) uniq in
   match abs with
   | (app lam' (var i)) :=
-    if i = unsigned.of_nat 0 ∧ ¬lam'↣has_var
+    if i = 0 ∧ ¬lam'↣has_var
     then lam'
     else lam pp info t abs
   | _ := lam pp info t abs
