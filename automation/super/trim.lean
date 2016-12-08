@@ -23,7 +23,7 @@ meta def trim : expr → tactic expr
     lift₂ app (trim (lam n m d b)) (trim arg)
 | (app a b) := lift₂ app (trim a) (trim b)
 | (lam n m d b) := do
-  x ← mk_local_def' `x d,
+  x ← mk_local' `x m d,
   b' ← trim (instantiate_var b x),
   return $ lam n m d (abstract_local b' x^.local_uniq_name)
 | (elet n t v b) :=
