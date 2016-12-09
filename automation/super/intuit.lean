@@ -1,4 +1,4 @@
-import .clausifier .cdcl
+import .clausifier .cdcl .trim
 open tactic super expr monad
 
 -- Intuitionistic propositional prover based on
@@ -32,7 +32,7 @@ is_solved ← first (do
 set_goals goals,
 if is_solved then do
   proof ← instantiate_mvars subgoal,
-  proof' ← whnf proof, -- gets rid of the unnecessary asserts
+  proof' ← trim proof, -- gets rid of the unnecessary asserts
   return $ some proof'
 else
   return none
@@ -40,7 +40,7 @@ else
 lemma imp1 {F a b} : b → ((a → b) → F) → F := λhb habf, habf (λha, hb)
 lemma imp2 {a b} : a → (a → b) → b := λha hab, hab ha
 
-meta def solve : unit → tactic unit | () := do
+meta def solve : unit → tactic unit | () := with_trim $ do
 as_refutation,
 local_false ← target, clauses ← clauses_of_context,
 clauses ← get_clauses_intuit clauses,
