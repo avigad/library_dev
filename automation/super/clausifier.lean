@@ -246,7 +246,9 @@ get_clauses_core clausification_rules_intuit
 
 meta def as_refutation : tactic unit := do
 repeat (do intro1, skip),
-local_false_name ← get_unused_name `F none, tgt ← target, tgt_type ← infer_type tgt,
+tgt ← target,
+if tgt^.is_constant || tgt^.is_local_constant then skip else do
+local_false_name ← get_unused_name `F none, tgt_type ← infer_type tgt,
 definev local_false_name tgt_type tgt, local_false ← get_local local_false_name,
 target_name ← get_unused_name `target none,
 assertv target_name (imp tgt local_false) (lam `hf binder_info.default tgt $ mk_var 0),
