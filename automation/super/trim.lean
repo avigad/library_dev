@@ -15,6 +15,7 @@ meta def count_var_occs : unsigned → expr → ℕ
 | k (elet _ t v b)        := count_var_occs k t + count_var_occs k v + count_var_occs k^.succ b
 | _ (macro _ _ _)         := 0 -- TODO(gabriel)
 
+-- TODO(gabriel): rewrite using conversions
 meta def trim : expr → tactic expr
 | (app (lam n m d b) arg) :=
   if has_var b = ff ∨ count_var_occs 0 b ≤ 1 then
@@ -35,6 +36,14 @@ meta def trim : expr → tactic expr
     trim b
 | e := return e
 
+-- iterate trim until convergence
+meta def trim' : expr → tactic expr
+| e := do e' ← trim e,
+          if e =ₐ e' then
+            return e
+          else
+            trim' e'
+
 open tactic
 
 meta def with_trim {α} (tac : tactic α) : tactic α := do
@@ -46,7 +55,7 @@ match gs with
   r ← tac,
   now,
   set_goals (g::gs),
-  instantiate_mvars g' >>= trim >>= exact,
+  instantiate_mvars g' >>= trim' >>= exact,
   return r
 | [] := fail "no goal"
 end
