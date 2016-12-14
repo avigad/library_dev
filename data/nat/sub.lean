@@ -10,53 +10,37 @@ namespace nat
 
 /- subtraction -/
 
-/-
-by rewrite [nat.mul_sub_left_distrib, *right_distrib, mul.comm b a, add.comm (a*a) (a*b),
-            nat.add_sub_add_left]
--/
+theorem sub_eq_zero_of_le {n m : ℕ} (h : n ≤ m) : n - m = 0 :=
+exists.elim (nat.le.dest h)
+  (take k, assume hk : n + k = m, by rw [-hk, sub_self_add])
 
--- local attribute [simp] /- succ_eq_add_one -/ right_distrib left_distrib
+theorem succ_sub {m n : ℕ} (h : m ≥ n) : succ m - n  = succ (m - n) :=
+exists.elim (nat.le.dest h)
+  (take k, assume hk : n + k = m,
+    by rw [-hk, nat.add_sub_cancel_left, -add_succ, nat.add_sub_cancel_left])
+
+theorem add_sub_of_le {n m : ℕ} (h : n ≤ m) : n + (m - n) = m :=
+exists.elim (nat.le.dest h)
+  (take k, assume hk : n + k = m,
+    by rw [-hk, nat.add_sub_cancel_left])
+
+protected theorem sub_add_cancel {n m : ℕ} (h : n ≥ m) : n - m + m = n :=
+by rw [add_comm, add_sub_of_le h]
+
+protected theorem sub_pos_of_lt {m n : ℕ} (h : m < n) : n - m > 0 :=
+have 0 + m < n - m + m, begin rw [zero_add, nat.sub_add_cancel (le_of_lt h)], exact h end,
+lt_of_add_lt_add_right this
+
+protected theorem add_sub_assoc {m k : ℕ} (h : k ≤ m) (n : ℕ) : n + m - k = n + (m - k) :=
+exists.elim (nat.le.dest h)
+  (take l, assume hl : k + l = m,
+    by rw [-hl, nat.add_sub_cancel_left, add_comm k, -add_assoc, nat.add_sub_cancel])
+
 
 /- interaction with inequalities -/
 
-theorem succ_sub {m n : ℕ} : m ≥ n → succ m - n  = succ (m - n) :=
-sorry
-/-
-sub_induction n m
-  (take k, assume H : 0 ≤ k, rfl)
-   (take k,
-    assume H : succ k ≤ 0,
-    absurd H !not_succ_le_zero)
-  (take k l,
-    assume IH : k ≤ l → succ l - k = succ (l - k),
-    take H : succ k ≤ succ l,
-    calc
-      succ (succ l) - succ k = succ l - k             : !succ_sub_succ
-                         ... = succ (l - k)           : IH (le_of_succ_le_succ H)
-                         ... = succ (succ l - succ k) : by rewrite succ_sub_succ)
--/
 
-theorem sub_eq_zero_of_le {n m : ℕ} (H : n ≤ m) : n - m = 0 :=
-sorry -- obtain (k : ℕ) (Hk : n + k = m), from le.elim H, Hk ▸ !sub_self_add
-
-theorem add_sub_of_le {n m : ℕ} : n ≤ m → n + (m - n) = m :=
-sorry
 /-
-sub_induction n m
-  (take k,
-    assume H : 0 ≤ k,
-    calc
-      0 + (k - 0) = k - 0 : by rewrite zero_add
-              ... = k     : by rewrite nat.sub_zero)
-  (take k, assume H : succ k ≤ 0, absurd H !not_succ_le_zero)
-  (take k l,
-    assume IH : k ≤ l → k + (l - k) = l,
-    take H : succ k ≤ succ l,
-    calc
-      succ k + (succ l - succ k) = succ k + (l - k)   : by rewrite succ_sub_succ
-                             ... = succ (k + (l - k)) : by rewrite succ_add
-                             ... = succ l             : by rewrite (IH (le_of_succ_le_succ H)))
--/
 
 theorem add_sub_of_ge {n m : ℕ} (H : n ≥ m) : n + (m - n) = n :=
 sorry
@@ -65,9 +49,6 @@ calc
   n + (m - n) = n + 0 : by rewrite (sub_eq_zero_of_le H)
           ... = n     : by rewrite add_zero
 -/
-
-protected theorem sub_add_cancel {n m : ℕ} : n ≥ m → n - m + m = n :=
-add_comm m (n - m) ▸ add_sub_of_le
 
 theorem sub_add_of_le {n m : ℕ} : n ≤ m → n - m + m = m :=
 add_comm m (n - m) ▸ add_sub_of_ge
@@ -88,24 +69,6 @@ exists.intro k
   (calc
     m - k = n + k - k : by rewrite Hk
       ... = n         : by rewrite nat.add_sub_cancel)
--/
-
-protected theorem add_sub_assoc {m k : ℕ} (H : k ≤ m) (n : ℕ) : n + m - k = n + (m - k) :=
-sorry
-/-
-have l1 : k ≤ m → n + m - k = n + (m - k), from
-  sub_induction k m
-    (by simp)
-    (take k : ℕ, assume H : succ k ≤ 0, absurd H !not_succ_le_zero)
-    (take k m,
-      assume IH : k ≤ m → n + m - k = n + (m - k),
-      take H : succ k ≤ succ m,
-      calc
-        n + succ m - succ k = succ (n + m) - succ k : by rewrite add_succ
-                        ... = n + m - k             : by rewrite succ_sub_succ
-                        ... = n + (m - k)           : by rewrite (IH (le_of_succ_le_succ H))
-                        ... = n + (succ m - succ k) : by rewrite succ_sub_succ),
-l1 H
 -/
 
 theorem le_of_sub_eq_zero {n m : ℕ} (h : n - m = 0) : n ≤ m :=
@@ -164,14 +127,6 @@ sub.cases
     have H3 : n ≤ k, from le.trans H (le.intro Hm),
     have H4 : m' + l + n = k - n + n, by simp,
     le.intro (add.right_cancel H4))
--/
-
-protected theorem sub_pos_of_lt {m n : ℕ} (H : m < n) : n - m > 0 :=
-sorry
-/-
-have H1 : n = n - m + m, from (nat.sub_add_cancel (le_of_lt H))⁻¹,
-have H2 : 0 + m < n - m + m, begin rewrite [zero_add, -H1], exact H end,
-!lt_of_add_lt_add_right H2
 -/
 
 protected theorem lt_of_sub_pos {m n : ℕ} (H : n - m > 0) : m < n :=
@@ -415,4 +370,6 @@ assume Pne, lt.by_cases
   (suppose i = j, by contradiction)
   (suppose i > j, begin rewrite [dist_eq_sub_of_gt this], apply nat.sub_pos_of_lt this end)
 -/
+-/
+
 end nat
