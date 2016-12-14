@@ -95,7 +95,7 @@ begin induction l, repeat { intro h, contradiction } end
 
 attribute [simp]
 theorem length_concat (a : α) (l : list α) : length (concat l a) = length l + 1 :=
-begin rw [concat_eq_append, length_append] end
+begin rw [concat_eq_append, length_append], reflexivity end
 
 attribute [simp]
 theorem concat_append (a : α) (l₁ l₂ : list α) : concat l₁ a ++ l₂ = l₁ ++ a :: l₂ :=
@@ -148,7 +148,13 @@ rfl
 
 attribute [simp]
 theorem reverse_cons (a : α) (l : list α) : reverse (a::l) = concat (reverse l) a :=
-rfl
+have aux : ∀ l₁ l₂, reverse_core l₁ (concat l₂ a) = concat (reverse_core l₁ l₂) a,
+  begin
+    intros l₁, induction l₁ with b l₁ ih,
+    { intro l₂, reflexivity },
+    intro l₂, transitivity, apply (ih (b :: l₂)), reflexivity,
+  end,
+aux l nil
 
 attribute [simp]
 theorem reverse_singleton (a : α) : reverse [a] = [a] :=
@@ -272,10 +278,10 @@ list.induction_on l
     assume ih : a ∈ l → ∃ s t : list α, l = s ++ (a::t),
     suppose a ∈ b::l,
     or.elim (eq_or_mem_of_mem_cons this)
-      (suppose a = b, ⟨[], l, by rw this⟩)
+      (suppose a = b, ⟨[], l, begin rw this, reflexivity end⟩)
       (suppose a ∈ l,
         match (ih this) with
-        | ⟨s, t, (h : l = s ++ (a::t))⟩ := ⟨b::s, t, by rw h⟩
+        | ⟨s, t, (h : l = s ++ (a::t))⟩ := ⟨b::s, t, begin rw h, reflexivity end⟩
         end))
 
 theorem mem_append_left {a : α} {l₁ : list α} (l₂ : list α) : a ∈ l₁ → a ∈ l₁ ++ l₂ :=
@@ -394,7 +400,8 @@ list.induction_on l
       assume ih : ¬a ∈ l → find a l = length l,
       suppose ¬a ∈ b::l,
       have ¬a = b ∧ ¬a ∈ l, begin rw [mem_cons_iff, not_or_iff] at this, exact this end,
-      show find a (b::l) = length (b::l), by rw [find_cons, if_neg this^.left, ih this^.right])
+      show find a (b::l) = length (b::l),
+        begin rw [find_cons, if_neg this^.left, ih this^.right], reflexivity end)
 
 lemma find_le_length {a : α} {l : list α} : find a l ≤ length l :=
 list.induction_on l
@@ -402,7 +409,7 @@ list.induction_on l
   (take b l, assume ih : find a l ≤ length l,
    show find a (b::l) ≤ length (b::l), from
      decidable.by_cases
-       (suppose a = b, begin simp [this, find_cons_of_eq l (eq.refl b), zero_le] end)
+       (suppose a = b, begin simp [this, find_cons_of_eq l (eq.refl b)], apply zero_le end)
        (suppose a ≠ b, begin simp [this, find_cons_of_ne l this], apply succ_le_succ ih end))
 
 lemma not_mem_of_find_eq_length : ∀ {a : α} {l : list α}, find a l = length l → a ∉ l
@@ -534,7 +541,7 @@ theorem mem_cons_of_qeq {a : α} : ∀ {l₁ l₂ : list α}, l₁≈a|l₂ → 
 
 theorem length_eq_of_qeq {a : α} {l₁ l₂ : list α} : l₁ ≈ a | l₂ → length l₁ = succ (length l₂) :=
 begin
-  intro q, induction q with l b l l' q ih, simp, simp, rw ih
+  intro q, induction q with l b l l' q ih, simp, reflexivity, simp, rw ih, reflexivity
 end
 
 theorem qeq_of_mem {a : α} {l : list α} : a ∈ l → (∃ l', l ≈ a | l') :=
@@ -612,7 +619,7 @@ lemma firstn_firstn : ∀ (n m) (l : list α), firstn n (firstn m l) = firstn (m
 -/
 
 lemma length_firstn_le : ∀ (n) (l : list α), length (firstn n l) ≤ n
-| 0        l      := by rw [firstn_zero]
+| 0        l      := begin rw [firstn_zero], reflexivity end
 | (succ n) (a::l) := begin
                        rw [firstn_cons, length_cons], apply succ_le_succ,
                        apply length_firstn_le
@@ -673,7 +680,7 @@ decidable.by_cases
   (suppose a ≠ b, begin rw (count_cons_of_ne this), apply le_refl end)
 
 lemma count_singleton (a : α) : count a [a] = 1 :=
-by rw count_cons_eq
+begin rw count_cons_eq, reflexivity end
 
 lemma count_append (a : α) : ∀ l₁ l₂, count a (l₁ ++ l₂) = count a l₁ + count a l₂
 | []      l₂ := begin rw [append_nil_left, count_nil, zero_add] end
@@ -682,7 +689,7 @@ lemma count_append (a : α) : ∀ l₁ l₂, count a (l₁ ++ l₂) = count a l�
   (suppose a ≠ b, by rw [append_cons, count_cons_of_ne this, count_cons_of_ne this, count_append])
 
 lemma count_concat (a : α) (l : list α) : count a (concat l a) = succ (count a l) :=
-by rw [concat_eq_append, count_append, count_singleton]
+begin rw [concat_eq_append, count_append, count_singleton], reflexivity end
 
 lemma mem_of_count_gt_zero : ∀ {a : α} {l : list α}, count a l > 0 → a ∈ l
 | a []     h := absurd h (lt_irrefl _)

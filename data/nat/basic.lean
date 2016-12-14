@@ -5,7 +5,6 @@ Authors: Floris van Doorn, Leonardo de Moura, Jeremy Avigad
 
 Basic operations on the natural numbers.
 -/
-import algebra.ring
 import automation.super.prover
 open tactic
 

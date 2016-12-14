@@ -5,7 +5,6 @@ Authors: Jeremy Avigad, Leonardo de Moura
 
 Various multiplicative and additive structures.
 -/
-import ..logic.todo -- ..automation.auto.auto use logic.todo, get rid of duplicate names
 
 universe variable uu
 variable {A : Type uu}

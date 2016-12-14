@@ -3,7 +3,6 @@ Copyright (c) 2014 Jeremy Avigad. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jeremy Avigad, Leonardo de Moura, Floris van Doorn
 -/
-import .group ..logic.todo
 open eq
 
 universe variable uu
@@ -46,7 +45,7 @@ section comm_semiring
   theorem dvd_trans {a b c : A} (h₁ : a ∣ b) (h₂ : b ∣ c) : a ∣ c :=
   match h₁, h₂ with
   | ⟨d, (h₃ : b = a * d)⟩, ⟨e, (h₄ : c = b * e)⟩ :=
-    ⟨d * e, show c = a * (d * e), by tactic.simp_using_hs⟩
+    ⟨d * e, show c = a * (d * e), by simp [h₃, h₄]⟩
   end
 
   def dvd.trans := @dvd_trans
@@ -71,7 +70,7 @@ section comm_semiring
   theorem mul_dvd_mul {a b c d : A} (dvd_ab : a ∣ b) (dvd_cd : c ∣ d) : a * c ∣ b * d :=
   dvd.elim dvd_ab (take e, assume beq,
     dvd.elim dvd_cd (take f, assume deq,
-      dvd.intro (e *f) (by tactic.simp_using_hs)))
+      dvd.intro (e * f) (by simp [beq, deq])))
 
 /-
   -- TODO: this should work, but doesn't.
@@ -102,7 +101,8 @@ section
   theorem mul_add_eq_mul_add_iff_sub_mul_add_eq : a * e + c = b * e + d ↔ (a - b) * e + c = d :=
   calc
     a * e + c = b * e + d ↔ a * e + c = d + b * e : by simp
-      ... ↔ a * e + c - b * e = d : iff.symm (sub_eq_iff_eq_add _ _ _)
+      ... ↔ a * e + c - b * e = d : iff.intro (λ h, begin simp [h] end) (λ h,
+                                                    begin simp [h^.symm] end)
       ... ↔ (a - b) * e + c = d   : begin simp [@sub_eq_add_neg A, @right_distrib A] end
 
   theorem sub_mul_add_eq_of_mul_add_eq_mul_add : a * e + c = b * e + d → (a - b) * e + c = d :=
@@ -179,16 +179,16 @@ section
   include s
 
   theorem eq_of_mul_eq_mul_right_of_ne_zero {a b c : A} (ha : a ≠ 0) (h : b * a = c * a) : b = c :=
-  have b * a - c * a = 0, from (eq_iff_sub_eq_zero _ _)^.mp h,
+  have b * a - c * a = 0, by simp [h],
   have (b - c) * a = 0, by rewrite [mul_sub_right_distrib, this],
   have b - c = 0, from (eq_zero_or_eq_zero_of_mul_eq_zero this)^.resolve_right ha,
-  (eq_iff_sub_eq_zero _ _)^.mpr this
+  eq_of_sub_eq_zero this
 
   theorem eq_of_mul_eq_mul_left_of_ne_zero {a b c : A} (ha : a ≠ 0) (h : a * b = a * c) : b = c :=
-  have a * b - a * c = 0, from (eq_iff_sub_eq_zero _ _)^.mp h,
+  have a * b - a * c = 0, by simp [h],
   have a * (b - c) = 0, by rewrite [mul_sub_left_distrib, this],
   have b - c = 0, from (eq_zero_or_eq_zero_of_mul_eq_zero this)^.resolve_left ha,
-  (eq_iff_sub_eq_zero _ _)^.mpr this
+  eq_of_sub_eq_zero this
 
   -- TODO: do we want the iff versions?
 

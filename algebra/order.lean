@@ -20,14 +20,14 @@ section
 
   theorem min_le_left (a b : α) : min a b ≤ a :=
   by_cases
-    (assume h : a ≤ b, begin unfold min, rewrite [if_pos h], apply le_refl end)
+    (assume h : a ≤ b, begin unfold min, rewrite [if_pos h] end)
     (assume h : ¬ a ≤ b,
       begin unfold min, rewrite  [if_neg h], apply le_of_lt (lt_of_not_ge h) end)
 
   theorem min_le_right (a b : α) : min a b ≤ b :=
   by_cases
     (assume h : a ≤ b, begin unfold min, rewrite [if_pos h], apply h end)
-    (assume h : ¬ a ≤ b, begin unfold min, rewrite [if_neg h], apply le_refl end)
+    (assume h : ¬ a ≤ b, begin unfold min, rewrite [if_neg h] end)
 
   theorem le_min {a b c : α} (h₁ : c ≤ a) (h₂ : c ≤ b) : c ≤ min a b :=
   by_cases
@@ -37,11 +37,11 @@ section
   theorem le_max_left (a b : α) : a ≤ max a b :=
   by_cases
     (assume h : a ≤ b, begin unfold max, rewrite [if_pos h], apply h end)
-    (assume h : ¬ a ≤ b, begin unfold max, rewrite [if_neg h], apply le_refl end)
+    (assume h : ¬ a ≤ b, begin unfold max, rewrite [if_neg h] end)
 
   theorem le_max_right (a b : α) : b ≤ max a b :=
   by_cases
-    (assume h : a ≤ b, begin unfold max, rewrite [if_pos h], apply le_refl end)
+    (assume h : a ≤ b, begin unfold max, rewrite [if_pos h] end)
     (assume h : ¬ a ≤ b, begin unfold max, rewrite [if_neg h], apply le_of_lt (lt_of_not_ge h) end)
 
   theorem max_le {a b c : α} (h₁ : a ≤ c) (h₂ : b ≤ c) : max a b ≤ c :=

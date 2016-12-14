@@ -122,7 +122,7 @@ private theorem neg_succ_of_nat_add_of_nat (m n : nat) :
 private theorem neg_succ_of_nat_add_neg_succ_of_nat (m n : nat) :
                 -[1+ m] + -[1+ n] = -[1+ succ (m + n)] := rfl
 
-private theorem of_nat_mul_of_nat   (m n : nat) : of_nat m * of_nat n = of_nat (m * n) := rfl
+private theorem of_nat_mul_of_nat (m n : nat) : of_nat m * of_nat n = of_nat (m * n) := rfl
 private theorem of_nat_mul_neg_succ_of_nat (m n : nat) :
                 of_nat m * -[1+ n] = neg_of_nat (m * succ n) := rfl
 private theorem neg_succ_of_nat_of_nat (m n : nat) :
@@ -196,10 +196,10 @@ private theorem sub_nat_nat_add_add (m n k : ℕ) : sub_nat_nat (m + k) (n + k) 
 or.elim (le_or_gt n m)
   (assume h : n ≤ m,
     have n + k ≤ m + k, from nat.add_le_add_right h k,
-    by simp [sub_nat_nat_of_ge h, sub_nat_nat_of_ge this])
+    begin rw [sub_nat_nat_of_ge h, sub_nat_nat_of_ge this, nat.add_sub_add_right] end)
   (assume h : n > m,
     have n + k > m + k, from nat.add_lt_add_right h k,
-    by simp [sub_nat_nat_of_lt h, sub_nat_nat_of_lt this])
+    by rw [sub_nat_nat_of_lt h, sub_nat_nat_of_lt this, nat.add_sub_add_right])
 
 private theorem sub_nat_nat_sub {m n : ℕ} (h : m ≥ n) (k : ℕ) :
   sub_nat_nat (m - n) k = sub_nat_nat m (k + n) :=
@@ -262,12 +262,12 @@ protected theorem add_assoc : ∀ a b c : ℤ, a + b + c = a + (b + c)
 
 private theorem sub_nat_self : ∀ n, sub_nat_nat n n = 0
 | 0        := rfl
-| (succ m) := begin rw [sub_nat_nat_of_sub_eq_zero, nat.sub_self], rw nat.sub_self end
+| (succ m) := begin rw [sub_nat_nat_of_sub_eq_zero, nat.sub_self, of_nat_zero], rw nat.sub_self end
 
 local attribute [simp] sub_nat_self
 
 protected theorem add_left_inv : ∀ a : ℤ, -a + a = 0
-| (of_nat 0)        := by simp
+| (of_nat 0)        := rfl
 | (of_nat (succ m)) := by simp
 | -[1+ m]           := by simp
 
@@ -281,7 +281,7 @@ protected theorem mul_comm : ∀ a b : ℤ, a * b = b * a
 
 private theorem of_nat_mul_neg_of_nat (m : ℕ) :
    ∀ n, of_nat m * neg_of_nat n = neg_of_nat (m * n)
-| 0        := by simp
+| 0        := rfl
 | (succ n) := by simp [neg_of_nat.equations.eqn_2]
 
 private theorem neg_of_nat_mul_of_nat (m n : ℕ) :
@@ -290,7 +290,7 @@ begin rw int.mul_comm, simp [of_nat_mul_neg_of_nat] end
 
 private theorem neg_succ_of_nat_mul_neg_of_nat (m : ℕ) :
   ∀ n, -[1+ m] * neg_of_nat n = of_nat (succ m * n)
-| 0        := by simp
+| 0        := rfl
 | (succ n) := by simp [neg_of_nat.equations.eqn_2]
 
 private theorem neg_of_nat_mul_neg_succ_of_nat (m n : ℕ) :
@@ -312,14 +312,14 @@ protected theorem mul_assoc : ∀ a b c : ℤ, a * b * c = a * (b * c)
 
 protected theorem mul_one : ∀ (a : ℤ), a * 1 = a
 | (of_nat m) := show of_nat m * of_nat 1 = of_nat m, by simp
-| -[1+ m]    := show -[1+ m] * of_nat 1 = -[1+ m], by simp
+| -[1+ m]    := show -[1+ m] * of_nat 1 = -[1+ m], begin simp, reflexivity end
 
 protected theorem one_mul (a : ℤ) : 1 * a = a :=
 int.mul_comm a 1 ▸ int.mul_one a
 
 protected theorem mul_zero : ∀ (a : ℤ), a * 0 = 0
-| (of_nat m) := begin unfold zero, simp end
-| -[1+ m]    := begin unfold zero, simp end
+| (of_nat m) := begin unfold zero, reflexivity end
+| -[1+ m]    := begin unfold zero, reflexivity end
 
 protected theorem zero_mul (a : ℤ) : 0 * a = 0 :=
 int.mul_comm a 0 ▸ int.mul_zero a
@@ -339,11 +339,13 @@ begin
     { assert h' : m * n < m * k,
         exact nat.mul_lt_mul_of_pos_left h h₀,
       rw [sub_nat_nat_of_lt h, sub_nat_nat_of_lt h'],
-      simp [succ_pred_eq_of_pos (nat.sub_pos_of_lt h)],
-      rw [-succ_pred_eq_of_pos (nat.sub_pos_of_lt h')]},
+      simp, rw [succ_pred_eq_of_pos (nat.sub_pos_of_lt h)],
+      rw [-neg_of_nat_of_succ, nat.mul_sub_left_distrib],
+      rw [-succ_pred_eq_of_pos (nat.sub_pos_of_lt h')], reflexivity },
     assert h' : m * k ≤ m * n,
       exact mul_le_mul_left _ h,
-    rw [sub_nat_nat_of_ge h, sub_nat_nat_of_ge h'], simp
+    rw [sub_nat_nat_of_ge h, sub_nat_nat_of_ge h'], simp,
+    rw [nat.mul_sub_left_distrib]
   },
   assert h₂ : of_nat 0 = 0, exact rfl,
   subst h₀, simp [h₂, int.zero_mul]
@@ -353,12 +355,12 @@ private theorem neg_of_nat_add (m n : ℕ) :
   neg_of_nat m + neg_of_nat n = neg_of_nat (m + n) :=
 begin
   cases m,
-    cases n,
-      simp,
-      simp,
+  {  cases n,
+    { simp, reflexivity },
+      simp, reflexivity },
   cases n,
-    simp,
-    simp [nat.succ_add]
+  { simp, reflexivity },
+  simp [nat.succ_add], reflexivity
 end
 
 private theorem neg_succ_of_nat_mul_sub_nat_nat (m n k : ℕ) :
@@ -369,16 +371,17 @@ begin
   { assert h' : succ m * n < succ m * k,
       exact nat.mul_lt_mul_of_pos_left h (nat.succ_pos m),
     rw [sub_nat_nat_of_lt h, sub_nat_nat_of_ge (le_of_lt h')],
-    simp [succ_pred_eq_of_pos (nat.sub_pos_of_lt h)]},
+    simp [succ_pred_eq_of_pos (nat.sub_pos_of_lt h), nat.mul_sub_left_distrib]},
   assert h' : n > k ∨ k = n,
     exact lt_or_eq_of_le h,
   cases h' with h' h',
   { assert h₁ : succ m * n > succ m * k,
       exact nat.mul_lt_mul_of_pos_left h' (nat.succ_pos m),
-    rw [sub_nat_nat_of_ge h, sub_nat_nat_of_lt h₁], simp,
-    rw [nat.mul_comm k, nat.mul_comm n, -succ_pred_eq_of_pos (nat.sub_pos_of_lt h₁)]
-  },
-  subst h', simp
+    rw [sub_nat_nat_of_ge h, sub_nat_nat_of_lt h₁], simp [nat.mul_sub_left_distrib],
+    rw [nat.mul_comm k, nat.mul_comm n, -succ_pred_eq_of_pos (nat.sub_pos_of_lt h₁),
+        -neg_of_nat_of_succ],
+    reflexivity },
+  subst h', simp, reflexivity
 end
 
 local attribute [simp] of_nat_mul_sub_nat_nat neg_of_nat_add neg_succ_of_nat_mul_sub_nat_nat
@@ -386,16 +389,16 @@ local attribute [simp] of_nat_mul_sub_nat_nat neg_of_nat_add neg_succ_of_nat_mul
 protected theorem distrib_left : ∀ a b c : ℤ, a * (b + c) = a * b + a * c
 | (of_nat m) (of_nat n) (of_nat k) := by simp [nat.left_distrib]
 | (of_nat m) (of_nat n) -[1+ k]    := begin simp [neg_of_nat_eq_sub_nat_nat_zero],
-                                            rw -sub_nat_nat_add end
+                                            rw -sub_nat_nat_add, reflexivity end
 | (of_nat m) -[1+ n]    (of_nat k) := begin simp [neg_of_nat_eq_sub_nat_nat_zero],
-                                            rw [int.add_comm, -sub_nat_nat_add] end
-| (of_nat m) -[1+ n]   -[1+ k]     := begin simp, rw [-nat.left_distrib, succ_add] end
+                                            rw [int.add_comm, -sub_nat_nat_add], reflexivity end
+| (of_nat m) -[1+ n]   -[1+ k]     := begin simp, rw [-nat.left_distrib, succ_add], reflexivity end
 | -[1+ m]    (of_nat n) (of_nat k) := begin simp, rw [-nat.right_distrib, mul_comm] end
 | -[1+ m]    (of_nat n) -[1+ k]    := begin simp [neg_of_nat_eq_sub_nat_nat_zero],
-                                            rw [int.add_comm, -sub_nat_nat_add] end
+                                            rw [int.add_comm, -sub_nat_nat_add], reflexivity end
 | -[1+ m]    -[1+ n]    (of_nat k) := begin simp [neg_of_nat_eq_sub_nat_nat_zero],
-                                            rw [-sub_nat_nat_add] end
-| -[1+ m]    -[1+ n]   -[1+ k]     := begin simp, rw [-nat.left_distrib, succ_add] end
+                                            rw [-sub_nat_nat_add], reflexivity end
+| -[1+ m]    -[1+ n]   -[1+ k]     := begin simp, rw [-nat.left_distrib, succ_add], reflexivity end
 
 protected theorem distrib_right (a b c : ℤ) : (a + b) * c = a * c + b * c :=
 begin rw [int.mul_comm, int.distrib_left], simp [int.mul_comm] end

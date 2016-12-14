@@ -8,106 +8,14 @@ Subtraction on the natural numbers, as well as min, max, and distance.
 
 namespace nat
 
--- better name (we use "pos" rather than "zero_lt")
-def succ_pos := zero_lt_succ
-
 /- subtraction -/
 
-attribute [simp]
-protected theorem sub_zero (n : ℕ) : n - 0 = n :=
-rfl
-
-attribute [simp]
-theorem sub_succ (n m : ℕ) : n - succ m = pred (n - m) :=
-rfl
-
-attribute [simp]
-protected theorem zero_sub (n : ℕ) : 0 - n = 0 :=
-sorry -- nat.induction_on n (by simp) (by simp)
-
-attribute [simp]
-theorem succ_sub_succ (n m : ℕ) : succ n - succ m = n - m :=
-succ_sub_succ_eq_sub n m
-
-attribute [simp]
-protected theorem sub_self (n : ℕ) : n - n = 0 :=
-sorry -- nat.induction_on n (by simp) (by simp)
-
--- local attribute [simp] nat.add_succ
-
-attribute [simp]
-protected theorem add_sub_add_right (n k m : ℕ) : (n + k) - (m + k) = n - m :=
-sorry -- nat.induction_on k (by simp) (by simp)
-
-attribute [simp]
-protected theorem add_sub_add_left (k n m : ℕ) : (k + n) - (k + m) = n - m :=
-sorry -- nat.induction_on k (by simp) (by simp)
-
-attribute [simp]
-protected theorem add_sub_cancel (n m : ℕ) : n + m - m = n :=
-sorry -- nat.induction_on m (by simp) (by simp)
-
-attribute [simp]
-protected theorem add_sub_cancel_left (n m : ℕ) : n + m - n = m :=
-sorry -- nat.induction_on n (by simp) (by simp)
-
-attribute [simp]
-protected theorem sub_sub (n m k : ℕ) : n - m - k = n - (m + k) :=
-sorry -- nat.induction_on k (by simp) (by simp)
-
-attribute [simp]
-theorem succ_sub_sub_succ (n m k : ℕ) : succ n - m - succ k = n - m - k :=
-sorry -- by simp
-
-attribute [simp]
-theorem sub_self_add (n m : ℕ) : n - (n + m) = 0 :=
-sorry -- by inst_simp
-
-protected theorem sub.right_comm (m n k : ℕ) : m - n - k = m - k - n :=
-sorry -- by simp
-
-theorem sub_one (n : ℕ) : n - 1 = pred n :=
-rfl
-
-attribute [simp]
-theorem succ_sub_one (n : ℕ) : succ n - 1 = n :=
-rfl
-
--- local attribute [simp] nat.succ_mul nat.mul_succ
-
-theorem succ_pred_eq_of_pos : ∀ {n : ℕ}, n > 0 → succ (pred n) = n
-| 0 h        := absurd h (lt_irrefl 0)
-| (succ k) h := rfl
-
-/- interaction with multiplication -/
-
-attribute [simp]
-theorem mul_pred_left (n m : ℕ) : pred n * m = n * m - m :=
-sorry -- nat.induction_on n (by simp) (by simp)
-
-attribute [simp]
-theorem mul_pred_right (n m : ℕ) : n * pred m = n * m - n :=
-sorry -- by inst_simp
-
-attribute [simp]
-protected theorem mul_sub_right_distrib (n m k : ℕ) : (n - m) * k = n * k - m * k :=
-sorry -- nat.induction_on m (by simp) (by simp)
-
-attribute [simp]
-protected theorem mul_sub_left_distrib (n m k : ℕ) : n * (m - k) = n * m - n * k :=
-sorry -- by inst_simp
-
-protected theorem mul_self_sub_mul_self_eq (a b : nat) : a * a - b * b = (a + b) * (a - b) :=
-sorry
 /-
 by rewrite [nat.mul_sub_left_distrib, *right_distrib, mul.comm b a, add.comm (a*a) (a*b),
             nat.add_sub_add_left]
 -/
 
 -- local attribute [simp] /- succ_eq_add_one -/ right_distrib left_distrib
-
-theorem succ_mul_succ_eq (a : nat) : succ a * succ a = a*a + a + a + 1 :=
-sorry -- by simp
 
 /- interaction with inequalities -/
 

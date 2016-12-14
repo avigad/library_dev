@@ -54,8 +54,8 @@ or.imp_right
   (nonneg_or_nonneg_neg (b - a))
 
 theorem coe_nat_le_coe_nat_of_le {m n : ℕ} (h : m ≤ n) : (↑m : ℤ) ≤ ↑n :=
-match nat.le.elim h with
-| ⟨k, (hk : m + k = n)⟩ := le.intro (by rw [-hk])
+match nat.le.dest h with
+| ⟨k, (hk : m + k = n)⟩ := le.intro (begin rw [-hk], reflexivity end)
 end
 
 theorem le_of_coe_nat_le_coe_nat {m n : ℕ} (h : (↑m : ℤ) ≤ ↑n) : m ≤ n :=
@@ -67,20 +67,20 @@ theorem coe_nat_le_coe_nat_iff (m n : ℕ) : (↑m : ℤ) ≤ ↑n ↔ m ≤ n :
 iff.intro le_of_coe_nat_le_coe_nat coe_nat_le_coe_nat_of_le
 
 theorem lt_add_succ (a : ℤ) (n : ℕ) : a < a + ↑(nat.succ n) :=
-le.intro (show a + 1 + n = a + nat.succ n, by simp [int.coe_nat_eq])
+le.intro (show a + 1 + n = a + nat.succ n, begin simp [int.coe_nat_eq], reflexivity end)
 
 theorem lt.intro {a b : ℤ} {n : ℕ} (h : a + nat.succ n = b) : a < b :=
 h ▸ lt_add_succ a n
 
 theorem lt.dest {a b : ℤ} (h : a < b) : ∃ n : ℕ, a + ↑(nat.succ n) = b :=
 le.elim h (take n, assume hn : a + 1 + n = b,
-    exists.intro n begin rw [-hn, add_assoc, add_comm (1 : int)] end)
+    exists.intro n begin rw [-hn, add_assoc, add_comm (1 : int)], reflexivity end)
 
 theorem lt.elim {a b : ℤ} (h : a < b) {P : Prop} (h' : ∀ n : ℕ, a + ↑(nat.succ n) = b → P) : P :=
 exists.elim (lt.dest h) h'
 
 theorem coe_nat_lt_coe_nat_iff (n m : ℕ) : (↑n : ℤ) < ↑m ↔ n < m :=
-by rw [lt_iff_add_one_le, -int.coe_nat_succ, coe_nat_le_coe_nat_iff]
+begin rw [lt_iff_add_one_le, -int.coe_nat_succ, coe_nat_le_coe_nat_iff], reflexivity end
 
 theorem lt_of_coe_nat_lt_coe_nat {m n : ℕ} (h : (↑m : ℤ) < ↑n) : m < n :=
 (coe_nat_lt_coe_nat_iff  _ _)^.mp h
@@ -96,7 +96,7 @@ le.intro (add_zero a)
 protected theorem le_trans {a b c : ℤ} (h₁ : a ≤ b) (h₂ : b ≤ c) : a ≤ c :=
 le.elim h₁ (take n, assume hn : a + n = b,
 le.elim h₂ (take m, assume hm : b + m = c,
-begin apply le.intro, rw [-hm, -hn, add_assoc] end))
+begin apply le.intro, rw [-hm, -hn, add_assoc], reflexivity end))
 
 protected theorem le_antisymm {a b : ℤ} (h₁ : a ≤ b) (h₂ : b ≤ a) : a = b :=
 le.elim h₁ (take n, assume hn : a + n = b,

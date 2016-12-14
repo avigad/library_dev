@@ -295,7 +295,7 @@ unify_safe_core semireducible e₁ e₂
 -- maybe we also want the same for fapply?
 meta def apply_safe_core (t : transparency) (all : bool) (insts : bool) (e : expr) :
   tactic unit :=
-apply_core t all insts e
+apply_core t tt all insts e
 
 meta def apply_safe : expr → tactic unit :=
 apply_safe_core semireducible ff tt
