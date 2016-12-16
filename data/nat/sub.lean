@@ -8,244 +8,113 @@ Subtraction on the natural numbers, as well as min, max, and distance.
 
 namespace nat
 
-/- subtraction -/
-
-theorem sub_eq_zero_of_le {n m : ℕ} (h : n ≤ m) : n - m = 0 :=
-exists.elim (nat.le.dest h)
-  (take k, assume hk : n + k = m, by rw [-hk, sub_self_add])
-
-theorem succ_sub {m n : ℕ} (h : m ≥ n) : succ m - n  = succ (m - n) :=
-exists.elim (nat.le.dest h)
-  (take k, assume hk : n + k = m,
-    by rw [-hk, nat.add_sub_cancel_left, -add_succ, nat.add_sub_cancel_left])
-
-theorem add_sub_of_le {n m : ℕ} (h : n ≤ m) : n + (m - n) = m :=
-exists.elim (nat.le.dest h)
-  (take k, assume hk : n + k = m,
-    by rw [-hk, nat.add_sub_cancel_left])
-
-protected theorem sub_add_cancel {n m : ℕ} (h : n ≥ m) : n - m + m = n :=
-by rw [add_comm, add_sub_of_le h]
-
-protected theorem sub_pos_of_lt {m n : ℕ} (h : m < n) : n - m > 0 :=
-have 0 + m < n - m + m, begin rw [zero_add, nat.sub_add_cancel (le_of_lt h)], exact h end,
-lt_of_add_lt_add_right this
-
-protected theorem add_sub_assoc {m k : ℕ} (h : k ≤ m) (n : ℕ) : n + m - k = n + (m - k) :=
-exists.elim (nat.le.dest h)
-  (take l, assume hl : k + l = m,
-    by rw [-hl, nat.add_sub_cancel_left, add_comm k, -add_assoc, nat.add_sub_cancel])
-
-
 /- interaction with inequalities -/
 
-
-/-
-
-theorem add_sub_of_ge {n m : ℕ} (H : n ≥ m) : n + (m - n) = n :=
-sorry
-/-
-calc
-  n + (m - n) = n + 0 : by rewrite (sub_eq_zero_of_le H)
-          ... = n     : by rewrite add_zero
--/
-
-theorem sub_add_of_le {n m : ℕ} : n ≤ m → n - m + m = m :=
-add_comm m (n - m) ▸ add_sub_of_ge
-
--- TODO: is this useful, with the current elaborator?
-@[elab_as_eliminator]
-theorem sub_cases {P : ℕ → Prop} {n m : ℕ} (H1 : n ≤ m → P 0) (H2 : ∀ k, m + k = n → P k) :
-  P (n - m) :=
+protected theorem le_sub_add (n m : ℕ) : n ≤ n - m + m :=
 or.elim (le_total n m)
-  (assume H3 : n ≤ m, eq.symm (sub_eq_zero_of_le H3) ▸ (H1 H3))
-  (assume H3 : m ≤ n, H2 (n - m) (add_sub_of_le H3))
+  (suppose n ≤ m, begin rw [sub_eq_zero_of_le this, zero_add], exact this end)
+  (suppose m ≤ n, begin rw (nat.sub_add_cancel this) end)
 
-theorem exists_sub_eq_of_le {n m : ℕ} (H : n ≤ m) : ∃k, m - k = n :=
-sorry
-/-
-obtain (k : ℕ) (Hk : n + k = m), from le.elim H,
-exists.intro k
-  (calc
-    m - k = n + k - k : by rewrite Hk
-      ... = n         : by rewrite nat.add_sub_cancel)
--/
+protected theorem sub_eq_of_eq_add {n m k : ℕ} (h : k = n + m) : k - n = m :=
+begin rw [h, nat.add_sub_cancel_left] end
 
-theorem le_of_sub_eq_zero {n m : ℕ} (h : n - m = 0) : n ≤ m :=
-le_of_not_gt
-  (assume h₁ : m < n,
-    have n = m, from calc
-      n = n - m + m : by rewrite (nat.sub_add_cancel (le_of_lt h₁))
-        ... = m     : by simp [h],
-    show false, begin rewrite this at h₁, exact lt_irrefl m h₁ end)
+protected theorem sub_le_sub_right {n m : ℕ} (h : n ≤ m) (k : ℕ) : n - k ≤ m - k :=
+or.elim (le_total n k)
+  (assume h' : n ≤ k, begin rw [sub_eq_zero_of_le h'], apply zero_le end)
+  (assume h' : n ≥ k,
+    begin
+      cases le.dest h with l hl,
+      cases le.dest h' with p hp,
+      rw [-hl, -hp, nat.add_sub_cancel_left, add_assoc, nat.add_sub_cancel_left],
+      apply le_add_right
+     end)
 
-theorem sub_sub.cases {P : ℕ → ℕ → Prop} {n m : ℕ} (H1 : ∀k, n = m + k -> P k 0)
-  (H2 : ∀k, m = n + k → P 0 k) : P (n - m) (m - n) :=
-or.elim (le_total n m)
-  (assume H3 : n ≤ m,
-    eq.symm (sub_eq_zero_of_le H3) ▸ H2 (m - n) (eq.symm (add_sub_of_le H3)))
-  (assume H3 : m ≤ n,
-    eq.symm (sub_eq_zero_of_le H3) ▸ (H1 (n - m) (eq.symm (add_sub_of_le H3))))
+protected theorem sub_le_sub_left {n m : ℕ} (h : n ≤ m) (k : ℕ) : k - m ≤ k - n :=
+begin
+  cases le.dest h with l hl,
+  rw [-hl, -nat.sub_sub],
+  apply sub_le
+end
 
-protected theorem sub_eq_of_add_eq {n m k : ℕ} (H : n + m = k) : k - n = m :=
-have H2 : k - n + n = m + n, from
-  calc
-    k - n + n = k     : nat.sub_add_cancel (le.intro H)
-          ... = n + m : eq.symm H
-          ... = m + n : add_comm n m,
-add_right_cancel H2
-
-protected theorem eq_sub_of_add_eq {a b c : ℕ} (H : a + c = b) : a = b - c :=
-eq.symm (nat.sub_eq_of_add_eq (add_comm a c ▸ H))
-
-protected theorem sub_eq_of_eq_add {a b c : ℕ} (H : a = c + b) : a - b = c :=
-nat.sub_eq_of_add_eq (add_comm c b ▸ eq.symm H)
-
-protected theorem sub_le_sub_right {n m : ℕ} (H : n ≤ m) (k : ℕ) : n - k ≤ m - k :=
-sorry
-/-
-obtain (l : ℕ) (Hl : n + l = m), from le.elim H,
-or.elim !le.total
-  (assume H2 : n ≤ k, (sub_eq_zero_of_le H2)⁻¹ ▸ !zero_le)
-  (assume H2 : k ≤ n,
-    have H3 : n - k + l = m - k, from
-      calc
-        n - k + l = l + (n - k) : by simp
-              ... = l + n - k   : by rewrite (nat.add_sub_assoc H2 l)
-              ... = m - k       : by simp,
-    le.intro H3)
--/
-
-protected theorem sub_le_sub_left {n m : ℕ} (H : n ≤ m) (k : ℕ) : k - m ≤ k - n :=
-sorry
-/-
-obtain (l : ℕ) (Hl : n + l = m), from le.elim H,
-sub.cases
-  (assume H2 : k ≤ m, !zero_le)
-  (take m' : ℕ,
-    assume Hm : m + m' = k,
-    have H3 : n ≤ k, from le.trans H (le.intro Hm),
-    have H4 : m' + l + n = k - n + n, by simp,
-    le.intro (add.right_cancel H4))
--/
-
-protected theorem lt_of_sub_pos {m n : ℕ} (H : n - m > 0) : m < n :=
+protected theorem lt_of_sub_pos {m n : ℕ} (h : n - m > 0) : m < n :=
 lt_of_not_ge
-  (take H1 : m ≥ n,
-    have n - m = 0, from sub_eq_zero_of_le H1,
-    begin rewrite this at H, exact lt_irrefl _ H end)
+  (suppose m ≥ n,
+    have n - m = 0, from sub_eq_zero_of_le this,
+    begin rw this at h, exact lt_irrefl _ h end)
 
-protected theorem lt_of_sub_lt_sub_right {n m k : ℕ} (H : n - k < m - k) : n < m :=
+protected theorem lt_of_sub_lt_sub_right {n m k : ℕ} (h : n - k < m - k) : n < m :=
 lt_of_not_ge
-  (assume H1 : m ≤ n,
-    have H2 : m - k ≤ n - k, from nat.sub_le_sub_right H1 _,
-    not_le_of_gt H H2)
+  (suppose m ≤ n,
+    have m - k ≤ n - k, from nat.sub_le_sub_right this _,
+    not_le_of_gt h this)
 
-protected theorem lt_of_sub_lt_sub_left {n m k : ℕ} (H : n - m < n - k) : k < m :=
+protected theorem lt_of_sub_lt_sub_left {n m k : ℕ} (h : n - m < n - k) : k < m :=
 lt_of_not_ge
-  (assume H1 : m ≤ k,
-    have H2 : n - k ≤ n - m, from nat.sub_le_sub_left H1 _,
-    not_le_of_gt H H2)
+  (suppose m ≤ k,
+    have n - k ≤ n - m, from nat.sub_le_sub_left this _,
+    not_le_of_gt h this)
 
-protected theorem sub_lt_sub_add_sub (n m k : ℕ) : n - k ≤ (n - m) + (m - k) :=
-sorry
-/-
-sub.cases
-  (assume H : n ≤ m, (zero_add (m - k))⁻¹ ▸ nat.sub_le_sub_right H k)
-  (take mn : ℕ,
-    assume Hmn : m + mn = n,
-    sub.cases
-      (assume H : m ≤ k,
-        have   H2 : n - k ≤ n - m, from nat.sub_le_sub_left H n,
-        have H3 : n - k ≤ mn, from nat.sub_eq_of_add_eq Hmn ▸ H2,
-        show   n - k ≤ mn + 0,  begin rewrite add_zero, assumption end)
-      (take km : ℕ,
-        assume Hkm : k + km = m,
-        have H : k + (mn + km) = n, from
-          calc
-            k + (mn + km) = k + km + mn  : by simp
-                      ... = m + mn       : by rewrite Hkm
-                      ... = n            : Hmn,
-        have H2 : n - k = mn + km, from nat.sub_eq_of_add_eq H,
-        H2 ▸ !le.refl))
--/
-
-protected theorem sub_lt_self {m n : ℕ} (H1 : m > 0) (H2 : n > 0) : m - n < m :=
-sorry
-/-
+protected theorem sub_lt_self {m n : ℕ} (h₁ : m > 0) (h₂ : n > 0) : m - n < m :=
 calc
-  m - n = succ (pred m) - n             : by rewrite (succ_pred_of_pos H1)
-    ... = succ (pred m) - succ (pred n) : by rewrite (succ_pred_of_pos H2)
-    ... = pred m - pred n               : by rewrite succ_sub_succ
-    ... ≤ pred m                        : !sub_le
-    ... < succ (pred m)                 : !lt_succ_self
-    ... = m                             : succ_pred_of_pos H1
--/
+  m - n = succ (pred m) - succ (pred n) : by rw [succ_pred_eq_of_pos h₁, succ_pred_eq_of_pos h₂]
+    ... = pred m - pred n               : by rw succ_sub_succ
+    ... ≤ pred m                        : sub_le _ _
+    ... < succ (pred m)                 : lt_succ_self _
+    ... = m                             : succ_pred_eq_of_pos h₁
 
-protected theorem le_sub_of_add_le {m n k : ℕ} (H : m + k ≤ n) : m ≤ n - k :=
-sorry
-/-
+protected theorem le_sub_of_add_le {m n k : ℕ} (h : m + k ≤ n) : m ≤ n - k :=
 calc
   m = m + k - k : by rewrite nat.add_sub_cancel
-    ... ≤ n - k : nat.sub_le_sub_right H k
--/
+    ... ≤ n - k : nat.sub_le_sub_right h k
 
-protected theorem lt_sub_of_add_lt {m n k : ℕ} (H : m + k < n) (H2 : k ≤ n) : m < n - k :=
-sorry
-/-
+protected theorem lt_sub_of_add_lt {m n k : ℕ} (h : m + k < n) : m < n - k :=
 lt_of_succ_le (nat.le_sub_of_add_le (calc
-    succ m + k = succ (m + k) : by rewrite succ_add_eq_succ_add
-           ... ≤ n            : succ_le_of_lt H))
--/
+    succ m + k = succ (m + k) : by rw succ_add
+           ... ≤ n            : succ_le_of_lt h))
 
-protected theorem sub_lt_of_lt_add {v n m : nat} (h₁ : v < n + m) (h₂ : n ≤ v) : v - n < m :=
-sorry
-/-
-have succ v ≤ n + m,   from succ_le_of_lt h₁,
-have succ (v - n) ≤ m, from
-  calc succ (v - n) = succ v - n : by rewrite (succ_sub h₂)
+protected theorem sub_lt_of_lt_add {k n m : nat} (h₁ : k < n + m) (h₂ : n ≤ k) : k - n < m :=
+have succ k ≤ n + m,   from succ_le_of_lt h₁,
+have succ (k - n) ≤ m, from
+  calc succ (k - n) = succ k - n : by rewrite (succ_sub h₂)
         ...     ≤ n + m - n      : nat.sub_le_sub_right this n
         ...     = m              : by rewrite nat.add_sub_cancel_left,
 lt_of_succ_le this
--/
+
+theorem le_of_sub_eq_zero {m n : ℕ} (h : m - n = 0) : m ≤ n :=
+le_of_not_gt
+  (suppose m > n,
+    have m - n > 0, from nat.sub_pos_of_lt this,
+    show false, from begin rw h at this, exact not_lt_zero _ this end)
 
 /- distance -/
 
-attribute [reducible]
 definition dist (n m : ℕ) := (n - m) + (m - n)
 
-theorem dist.comm (n m : ℕ) : dist n m = dist m n :=
-sorry -- by simp
+theorem dist.def (n m : ℕ) : dist n m = (n - m) + (m - n) := rfl
 
+@[simp]
+theorem dist_comm (n m : ℕ) : dist n m = dist m n :=
+by simp [dist.def]
+
+@[simp]
 theorem dist_self (n : ℕ) : dist n n = 0 :=
-sorry -- by simp
+by simp [dist.def, nat.sub_self]
 
-theorem eq_of_dist_eq_zero {n m : ℕ} (H : dist n m = 0) : n = m :=
-have H2 : n - m = 0, from eq_zero_of_add_eq_zero_right H,
-have H3 : n ≤ m, from le_of_sub_eq_zero H2,
-have H4 : m - n = 0, from eq_zero_of_add_eq_zero_left H,
-have H5 : m ≤ n, from le_of_sub_eq_zero H4,
-le_antisymm H3 H5
+theorem eq_of_dist_eq_zero {n m : ℕ} (h : dist n m = 0) : n = m :=
+have n - m = 0, from eq_zero_of_add_eq_zero_right h,
+have n ≤ m, from le_of_sub_eq_zero this,
+have m - n = 0, from eq_zero_of_add_eq_zero_left h,
+have m ≤ n, from le_of_sub_eq_zero this,
+le_antisymm ‹n ≤ m› ‹m ≤ n›
 
-theorem dist_eq_zero {n m : ℕ} (H : n = m) : dist n m = 0 :=
-sorry -- by substvars; rewrite [↑dist, *nat.sub_self, add_zero]
+theorem dist_eq_zero {n m : ℕ} (h : n = m) : dist n m = 0 :=
+begin rw [h, dist_self] end
 
-theorem dist_eq_sub_of_le {n m : ℕ} (H : n ≤ m) : dist n m = m - n :=
-sorry
-/-
-calc
-  dist n m = 0 + (m - n) : by rewrite -(sub_eq_zero_of_le H)
-       ... = m - n       : by rewrite zero_add
--/
+theorem dist_eq_sub_of_le {n m : ℕ} (h : n ≤ m) : dist n m = m - n :=
+begin rw [dist.def, sub_eq_zero_of_le h, zero_add] end
 
-theorem dist_eq_sub_of_lt {n m : ℕ} (H : n < m) : dist n m = m - n :=
-dist_eq_sub_of_le (le_of_lt H)
-
-theorem dist_eq_sub_of_ge {n m : ℕ} (H : n ≥ m) : dist n m = n - m :=
-dist.comm m n ▸ dist_eq_sub_of_le H
-
-theorem dist_eq_sub_of_gt {n m : ℕ} (H : n > m) : dist n m = n - m :=
-dist_eq_sub_of_ge (le_of_lt H)
+theorem dist_eq_sub_of_ge {n m : ℕ} (h : n ≥ m) : dist n m = n - m :=
+begin rw [dist_comm], apply dist_eq_sub_of_le h end
 
 theorem dist_zero_right (n : ℕ) : dist n 0 = n :=
 eq.trans (dist_eq_sub_of_ge (zero_le n)) (nat.sub_zero n)
@@ -253,99 +122,41 @@ eq.trans (dist_eq_sub_of_ge (zero_le n)) (nat.sub_zero n)
 theorem dist_zero_left (n : ℕ) : dist 0 n = n :=
 eq.trans (dist_eq_sub_of_le (zero_le n)) (nat.sub_zero n)
 
-theorem dist.intro {n m k : ℕ} (H : n + m = k) : dist k n = m :=
-calc
-  dist k n = k - n : dist_eq_sub_of_ge (le.intro H)
-           ... = m : nat.sub_eq_of_add_eq H
-
 theorem dist_add_add_right (n k m : ℕ) : dist (n + k) (m + k) = dist n m :=
 calc
-  dist (n + k) (m + k) = ((n+k) - (m+k)) + ((m+k)-(n+k)) : rfl
-                   ... = (n - m) + ((m + k) - (n + k))   : sorry -- by rewrite nat.add_sub_add_right
-                   ... = (n - m) + (m - n)               : sorry -- by rewrite nat.add_sub_add_right
+  dist (n + k) (m + k) = ((n + k) - (m + k)) + ((m + k)-(n + k)) : rfl
+                   ... = (n - m) + ((m + k) - (n + k))   : by rw nat.add_sub_add_right
+                   ... = (n - m) + (m - n)               : by rw nat.add_sub_add_right
 
 theorem dist_add_add_left (k n m : ℕ) : dist (k + n) (k + m) = dist n m :=
-sorry -- begin rewrite [add_comm k n, add_comm k m]; apply dist_add_add_right end
+begin rw [add_comm k n, add_comm k m], apply dist_add_add_right end
 
-theorem dist_add_eq_of_ge {n m : ℕ} (H : n ≥ m) : dist n m + m = n :=
-sorry
-/-
+theorem dist_eq_intro {n m k l : ℕ} (h : n + m = k + l) : dist n k = dist l m :=
 calc
-  dist n m + m = n - m + m : by rewrite (dist_eq_sub_of_ge H)
-           ... = n         : nat.sub_add_cancel H
--/
+  dist n k = dist (n + m) (k + m) : by rw dist_add_add_right
+       ... = dist (k + l) (k + m) : by rw h
+       ... = dist l m             : by rw dist_add_add_left
 
-theorem dist_eq_intro {n m k l : ℕ} (H : n + m = k + l) : dist n k = dist l m :=
-sorry
-/-
-calc
-  dist n k = dist (n + m) (k + m) : by rewrite dist_add_add_right
-       ... = dist (k + l) (k + m) : by rewrite H
-       ... = dist l m             : by rewrite dist_add_add_left
--/
-
-theorem dist_sub_eq_dist_add_left {n m : ℕ} (H : n ≥ m) (k : ℕ) :
-  dist (n - m) k = dist n (k + m) :=
-sorry
-/-
-have H2 : n - m + (k + m) = k + n, from
-  calc
-    n - m + (k + m) = n - m + m + k   : by simp
-                ... = n + k           : by rewrite (nat.sub_add_cancel H)
-                ... = k + n           : by simp,
-dist_eq_intro H2
--/
-
-theorem dist_sub_eq_dist_add_right {k m : ℕ} (H : k ≥ m) (n : ℕ) :
-  dist n (k - m) = dist (n + m) k :=
-dist.comm (k - m) n ▸ dist.comm k (n + m) ▸ dist_sub_eq_dist_add_left H n
+protected theorem sub_lt_sub_add_sub (n m k : ℕ) : n - k ≤ (n - m) + (m - k) :=
+or.elim (le_total k m)
+  (suppose k ≤ m,
+    begin rw -nat.add_sub_assoc this, apply nat.sub_le_sub_right, apply nat.le_sub_add end)
+  (suppose k ≥ m,
+    begin rw [sub_eq_zero_of_le this, add_zero], apply nat.sub_le_sub_left, exact this end)
 
 theorem dist.triangle_inequality (n m k : ℕ) : dist n k ≤ dist n m + dist m k :=
-sorry
-/-
-have (n - m) + (m - k) + ((k - m) + (m - n)) = (n - m) + (m - n) + ((m - k) + (k - m)), by simp,
-this ▸ add_le_add !nat.sub_lt_sub_add_sub !nat.sub_lt_sub_add_sub
--/
-
-theorem dist_add_add_le_add_dist_dist (n m k l : ℕ) : dist (n + m) (k + l) ≤ dist n k + dist m l :=
-sorry
-/-
-have H : dist (n + m) (k + m) + dist (k + m) (k + l) = dist n k + dist m l,
-  by rewrite [dist_add_add_left, dist_add_add_right],
-by rewrite -H; apply dist.triangle_inequality
--/
+have dist n m + dist m k = (n - m) + (m - k) + ((k - m) + (m - n)), by simp [dist.def],
+begin
+  rw [this, dist.def], apply add_le_add, repeat { apply nat.sub_lt_sub_add_sub }
+end
 
 theorem dist_mul_right (n k m : ℕ) : dist (n * k) (m * k) = dist n m * k :=
-sorry
-/-
-have ∀ n m, dist n m = n - m + (m - n), from take n m, rfl,
-by rewrite [this, this n m, right_distrib, *nat.mul_sub_right_distrib]
--/
+by rw [dist.def, dist.def, right_distrib, nat.mul_sub_right_distrib, nat.mul_sub_right_distrib]
 
 theorem dist_mul_left (k n m : ℕ) : dist (k * n) (k * m) = k * dist n m :=
-sorry -- begin rewrite [mul.comm k n, mul.comm k m, dist_mul_right, mul.comm] end
+by rw [mul_comm k n, mul_comm k m, dist_mul_right, mul_comm]
 
-theorem dist_mul_dist (n m k l : ℕ) : dist n m * dist k l = dist (n * k + m * l) (n * l + m * k) :=
-sorry
-/-
-have aux : ∀k l, k ≥ l → dist n m * dist k l = dist (n * k + m * l) (n * l + m * k), from
-  take k l : ℕ,
-  assume H : k ≥ l,
-  have H2 : m * k ≥ m * l, from !mul_le_mul_left H,
-  have H3 : n * l + m * k ≥ m * l, from le.trans H2 !le_add_left,
-  calc
-    dist n m * dist k l = dist n m * (k - l)       : by rewrite (dist_eq_sub_of_ge H)
-      ... = dist (n * (k - l)) (m * (k - l))       : by rewrite dist_mul_right
-      ... = dist (n * k - n * l) (m * k - m * l)   : by rewrite [*nat.mul_sub_left_distrib]
-      ... = dist (n * k) (m * k - m * l + n * l)   : by rewrite (dist_sub_eq_dist_add_left (!mul_le_mul_left H))
-      ... = dist (n * k) (n * l + (m * k - m * l)) : by rewrite (add_comm (n * l))
-      ... = dist (n * k) (n * l + m * k - m * l)   : by rewrite (nat.add_sub_assoc H2 (n * l))
-      ... = dist (n * k + m * l) (n * l + m * k)   : dist_sub_eq_dist_add_right H3 _,
-or.elim !le.total
-  (assume H : k ≤ l, !dist.comm ▸ !dist.comm ▸ aux l k H)
-  (assume H : l ≤ k, aux k l H)
--/
-
+-- TODO(Jeremy): do when we have max and minx
 --lemma dist_eq_max_sub_min {i j : nat} : dist i j = (max i j) - min i j :=
 --sorry
 /-
@@ -356,20 +167,15 @@ or.elim (lt_or_ge i j)
     by rewrite [max_eq_left this , min_eq_right this, dist_eq_sub_of_ge this])
 -/
 
-lemma dist_succ {i j : nat} : dist (succ i) (succ j) = dist i j :=
-sorry -- by rewrite [↑dist, *succ_sub_succ]
-
---lemma dist_le_max {i j : nat} : dist i j ≤ max i j :=
---sorry -- begin rewrite dist_eq_max_sub_min, apply sub_le end
+lemma dist_succ_succ {i j : nat} : dist (succ i) (succ j) = dist i j :=
+by simp [dist.def, succ_sub_succ]
 
 lemma dist_pos_of_ne {i j : nat} : i ≠ j → dist i j > 0 :=
-sorry
-/-
-assume Pne, lt.by_cases
-  (suppose i < j, begin rewrite [dist_eq_sub_of_lt this], apply nat.sub_pos_of_lt this end)
+assume hne, nat.lt_by_cases
+  (suppose i < j,
+     begin rw [dist_eq_sub_of_le (le_of_lt this)], apply nat.sub_pos_of_lt this end)
   (suppose i = j, by contradiction)
-  (suppose i > j, begin rewrite [dist_eq_sub_of_gt this], apply nat.sub_pos_of_lt this end)
--/
--/
+  (suppose i > j,
+     begin rewrite [dist_eq_sub_of_ge (le_of_lt this)], apply nat.sub_pos_of_lt this end)
 
 end nat
