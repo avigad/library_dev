@@ -35,7 +35,6 @@ theorem sorted_cons {a : α} {l : list α} (h₁ : sorted r l) (h₂ : ∀ b ∈
 
 end sorted
 
-
 /-
   sorting procedures
 -/
@@ -88,8 +87,11 @@ theorem perm_insertion_sort : ∀ l, insertion_sort l ~ l
                 simp [count_cons', perm_insertion_sort l a]
               end
 
-theorem sorted_ordered_insert (totr : total r) (transr : transitive r) (a : α) :
-  ∀ l, sorted r l → sorted r (ordered_insert a l)
+section total_and_transitive
+variables (totr : total r) (transr : transitive r)
+include totr transr
+
+theorem sorted_ordered_insert (a : α) : ∀ l, sorted r l → sorted r (ordered_insert a l)
 | []       := assume h, sorted_singleton r a
 | (b :: l) :=
   assume h,
@@ -120,9 +122,16 @@ theorem sorted_ordered_insert (totr : total r) (transr : transitive r) (a : α) 
            (suppose c ∈ l, h₀ c this),
        show sorted r (b :: ordered_insert r a l), from sorted_cons r h₁ h₂
      end)
-end correctness
 
+theorem sorted_insert_sort : ∀ l, sorted r (insertion_sort l)
+| []       := sorted_nil r
+| (a :: l) := sorted_ordered_insert totr transr a _ (sorted_insert_sort l)
+
+end total_and_transitive
+end correctness
 end sort
+
+/- try it out! -/
 
 vm_eval insertion_sort (λ m n : ℕ, m ≤ n) [5, 27, 221, 95, 17, 43, 7, 2, 98, 567, 23, 12]
 
