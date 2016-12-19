@@ -1,4 +1,4 @@
-import .clausifier .cdcl .trim
+import tools.super.clausifier tools.super.cdcl tools.super.trim
 open tactic super expr monad
 
 -- Intuitionistic propositional prover based on

@@ -95,9 +95,6 @@ end comm_semiring
 section
   variables [ring A] (a b c d e : A)
 
-  theorem neg_eq_neg_one_mul : -a = -1 * a :=
-  by simp
-
   theorem mul_add_eq_mul_add_iff_sub_mul_add_eq : a * e + c = b * e + d ↔ (a - b) * e + c = d :=
   calc
     a * e + c = b * e + d ↔ a * e + c = d + b * e : by simp

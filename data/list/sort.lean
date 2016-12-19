@@ -94,24 +94,18 @@ include deceqα
 open perm
 
 -- TODO(Jeremy): anonymous type class parameters don't work well
--- TODO(Jeremy): in all the proofs below, simp [if_pos h] doesn't work
 
 theorem count_ordered_insert_eq (b a : α) : ∀ l, count b (ordered_insert a l) = count b (a :: l)
 | []       := by simp
-| (c :: l) := if h : a ≼ c then
-                begin simp, rw [if_pos h] end
-              else
-                begin
-                  simp, rw [if_neg h], simp [count_cons', count_ordered_insert_eq]
-                end
+| (c :: l) := if h : a ≼ c then by simp [if_pos, h]
+              else by simp [if_neg, h, count_cons', count_ordered_insert_eq]
 
 theorem mem_ordered_insert_iff (b a : α) (l : list α) : b ∈ ordered_insert a l ↔ b ∈ a :: l :=
 by simp [mem_iff_count_pos, count_ordered_insert_eq]
 
 theorem perm_insertion_sort : ∀ l, insertion_sort l ~ l
 | []       := take a, rfl
-| (b :: l) := take a,
-              by simp [count_ordered_insert_eq, count_cons', perm_insertion_sort l a]
+| (b :: l) := take a, by simp [count_ordered_insert_eq, count_cons', perm_insertion_sort l a]
 
 section total_and_transitive
 variables (totr : total r) (transr : transitive r)
@@ -125,7 +119,7 @@ theorem sorted_ordered_insert (a : α) : ∀ l, sorted r l → sorted r (ordered
   have h₀ : ∀ c ∈ l, b ≼ c, from forall_mem_rel_of_sorted_cons r h,
   if h' : a ≼ b then
     begin
-      simp, rw [if_pos h'],
+      simp [if_pos, h'],
       have ∀ c ∈ b :: l, a ≼ c, from
         take c, suppose c ∈ b :: l,
         or.elim (eq_or_mem_of_mem_cons this)
@@ -136,7 +130,7 @@ theorem sorted_ordered_insert (a : α) : ∀ l, sorted r l → sorted r (ordered
   else
     have b ≼ a, from or.resolve_left (totr a b) h',
     begin
-      simp, rw [if_neg ‹¬ a ≼ b›],
+      simp [if_neg, ‹¬ a ≼ b›],
       have h₁ : sorted r (ordered_insert r a l), from sorted_ordered_insert l ‹sorted r l›,
       have h₂ : ∀ c ∈ ordered_insert r a l, b ≼ c, from
         take c,
@@ -179,22 +173,22 @@ begin rw [split.equations.eqn_3], cases split l, reflexivity end
 attribute [simp] split.equations.eqn_1 split.equations.eqn_2 split_cons_cons
 
 theorem length_split_fst_le : ∀ l : list α, length ((split l).1) ≤ length l
-| [] := nat.le_refl 0
-| [a] := nat.le_refl 1
+| []            := nat.le_refl 0
+| [a]           := nat.le_refl 1
 | (a :: b :: l) := begin
                      simp, rw [add_comm],
                      transitivity,
-                     apply add_le_add_right (length_split_fst_le l),
+                     { apply add_le_add_right (length_split_fst_le l) },
                      apply nat.le_succ
                    end
 
 theorem length_split_snd_le : ∀ l : list α, length ((split l).2) ≤ length l
-| [] := nat.le_refl 0
-| [a] := nat.zero_le 1
+| []            := nat.le_refl 0
+| [a]           := nat.zero_le 1
 | (a :: b :: l) := begin
                      simp, rw [add_comm],
                      transitivity,
-                     apply add_le_add_right (length_split_snd_le l),
+                     { apply add_le_add_right (length_split_snd_le l) },
                      apply nat.le_succ
                    end
 
@@ -221,9 +215,9 @@ private def merge.F :
 | ([], l)           f := l
 | (a :: l, [])      f := a :: l
 | (a :: l, b :: l') f := if a ≼ b then
-                            a :: f (l, b :: l') begin simp, apply nat.le_refl end
-                          else
-                            b :: f (a :: l, l') begin simp, apply nat.le_refl end
+                           a :: f (l, b :: l') begin simp, apply nat.le_refl end
+                         else
+                           b :: f (a :: l, l') begin simp, apply nat.le_refl end
 
 def merge := well_founded.fix (inv_image.wf _ nat.lt_wf) merge.F
 
@@ -282,7 +276,7 @@ include deceqα
 theorem count_split (a : α) : ∀ l : list α, count a (split l).1 + count a (split l).2 = count a l
 | []            := rfl
 | [a]           := rfl
-| (a :: b :: l) := begin simp, simp, simp [count_cons'], rw [-count_split l], simp end
+| (a :: b :: l) := begin simp, simp [count_cons'], rw [-count_split l], simp end
 
 private def count_merge.F (c : α) :
   Π p : list α × list α,
@@ -294,12 +288,12 @@ private def count_merge.F (c : α) :
 | (a :: l, b :: l')  f := if h : a ≼ b then
                             begin
                               note hrec := f (l, b :: l') begin simp, apply nat.le_refl end,
-                              simp, rw [if_pos h], simp [count_cons', hrec]
+                              simp [if_pos, h, count_cons', hrec]
                             end
                           else
                             begin
                               note hrec := f (a :: l, l') begin simp, apply nat.le_refl end,
-                              simp, rw [if_neg h], simp [count_cons', hrec]
+                              simp [if_neg, h, count_cons', hrec]
                             end
 
 theorem count_merge (c : α) :
@@ -345,7 +339,7 @@ private def sorted_merge.F :
   if h : a ≼ b then
     begin
       note hrec := f (l, b :: l') begin simp, apply nat.le_refl end,
-      simp, rw [if_pos h],
+      simp [if_pos, h],
       have h₃ : sorted r (merge r (l, b :: l')), from hrec ‹sorted r l› h₂,
       have h₄ : ∀ c ∈ merge r (l, b :: l'), a ≼ c,
       begin
@@ -364,7 +358,7 @@ private def sorted_merge.F :
     have h' : b ≼ a, from or.resolve_left (totr a b) h,
     begin
       note hrec := f (a :: l, l') begin simp, apply nat.le_refl end,
-      simp, rw [if_neg h],
+      simp [if_neg, h],
       have h₃ : sorted r (merge r (a :: l, l')), from hrec h₁ ‹sorted r l'›,
       have h₄ : ∀ c ∈ merge r (a :: l, l'), b ≼ c,
       begin

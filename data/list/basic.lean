@@ -419,7 +419,7 @@ list.induction_on l
        (suppose a ≠ b, begin simp [this, find_cons_of_ne l this], apply succ_le_succ ih end))
 
 lemma not_mem_of_find_eq_length : ∀ {a : α} {l : list α}, find a l = length l → a ∉ l
-| a []        := by simp
+| a []        := λ h, not_mem_nil _ -- by simp
 | a (b::l)    := begin
                    note h := decidable.em (a = b),
                    cases h with aeqb aneb,

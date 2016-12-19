@@ -5,7 +5,7 @@ Authors: Floris van Doorn, Leonardo de Moura, Jeremy Avigad
 
 Basic operations on the natural numbers.
 -/
-import automation.super.prover
+import tools.super.prover
 open tactic
 
 namespace nat
