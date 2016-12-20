@@ -23,7 +23,7 @@ variable {α : Type u}
 
 /- theorems -/
 
-attribute [simp]
+@[simp]
 lemma cons_ne_nil (a : α) (l : list α) : a::l ≠ [] :=
 begin intro, contradiction end
 
@@ -40,32 +40,32 @@ take l₁ l₂, assume Pe, tail_eq_of_cons_eq Pe
 
 /- append -/
 
-attribute [simp]
+@[simp]
 theorem append_nil_left (t : list α) : [] ++ t = t :=
 rfl
 
-attribute [simp]
+@[simp]
 theorem append_cons (x : α) (s t : list α) : (x::s) ++ t = x::(s ++ t) :=
 rfl
 
-attribute [simp]
+@[simp]
 theorem append_nil_right (t : list α) : t ++ [] = t :=
 begin induction t with a t ih, reflexivity, simp [ih] end
 
-attribute [simp]
+@[simp]
 theorem append.assoc (s t u : list α) : s ++ t ++ u = s ++ (t ++ u) :=
 begin induction s with a s ih, reflexivity, simp [ih] end
 
 /- length -/
-attribute [simp]
+@[simp]
 theorem length_nil : length (@nil α) = 0 :=
 rfl
 
-attribute [simp]
+@[simp]
 theorem length_cons (x : α) (t : list α) : length (x::t) = length t + 1 :=
 rfl
 
-attribute [simp]
+@[simp]
 theorem length_append (s t : list α) : length (s ++ t) = length s + length t :=
 begin induction s with a s ih, simp, simp [ih] end
 
@@ -79,27 +79,27 @@ theorem ne_nil_of_length_eq_succ : ∀ {l : list α} {n : nat}, length l = succ 
 
 /- concat -/
 
-attribute [simp]
+@[simp]
 theorem concat_nil (a : α) : concat [] a = [a] :=
 rfl
 
-attribute [simp]
+@[simp]
 theorem concat_cons (a b : α) (l : list α) : concat (a::l) b  = a::(concat l b) :=
 rfl
 
-attribute [simp]
+@[simp]
 theorem concat_eq_append (a : α) (l : list α) : concat l a = l ++ [a] :=
 begin induction l with b l ih, simp, simp [ih] end
 
-attribute [simp]
+@[simp]
 theorem concat_ne_nil (a : α) (l : list α) : concat l a ≠ [] :=
 begin induction l, repeat { intro h, contradiction } end
 
-attribute [simp]
+@[simp]
 theorem length_concat (a : α) (l : list α) : length (concat l a) = length l + 1 :=
 begin rw [concat_eq_append, length_append], reflexivity end
 
-attribute [simp]
+@[simp]
 theorem concat_append (a : α) (l₁ l₂ : list α) : concat l₁ a ++ l₂ = l₁ ++ a :: l₂ :=
 begin induction l₁ with b l₁ ih, simp, simp [ih] end
 
@@ -113,11 +113,11 @@ definition last : Π l : list α, l ≠ [] → α
 | [a]         h := a
 | (a₁::a₂::l) h := last (a₂::l) $ cons_ne_nil a₂ l
 
-attribute [simp]
+@[simp]
 lemma last_singleton (a : α) (h : [a] ≠ []) : last [a] h = a :=
 rfl
 
-attribute [simp]
+@[simp]
 lemma last_cons_cons (a₁ a₂ : α) (l : list α) (h : a₁::a₂::l ≠ []) :
   last (a₁::a₂::l) h = last (a₂::l) (cons_ne_nil a₂ l) :=
 rfl
@@ -130,7 +130,7 @@ by subst l₁
 -- TODO(Jeremy): this was not easy. Is there are better proof? Can we automate it?
 -- The commented-out version was "by rec_inst_simp"
 
-attribute [simp]
+@[simp]
 theorem last_concat {a : α} (l : list α) : ∀ (h : concat l a ≠ []), last (concat l a) h = a :=
 begin
   induction l with b l₁ ih,
@@ -144,11 +144,11 @@ end
 
 /- reverse -/
 
-attribute [simp]
+@[simp]
 theorem reverse_nil : reverse (@nil α) = [] :=
 rfl
 
-attribute [simp]
+@[simp]
 theorem reverse_cons (a : α) (l : list α) : reverse (a::l) = concat (reverse l) a :=
 have aux : ∀ l₁ l₂, reverse_core l₁ (concat l₂ a) = concat (reverse_core l₁ l₂) a,
   begin
@@ -158,15 +158,15 @@ have aux : ∀ l₁ l₂, reverse_core l₁ (concat l₂ a) = concat (reverse_co
   end,
 aux l nil
 
-attribute [simp]
+@[simp]
 theorem reverse_singleton (a : α) : reverse [a] = [a] :=
 rfl
 
-attribute [simp]
+@[simp]
 theorem reverse_append (s t : list α) : reverse (s ++ t) = (reverse t) ++ (reverse s) :=
 begin induction s with a s ih, simp, simp [ih] end
 
-attribute [simp]
+@[simp]
 theorem reverse_reverse (l : list α) : reverse (reverse l) = l :=
 begin induction l with a l ih, simp, simp [ih] end
 
@@ -178,20 +178,20 @@ begin induction l with a l ih, simp, simp [ih] end
 
 /- head and tail -/
 
-attribute [simp]
+@[simp]
 theorem head_cons [h : inhabited α] (a : α) (l : list α) : head (a::l) = a :=
 rfl
 
-attribute [simp]
+@[simp]
 theorem head_append [h : inhabited α] (t : list α) {s : list α} (h : s ≠ []) :
   head (s ++ t) = head s :=
 begin induction s with a s ih, contradiction, simp end
 
-attribute [simp]
+@[simp]
 theorem tail_nil : tail (@nil α) = [] :=
 rfl
 
-attribute [simp]
+@[simp]
 theorem tail_cons (a : α) (l : list α) : tail (a::l) = l :=
 rfl
 
@@ -200,14 +200,14 @@ begin induction l with a l ih, contradiction, simp end
 
 /- list membership -/
 
-attribute [simp]
+@[simp]
 theorem mem_nil_iff (a : α) : a ∈ [] ↔ false :=
 iff.rfl
 
 theorem not_mem_nil (a : α) : a ∉ [] :=
 iff.mp $ mem_nil_iff a
 
-attribute [simp]
+@[simp]
 theorem mem_cons (a : α) (l : list α) : a ∈ a :: l :=
 or.inl rfl
 
@@ -314,18 +314,18 @@ definition sublist (l₁ l₂ : list α) := ∀ ⦃a : α⦄, a ∈ l₁ → a �
 
 instance : has_subset (list α) := ⟨sublist⟩
 
-attribute [simp]
+@[simp]
 theorem nil_sub (l : list α) : [] ⊆ l :=
 λ b i, false.elim (iff.mp (mem_nil_iff b) i)
 
-attribute [simp]
+@[simp]
 theorem sub.refl (l : list α) : l ⊆ l :=
 λ b i, i
 
 theorem sub.trans {l₁ l₂ l₃ : list α} (h₁ : l₁ ⊆ l₂) (h₂ : l₂ ⊆ l₃) : l₁ ⊆ l₃ :=
 λ b i, h₂ (h₁ i)
 
-attribute [simp]
+@[simp]
 theorem sub_cons (a : α) (l : list α) : l ⊆ a::l :=
 λ b i, or.inr i
 
@@ -337,11 +337,11 @@ theorem cons_sub_cons  {l₁ l₂ : list α} (a : α) (s : l₁ ⊆ l₂) : (a::
   (λ e : b = a,  or.inl e)
   (λ i : b ∈ l₁, or.inr (s i))
 
-attribute [simp]
+@[simp]
 theorem sub_append_left (l₁ l₂ : list α) : l₁ ⊆ l₁++l₂ :=
 λ b i, iff.mpr (mem_append_iff b l₁ l₂) (or.inl i)
 
-attribute [simp]
+@[simp]
 theorem sub_append_right (l₁ l₂ : list α) : l₂ ⊆ l₁++l₂ :=
 λ b i, iff.mpr (mem_append_iff b l₁ l₂) (or.inr i)
 
@@ -380,22 +380,22 @@ definition find : α → list α → nat
 | a []       := 0
 | a (b :: l) := if a = b then 0 else succ (find a l)
 
-attribute [simp]
+@[simp]
 theorem find_nil (a : α) : find a [] = 0 :=
 rfl
 
 theorem find_cons (a b : α) (l : list α) : find a (b::l) = if a = b then 0 else succ (find a l) :=
 rfl
 
-attribute [simp]
+@[simp]
 theorem find_cons_of_eq {a b : α} (l : list α) : a = b → find a (b::l) = 0 :=
 assume e, if_pos e
 
-attribute [simp]
+@[simp]
 theorem find_cons_of_ne {a b : α} (l : list α) : a ≠ b → find a (b::l) = succ (find a l) :=
 assume n, if_neg n
 
-attribute [simp]
+@[simp]
 theorem find_of_not_mem {l : list α} {a : α} : ¬a ∈ l → find a l = length l :=
 list.induction_on l
    (suppose ¬a ∈ [], rfl)
@@ -440,11 +440,11 @@ end find
 /- nth element -/
 
 section nth
-attribute [simp]
+@[simp]
 theorem nth_zero (a : α) (l : list α) : nth (a :: l) 0 = some a :=
 rfl
 
-attribute [simp]
+@[simp]
 theorem nth_succ (a : α) (l : list α) (n : nat) : nth (a::l) (succ n) = nth l n :=
 rfl
 
@@ -487,11 +487,11 @@ definition ith : Π (l : list α) (i : nat), i < length l → α
 | (a::ains) 0        h := a
 | (a::ains) (succ i) h := ith ains i (lt_of_succ_lt_succ h)
 
-attribute [simp]
+@[simp]
 lemma ith_zero (a : α) (l : list α) (h : 0 < length (a::l)) : ith (a::l) 0 h = a :=
 rfl
 
-attribute [simp]
+@[simp]
 lemma ith_succ (a : α) (l : list α) (i : nat) (h : succ i < length (a::l))
                       : ith (a::l) (succ i) h = ith l i (lt_of_succ_lt_succ h) :=
 rfl
@@ -588,11 +588,11 @@ definition firstn : nat → list α → list α
 | (n+1) []     := []
 | (n+1) (a::l) := a :: firstn n l
 
-attribute [simp]
+@[simp]
 lemma firstn_zero : ∀ (l : list α), firstn 0 l = [] :=
 begin intros, reflexivity end
 
-attribute [simp]
+@[simp]
 lemma firstn_nil : ∀ n, firstn n [] = ([] : list α)
 | 0     := rfl
 | (n+1) := rfl
