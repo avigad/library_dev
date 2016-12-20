@@ -200,14 +200,11 @@ begin induction l with a l ih, contradiction, simp end
 
 /- list membership -/
 
--- TODO(Jeremy): annotations are generally needed on ([] : list α). Can this be avoided?
--- Also, when the annotations are left out, the error message is inscrutible.
-
 attribute [simp]
-theorem mem_nil_iff (a : α) : a ∈ ([] : list α) ↔ false :=
+theorem mem_nil_iff (a : α) : a ∈ [] ↔ false :=
 iff.rfl
 
-theorem not_mem_nil (a : α) : a ∉ ([] : list α) :=
+theorem not_mem_nil (a : α) : a ∉ [] :=
 iff.mp $ mem_nil_iff a
 
 attribute [simp]
@@ -230,7 +227,7 @@ assume h, h
 theorem mem_singleton {a b : α} : a ∈ [b] → a = b :=
 suppose a ∈ [b], or.elim (eq_or_mem_of_mem_cons this)
   (suppose a = b, this)
-  (suppose a ∈ ([] : list α), absurd this (not_mem_nil a))
+  (suppose a ∈ [], absurd this (not_mem_nil a))
 
 theorem mem_of_mem_cons_of_mem {a b : α} {l : list α} : a ∈ b::l → b ∈ l → a ∈ l :=
 assume ainbl binl, or.elim (eq_or_mem_of_mem_cons ainbl)
@@ -274,12 +271,12 @@ theorem not_mem_append {a : α} {s t : list α} : a ∉ s → a ∉ t → a ∉ 
   (λ aint, by contradiction)
 
 lemma length_pos_of_mem {a : α} : ∀ {l : list α}, a ∈ l → 0 < length l
-| []     := suppose a ∈ ([] : list α), begin simp at this, contradiction end
+| []     := suppose a ∈ [], begin simp at this, contradiction end
 | (b::l) := suppose a ∈ b::l, zero_lt_succ _
 
 theorem mem_split {a : α} {l : list α} : a ∈ l → ∃ s t : list α, l = s ++ (a::t) :=
 list.induction_on l
-  (suppose a ∈ ([] : list α), begin simp at this, contradiction end)
+  (suppose a ∈ [], begin simp at this, contradiction end)
   (take b l,
     assume ih : a ∈ l → ∃ s t : list α, l = s ++ (a::t),
     suppose a ∈ b::l,
@@ -401,7 +398,7 @@ assume n, if_neg n
 attribute [simp]
 theorem find_of_not_mem {l : list α} {a : α} : ¬a ∈ l → find a l = length l :=
 list.induction_on l
-   (suppose ¬a ∈ ([] : list α), rfl)
+   (suppose ¬a ∈ [], rfl)
    (take b l,
       assume ih : ¬a ∈ l → find a l = length l,
       suppose ¬a ∈ b::l,
@@ -428,6 +425,7 @@ lemma not_mem_of_find_eq_length : ∀ {a : α} {l : list α}, find a l = length 
                    intro h, split, assumption,
                    exact not_mem_of_find_eq_length (nat.succ_inj h)
                  end
+
 
 lemma find_lt_length {a} {l : list α} (al : a ∈ l) : find a l < length l :=
 begin
@@ -566,7 +564,7 @@ list.induction_on l
          exists.intro (b::l') this)))
 
 theorem qeq_split {a : α} : ∀ {l l' : list α}, l'≈a|l → ∃ l₁ l₂, l = l₁ ++ l₂ ∧ l' = l₁ ++ (a::l₂)
-| ._ ._ (qhead .a l)            := ⟨([] : list α), l, by simp⟩
+| ._ ._ (qhead .a l)            := ⟨[], l, by simp⟩
 | ._ ._ (@qcons .α .a c l l' q) :=
   match (qeq_split q) with
   | ⟨l₁, l₂, h₁, h₂⟩ := ⟨c :: l₁, l₂, by simp [h₁, h₂]⟩
