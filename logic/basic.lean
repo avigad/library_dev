@@ -453,6 +453,26 @@ iff.intro
 
 end bounded_quantifiers
 
+-- TODO(Jeremy): merge with previous section
+
+section
+  universe variable uu
+  variables {α : Type uu} {p q : α → Prop}
+
+  @[simp]
+  theorem exists_prop_iff (p q : Prop) : (∃ h : p, q) ↔ p ∧ q :=
+  iff.intro
+    begin intro h', cases h', split, repeat { assumption } end
+    begin intro h', cases h', split, repeat { assumption } end
+
+  theorem bexists.elim {b : Prop} (h : ∃ x : α, ∃ h : p x, q x) (h' : ∀ (a : α), p a → q a → b) :
+    b :=
+  exists.elim h (λ a h₁, exists.elim h₁ (h' a))
+
+  theorem bexists.intro (a : α) (h₁ : p a) (h₂ : q a) : ∃ x, ∃ h : p x, q x :=
+  exists.intro a (exists.intro h₁ h₂)
+end
+
 namespace classical
 universe variable u
 variables {A : Type u} {r p : A → Prop}
