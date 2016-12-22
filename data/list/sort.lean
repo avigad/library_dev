@@ -101,11 +101,13 @@ theorem count_ordered_insert_eq (b a : α) : ∀ l, count b (ordered_insert a l)
               else by simp [if_neg, h, count_cons', count_ordered_insert_eq]
 
 theorem mem_ordered_insert_iff (b a : α) (l : list α) : b ∈ ordered_insert a l ↔ b ∈ a :: l :=
-by simp [mem_iff_count_pos, count_ordered_insert_eq]
+begin repeat {rw mem_iff_count_pos}, simp [count_ordered_insert_eq] end
 
-theorem perm_insertion_sort : ∀ l, insertion_sort l ~ l
-| []       := take a, rfl
-| (b :: l) := take a, by simp [count_ordered_insert_eq, count_cons', perm_insertion_sort l a]
+theorem perm_insertion_sort : ∀ l : list α, insertion_sort l ~ l
+| []       := perm.nil
+| (b :: l) := perm_of_forall_count_eq (take a,
+                by simp [count_ordered_insert_eq, count_cons',
+                         count_eq_count_of_perm (perm_insertion_sort l) a])
 
 section total_and_transitive
 variables (totr : total r) (transr : transitive r)
@@ -301,18 +303,19 @@ theorem count_merge (c : α) :
 well_founded.fix (inv_image.wf _ nat.lt_wf) (count_merge.F c)
 
 theorem mem_merge_iff (a : α) (p : list α × list α) : a ∈ merge p ↔ a ∈ p.1 ∨ a ∈ p.2 :=
-by simp [mem_iff_count_pos, count_merge, nat.add_pos_iff_pos_or_pos]
+begin repeat { rw mem_iff_count_pos }, simp [count_merge, nat.add_pos_iff_pos_or_pos] end
 
 private def perm_merge_sort.F :
   Π l : list α, (Π l₁ : list α, length l₁ < length l → merge_sort l₁ ~ l₁) →
     merge_sort l ~ l
-| []  f           := take c, rfl
-| [a] f           := take c, rfl
+| []  f           := perm.refl _
+| [a] f           := perm.refl _
 | (a :: b :: l) f :=
+  perm.perm_of_forall_count_eq
   begin
     intro c,
-    pose hrec₁ := f _ (length_split_cons_cons_fst_lt a b l) c,
-    pose hrec₂ := f _ (length_split_cons_cons_snd_lt a b l) c,
+    pose hrec₁ := perm.count_eq_count_of_perm (f _ (length_split_cons_cons_fst_lt a b l)) c,
+    pose hrec₂ := perm.count_eq_count_of_perm (f _ (length_split_cons_cons_snd_lt a b l)) c,
     simp at hrec₁, simp at hrec₁, simp at hrec₂, simp at hrec₂,
     simp [hrec₁, hrec₂, count_merge, count_split, count_cons']
   end
