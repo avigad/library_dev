@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2015 Microsoft Corporation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Leonardo de Moura
+Authors: Leonardo de Moura, Jeremy Avigad
 
 List permutations.
 -/
@@ -822,16 +822,12 @@ end
 lemma perm_insert_insert (x y : α) (l : list α) :
   insert x (insert y l) ~ insert y (insert x l) :=
 if yl : y ∈ l then
-  if xl : x ∈ l then
-    begin simp [xl, yl] end
-  else
-    begin simp [xl, yl] end
+  if xl : x ∈ l then by simp [xl, yl]
+  else by simp [xl, yl]
 else
-  if xl : x ∈ l then
-    begin simp [xl, yl] end
+  if xl : x ∈ l then by simp [xl, yl]
   else
-    if xy : x = y then
-      begin simp [xy, xl, yl] end
+    if xy : x = y then by simp [xy, xl, yl]
     else
       have h₁ : x ∉ l ++ [y], begin intro h, simp at h, cases h, repeat { contradiction } end,
       have h₂ : y ∉ l ++ [x], begin intro h, simp at h, cases h with h₃, exact xy h₃^.symm,
@@ -876,8 +872,7 @@ else
 end perm_insert
 
 section perm_inter
-variable [H : decidable_eq α]
-include H
+variable [decidable_eq α]
 
 theorem perm_inter_left {l₁ l₂ : list α} (t₁ : list α) : l₁ ~ l₂ → (inter l₁ t₁) ~ (inter l₂ t₁) :=
 assume p, perm.induction_on p

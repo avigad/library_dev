@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2015 Leonardo de Moura. αll rights reserved.
-Released under αpache 2.0 license as described in the file LICENSE.
-αuthors: Leonardo de Moura, Haitao Zhang, Floris van Doorn, Jeremy αvigad
+Released under Apache 2.0 license as described in the file LICENSE.
+αuthors: Leonardo de Moura, Haitao Zhang, Floris van Doorn, Jeremy Avigad
 
 List combinators.
 -/
@@ -122,18 +122,18 @@ theorem map₂_nil2 (f : α → β → γ) : ∀ (l : list α), map₂ f l [] = 
 | []     := rfl
 | (a::y) := rfl
 
-/- TODO(Jeremy): there is an overload ambiguity between min and nat.min
-theorem length_map₂ : ∀ (f : α → β → γ) x y, length (map₂ f x y) = min (length x) (length y)
+/- TODO(Jeremy): there is an overload ambiguity between min and nat.min -/
+theorem length_map₂ : ∀ (f : α → β → γ) x y, length (map₂ f x y) = _root_.min (length x) (length y)
 | f []       [] := rfl
 | f (xh::xr) [] := rfl
 | f [] (yh::yr) := rfl
 | f (xh::xr) (yh::yr) := calc
   length (map₂ f (xh::xr) (yh::yr))
           = length (map₂ f xr yr) + 1                 : rfl
-      ... = min (length xr) (length yr) + 1           : by rw length_map₂
-      ... = min (succ (length xr)) (succ (length yr)) : begin rw min_succ_succ, reflexivity end
-      ... = min (length (xh::xr)) (length (yh::yr))   : rfl
--/
+      ... = _root_.min (length xr) (length yr) + 1    : by rw length_map₂
+      ... = _root_.min (succ (length xr)) (succ (length yr))
+                                                      : begin rw min_succ_succ, reflexivity end
+      ... = _root_.min (length (xh::xr)) (length (yh::yr)) : rfl
 
 /- filter -/
 @[simp]
@@ -450,19 +450,18 @@ def mapαccumR₂
   (q.1, q.2 :: r.2)
 
 -- TODO(Jeremy) : again the "min" overload
-/-
+
 theorem length_mapαccumR₂ : ∀ (f : α → β → S → S × γ) (x : list α) (y : list β) (c : S),
-  length (mapαccumR₂ f x y c).2 = min (length x) (length y)
+  length (mapαccumR₂ f x y c).2 = _root_.min (length x) (length y)
 | f (a::x) (b::y) c := calc
     length (snd (mapαccumR₂ f (a::x) (b::y) c))
               = length (snd (mapαccumR₂ f x y c)) + 1  : rfl
-          ... = min (length x) (length y) + 1             : by rw (length_mapαccumR₂ f x y c)
-          ... = min (succ (length x)) (succ (length y))   : begin rw min_succ_succ, reflexivity end
-          ... = min (length (a::x)) (length (b::y))       : rfl
+          ... = _root_.min (length x) (length y) + 1             : by rw (length_mapαccumR₂ f x y c)
+          ... = _root_.min (succ (length x)) (succ (length y))   : begin rw min_succ_succ, reflexivity end
+          ... = _root_.min (length (a::x)) (length (b::y))       : rfl
 | f (a::x) [] c := rfl
 | f [] (b::y) c := rfl
 | f [] []     c := rfl
--/
 
 end mapαccumR₂
 
