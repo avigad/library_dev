@@ -5,21 +5,12 @@ Authors: Parikshit Khanna, Jeremy Avigad, Leonardo de Moura, Floris van Doorn
 
 Basic properties of lists.
 -/
-import ...logic.basic
-
--- TODO(Jeremy): move to nat
-namespace nat
-
-theorem succ_inj {n m : ℕ} (h : succ n = succ m) : n = m :=
-nat.no_confusion h id
-
-end nat
-
+import logic.basic data.nat.basic
 open function nat
 
 namespace list
-universe variable u
-variable {α : Type u}
+universe variable uu
+variable {α : Type uu}
 
 /- theorems -/
 
@@ -173,6 +164,7 @@ begin induction l with a l ih, simp, simp [ih] end
 theorem concat_eq_reverse_cons (a : α) (l : list α) : concat l a = reverse (a :: reverse l) :=
 begin induction l with a l ih, simp, simp [ih] end
 
+@[simp]
 theorem length_reverse (l : list α) : length (reverse l) = length l :=
 begin induction l with a l ih, simp, simp [ih] end
 
@@ -195,6 +187,7 @@ rfl
 theorem tail_cons (a : α) (l : list α) : tail (a::l) = l :=
 rfl
 
+@[simp]
 theorem cons_head_tail [h : inhabited α] {l : list α} (h : l ≠ []) : (head l)::(tail l) = l :=
 begin induction l with a l ih, contradiction, simp end
 
@@ -208,16 +201,17 @@ theorem not_mem_nil (a : α) : a ∉ [] :=
 iff.mp $ mem_nil_iff a
 
 @[simp]
-theorem mem_cons (a : α) (l : list α) : a ∈ a :: l :=
+theorem mem_cons_self (a : α) (l : list α) : a ∈ a :: l :=
 or.inl rfl
 
 theorem eq_nil_of_forall_not_mem : ∀ {l : list α}, (∀ a, a ∉ l) → l = nil
 | []        := assume h, rfl
-| (b :: l') := assume h, absurd (mem_cons b l') (h b)
+| (b :: l') := assume h, absurd (mem_cons_self b l') (h b)
 
 theorem mem_cons_of_mem (y : α) {a : α} {l : list α} : a ∈ l → a ∈ y :: l :=
 assume H, or.inr H
 
+@[simp]
 theorem mem_cons_iff (a y : α) (l : list α) : a ∈ y::l ↔ (a = y ∨ a ∈ l) :=
 iff.rfl
 
@@ -228,6 +222,9 @@ theorem mem_singleton {a b : α} : a ∈ [b] → a = b :=
 suppose a ∈ [b], or.elim (eq_or_mem_of_mem_cons this)
   (suppose a = b, this)
   (suppose a ∈ [], absurd this (not_mem_nil a))
+
+@[simp] theorem mem_singleton_iff (a b : α) : a ∈ [b] ↔ a = b :=
+iff.intro mem_singleton begin intro h, simp [h] end
 
 theorem mem_of_mem_cons_of_mem {a b : α} {l : list α} : a ∈ b::l → b ∈ l → a ∈ l :=
 assume ainbl binl, or.elim (eq_or_mem_of_mem_cons ainbl)
@@ -256,6 +253,7 @@ list.induction_on s
             (suppose a ∈ s, or.inr (ih (or.inl this))))
         (suppose a ∈ t, or.inr (ih (or.inr this))))
 
+@[simp]
 theorem mem_append_iff (a : α) (s t : list α) : a ∈ s ++ t ↔ a ∈ s ∨ a ∈ t :=
 iff.intro mem_or_mem_of_mem_append mem_append_of_mem_or_mem
 
@@ -315,56 +313,57 @@ definition sublist (l₁ l₂ : list α) := ∀ ⦃a : α⦄, a ∈ l₁ → a �
 instance : has_subset (list α) := ⟨sublist⟩
 
 @[simp]
-theorem nil_sub (l : list α) : [] ⊆ l :=
+theorem nil_subset (l : list α) : [] ⊆ l :=
 λ b i, false.elim (iff.mp (mem_nil_iff b) i)
 
 @[simp]
-theorem sub.refl (l : list α) : l ⊆ l :=
+theorem subset.refl (l : list α) : l ⊆ l :=
 λ b i, i
 
-theorem sub.trans {l₁ l₂ l₃ : list α} (h₁ : l₁ ⊆ l₂) (h₂ : l₂ ⊆ l₃) : l₁ ⊆ l₃ :=
+theorem subset.trans {l₁ l₂ l₃ : list α} (h₁ : l₁ ⊆ l₂) (h₂ : l₂ ⊆ l₃) : l₁ ⊆ l₃ :=
 λ b i, h₂ (h₁ i)
 
 @[simp]
-theorem sub_cons (a : α) (l : list α) : l ⊆ a::l :=
+theorem subset_cons (a : α) (l : list α) : l ⊆ a::l :=
 λ b i, or.inr i
 
-theorem sub_of_cons_sub {a : α} {l₁ l₂ : list α} : a::l₁ ⊆ l₂ → l₁ ⊆ l₂ :=
+theorem subset_of_cons_subset {a : α} {l₁ l₂ : list α} : a::l₁ ⊆ l₂ → l₁ ⊆ l₂ :=
 λ s b i, s (mem_cons_of_mem _ i)
 
-theorem cons_sub_cons  {l₁ l₂ : list α} (a : α) (s : l₁ ⊆ l₂) : (a::l₁) ⊆ (a::l₂) :=
+theorem cons_subset_cons  {l₁ l₂ : list α} (a : α) (s : l₁ ⊆ l₂) : (a::l₁) ⊆ (a::l₂) :=
 λ b hin, or.elim (eq_or_mem_of_mem_cons hin)
   (λ e : b = a,  or.inl e)
   (λ i : b ∈ l₁, or.inr (s i))
 
 @[simp]
-theorem sub_append_left (l₁ l₂ : list α) : l₁ ⊆ l₁++l₂ :=
+theorem subset_append_left (l₁ l₂ : list α) : l₁ ⊆ l₁++l₂ :=
 λ b i, iff.mpr (mem_append_iff b l₁ l₂) (or.inl i)
 
 @[simp]
-theorem sub_append_right (l₁ l₂ : list α) : l₂ ⊆ l₁++l₂ :=
+theorem subset_append_right (l₁ l₂ : list α) : l₂ ⊆ l₁++l₂ :=
 λ b i, iff.mpr (mem_append_iff b l₁ l₂) (or.inr i)
 
-theorem sub_cons_of_sub (a : α) {l₁ l₂ : list α} : l₁ ⊆ l₂ → l₁ ⊆ (a::l₂) :=
+theorem subset_cons_of_subset (a : α) {l₁ l₂ : list α} : l₁ ⊆ l₂ → l₁ ⊆ (a::l₂) :=
 λ (s : l₁ ⊆ l₂) (a : α) (i : a ∈ l₁), or.inr (s i)
 
-theorem sub_app_of_sub_left (l l₁ l₂ : list α) : l ⊆ l₁ → l ⊆ l₁++l₂ :=
+theorem subset_app_of_subset_left (l l₁ l₂ : list α) : l ⊆ l₁ → l ⊆ l₁++l₂ :=
 λ (s : l ⊆ l₁) (a : α) (ainl : a ∈ l),
   have a ∈ l₁, from s ainl,
   mem_append_of_mem_or_mem (or.inl this)
 
-theorem sub_app_of_sub_right (l l₁ l₂ : list α) : l ⊆ l₂ → l ⊆ l₁++l₂ :=
+theorem subset_app_of_subset_right (l l₁ l₂ : list α) : l ⊆ l₂ → l ⊆ l₁++l₂ :=
 λ (s : l ⊆ l₂) (a : α) (ainl : a ∈ l),
   have a ∈ l₂, from s ainl,
   mem_append_of_mem_or_mem (or.inr this)
 
-theorem cons_sub_of_sub_of_mem {a : α} {l m : list α} (ainm : a ∈ m) (lsubm : l ⊆ m) : a::l ⊆ m :=
+theorem cons_subset_of_subset_of_mem {a : α} {l m : list α} (ainm : a ∈ m) (lsubm : l ⊆ m) :
+  a::l ⊆ m :=
 take b, suppose b ∈ a::l,
 or.elim (eq_or_mem_of_mem_cons this)
   (suppose b = a, begin subst b, exact ainm end)
   (suppose b ∈ l, lsubm this)
 
-theorem app_sub_of_sub_of_sub {l₁ l₂ l : list α} (l₁subl : l₁ ⊆ l) (l₂subl : l₂ ⊆ l) :
+theorem app_subset_of_subset_of_subset {l₁ l₂ l : list α} (l₁subl : l₁ ⊆ l) (l₂subl : l₂ ⊆ l) :
   l₁ ++ l₂ ⊆ l :=
 take a, suppose a ∈ l₁ ++ l₂,
 or.elim (mem_or_mem_of_mem_append this)
@@ -497,90 +496,6 @@ lemma ith_succ (a : α) (l : list α) (i : nat) (h : succ i < length (a::l))
 rfl
 end ith
 
--- TODO(Jeremy): move this to set?
-
-/- quasiequal a l l' means that l' is exactly l, with a added
-   once somewhere -/
-section qeq
-
-inductive qeq (a : α) : list α → list α → Prop
-| qhead : ∀ l, qeq l (a::l)
-| qcons : ∀ (b : α) {l l' : list α}, qeq l l' → qeq (b::l) (b::l')
-
-open qeq
-
-notation l' `≈`:50 a `|` l:50 := qeq a l l'
-
-theorem qeq_app : ∀ (l₁ : list α) (a : α) (l₂ : list α), l₁ ++ (a :: l₂) ≈ a | l₁ ++ l₂
-| ([] : list α) b l₂ := qhead b l₂
-| (a::ains)     b l₂ := qcons a (qeq_app ains b l₂)
-
-theorem mem_head_of_qeq {a : α} : ∀ {l₁ l₂ : list α}, l₁ ≈ a | l₂ → a ∈ l₁
-| ._ ._ (qhead .a l)            := mem_cons a l
-| ._ ._ (@qcons .α .a b l l' q) := mem_cons_of_mem b (mem_head_of_qeq q)
-
-theorem mem_tail_of_qeq {a : α} : ∀ {l₁ l₂ : list α}, l₁ ≈ a | l₂ → ∀ {b}, b ∈ l₂ → b ∈ l₁
-| ._ ._ (qhead .a l)            b bl  := mem_cons_of_mem a bl
-| ._ ._ (@qcons .α .a c l l' q) b bcl :=
-  or.elim (eq_or_mem_of_mem_cons bcl)
-    (take bc : b = c,
-      begin rw bc, apply mem_cons end)
-    (take bl : b ∈ l,
-      have bl' : b ∈ l', from mem_tail_of_qeq q bl,
-      mem_cons_of_mem c bl')
-
-theorem mem_cons_of_qeq {a : α} : ∀ {l₁ l₂ : list α}, l₁≈a|l₂ → ∀ {b}, b ∈ l₁ → b ∈ a::l₂
-| ._ ._ (qhead .a l)            b bal                  := bal
-| ._ ._ (@qcons .α .a c l l' q) b (bcl' : b ∈ c :: l') :=
-  show b ∈ a :: c :: l, from
-    or.elim (eq_or_mem_of_mem_cons bcl')
-      (take bc : b = c,
-        begin rw bc, apply mem_cons_of_mem, apply mem_cons end)
-      (take bl' : b ∈ l',
-        have b ∈ a :: l, from mem_cons_of_qeq q bl',
-        or.elim (eq_or_mem_of_mem_cons this)
-          (take ba : b = a,
-            begin rw ba, apply mem_cons end)
-          (take bl : b ∈ l,
-            mem_cons_of_mem a (mem_cons_of_mem c bl)))
-
-theorem length_eq_of_qeq {a : α} {l₁ l₂ : list α} : l₁ ≈ a | l₂ → length l₁ = succ (length l₂) :=
-begin
-  intro q, induction q with l b l l' q ih, simp, reflexivity, simp, rw ih, reflexivity
-end
-
-theorem qeq_of_mem {a : α} {l : list α} : a ∈ l → (∃ l', l ≈ a | l') :=
-list.induction_on l
-  (λ h : a ∈ (nil : list α), absurd h (not_mem_nil a))
-  (λ b bs r ainbbs, or.elim (eq_or_mem_of_mem_cons ainbbs)
-    (λ aeqb  : a = b,
-       have ∃ l, b::bs ≈ b | l, from
-         exists.intro bs (qhead b bs),
-       begin rw aeqb, exact this end)
-    (λ ainbs : a ∈ bs,
-       have ∃ l', bs ≈ a|l', from r ainbs,
-       exists.elim this (take (l' : list α) (q : bs ≈ a|l'),
-         have b::bs ≈ a | b::l', from qcons b q,
-         exists.intro (b::l') this)))
-
-theorem qeq_split {a : α} : ∀ {l l' : list α}, l'≈a|l → ∃ l₁ l₂, l = l₁ ++ l₂ ∧ l' = l₁ ++ (a::l₂)
-| ._ ._ (qhead .a l)            := ⟨[], l, by simp⟩
-| ._ ._ (@qcons .α .a c l l' q) :=
-  match (qeq_split q) with
-  | ⟨l₁, l₂, h₁, h₂⟩ := ⟨c :: l₁, l₂, by simp [h₁, h₂]⟩
-  end
-
-theorem subset_of_mem_of_subset_of_qeq {a : α} {l : list α} {u v : list α} :
-  a ∉ l → a::l ⊆ v → v≈a|u → l ⊆ u :=
-λ (nainl : a ∉ l) (s : a::l ⊆ v) (q : v≈a|u) (b : α) (binl : b ∈ l),
-  have b ∈ v,    from s (or.inr binl),
-  have b ∈ a::u, from mem_cons_of_qeq q this,
-  or.elim (eq_or_mem_of_mem_cons this)
-    (suppose b = a, begin subst b, contradiction end)
-    (suppose b ∈ u, this)
-
-end qeq
-
 section firstn
 
 definition firstn : nat → list α → list α
@@ -685,6 +600,7 @@ decidable.by_cases
 lemma count_cons_self (a : α) (l : list α) : count a (a::l) = succ (count a l) :=
 if_pos rfl
 
+@[simp]
 lemma count_cons_of_ne {a b : α} (h : a ≠ b) (l : list α) : count a (b::l) = count a l :=
 if_neg h
 
@@ -710,7 +626,7 @@ begin rw [concat_eq_append, count_append, count_singleton], reflexivity end
 lemma mem_of_count_pos : ∀ {a : α} {l : list α}, count a l > 0 → a ∈ l
 | a []     h := absurd h (lt_irrefl _)
 | a (b::l) h := decidable.by_cases
-  (suppose a = b, begin subst b, apply mem_cons end)
+  (suppose a = b, begin subst b, apply mem_cons_self end)
   (suppose a ≠ b,
    have count a l > 0, begin rw [count_cons_of_ne this] at h, exact h end,
    have a ∈ l,    from mem_of_count_pos this,
@@ -727,6 +643,7 @@ lemma count_pos_of_mem : ∀ {a : α} {l : list α}, a ∈ l → count a l > 0
 lemma mem_iff_count_pos (a : α) (l : list α) : a ∈ l ↔ count a l > 0 :=
 iff.intro count_pos_of_mem mem_of_count_pos
 
+@[simp]
 lemma count_eq_zero_of_not_mem {a : α} {l : list α} (h : a ∉ l) : count a l = 0 :=
 have ∀ n, count a l = n → count a l = 0,
   begin
