@@ -1063,18 +1063,19 @@ meta def force_all_core_aux (classical : bool) (use_simp : bool)
     (final_check : tactic unit) /- (preprocessed_goals : list expr) -/ :
   unit → list expr → tactic unit
 | unit.star :=
-let force_core_rec := force_all_core_aux /- classical use_simp idb edb nedb bidb bedb bnedb
-                                         simp_lemmas final_check -/ unit.star in
+-- TODO(Jeremy) : all of a sudden, this stopped working...
+--let force_core_rec := force_all_core_aux /- classical use_simp idb edb nedb bidb bedb bnedb
+--                                         simp_lemmas final_check -/ unit.star in
 let process_goals_with_backtracking : list expr → tactic unit :=
   λ l, match l with
        | []        := final_check   -- if it passes, we have success!
        | (g :: gs) :=
          do {set_goals [g],
-             try_assumptions (force_core_rec gs) <|>
-             try_contradictions (force_core_rec gs) <|>
-             try_instantiate_quantifiers (force_core_rec gs) <|>
-             apply_bintro_rule bidb 10 classical (force_core_rec gs) <|>
-             apply_belim_rule bedb bnedb 10 classical (force_core_rec gs)}
+             try_assumptions (force_all_core_aux unit.star gs) <|>
+             try_contradictions (force_all_core_aux unit.star gs) <|>
+             try_instantiate_quantifiers (force_all_core_aux unit.star gs) <|>
+             apply_bintro_rule bidb 10 classical (force_all_core_aux unit.star gs) <|>
+             apply_belim_rule bedb bnedb 10 classical (force_all_core_aux unit.star gs)}
        end in
 λ preprocessed_goals,
 do n ← num_goals,
