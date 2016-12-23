@@ -306,7 +306,7 @@ theorem exists_of_any_eq_tt {p : α → bool} : ∀{l : list α}, any l p = tt �
               end
 
 theorem any_eq_tt_iff {p : α → bool} {l : list α} : any l p = tt ↔ ∃ a ∈ l, p a = tt :=
-iff.intro exists_of_any_eq_tt (assume h, exists.elim h (take a, any_of_mem))
+iff.intro exists_of_any_eq_tt (assume h, bexists.elim h (take a, any_of_mem))
 
 /- bounded quantifiers over lists -/
 
