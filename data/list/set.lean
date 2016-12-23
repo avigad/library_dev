@@ -249,7 +249,7 @@ theorem mem_upto_of_lt : ∀ ⦃n i : nat⦄, i < n → i ∈ upto n
 | (succ n) := λ i h,
 begin
   cases nat.lt_or_eq_of_le (le_of_lt_succ h) with ilt ieq,
-  { apply mem_upto_succ_of_mem_upto, apply mem_upto_of_lt n },
+  { apply mem_upto_succ_of_mem_upto, apply mem_upto_of_lt ilt },
   simp [ieq]
 end
 
