@@ -21,7 +21,7 @@ the name may be made even shorter:
 
 - `neg_neg`
 - `pred_succ`
-  
+
 Sometimes, to disambiguate the name of theorem or better convey the
 intended reference, it is necessary to describe some of the
 hypotheses. The word "of" is used to separate these hypotheses:
@@ -64,7 +64,7 @@ useful. Thus they are used in all the following situations.
 
 Intro, elim, and destruct rules for logical connectives, whether they
 are automatically generated or not:
-  
+
 - `and.intro`
 - `and.elim`
 - `and.left`
@@ -96,7 +96,7 @@ General intro, elim, destruct operations, for example:
 - `dvd.dest`
 - `dvd.elim`
 - `lt.refl`
-  
+
 Places where projection notation is useful, for example:
 
 - `and.symm`
@@ -135,13 +135,14 @@ describing their conclusions.
 Variable conventions
 --------------------
 
+- `u`, `v`, `w`, ... for universes
 - `α`, `β`, `γ`, ... for types
 - `a`, `b`, `c`, ... for propositions
 - `x`, `y`, `z`, ... for elements of a generic type
 - `h`, `h₁`, ...     for assumptions
 - `p`, `q`, `r`, ... for predicates and relations
-- `s`, `t`, `u`, ... for lists
-- `s`, `t`, `u`, ... for sets
+- `s`, `t`, ...      for lists
+- `s`, `t`, ...      for sets
 - `m`, `n`, `k`, ... for natural numbers
 - `i`, `j`, `k`, ... for integers
 
