@@ -25,7 +25,7 @@ iff.intro
   begin
     intro h,
     cases m with m,
-    {rw nat.zero_add at h, exact or.inr h},
+    {simp [zero_add] at h, exact or.inr h},
     exact or.inl (succ_pos _)
   end
   begin

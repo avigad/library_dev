@@ -35,9 +35,7 @@ take l₁ l₂, assume Pe, tail_eq_of_cons_eq Pe
 theorem append_nil_left (t : list α) : [] ++ t = t :=
 rfl
 
-@[simp]
-theorem append_cons (x : α) (s t : list α) : (x::s) ++ t = x::(s ++ t) :=
-rfl
+attribute [simp] append_cons
 
 @[simp]
 theorem append_nil_right (t : list α) : t ++ [] = t :=
@@ -48,13 +46,8 @@ theorem append.assoc (s t u : list α) : s ++ t ++ u = s ++ (t ++ u) :=
 begin induction s with a s ih, reflexivity, simp [ih] end
 
 /- length -/
-@[simp]
-theorem length_nil : length (@nil α) = 0 :=
-rfl
 
-@[simp]
-theorem length_cons (x : α) (t : list α) : length (x::t) = length t + 1 :=
-rfl
+attribute [simp] length_nil length_cons
 
 @[simp]
 theorem length_append (s t : list α) : length (s ++ t) = length s + length t :=
@@ -193,30 +186,7 @@ begin induction l with a l ih, contradiction, simp end
 
 /- list membership -/
 
-@[simp]
-theorem mem_nil_iff (a : α) : a ∈ [] ↔ false :=
-iff.rfl
-
-theorem not_mem_nil (a : α) : a ∉ [] :=
-iff.mp $ mem_nil_iff a
-
-@[simp]
-theorem mem_cons_self (a : α) (l : list α) : a ∈ a :: l :=
-or.inl rfl
-
-theorem eq_nil_of_forall_not_mem : ∀ {l : list α}, (∀ a, a ∉ l) → l = nil
-| []        := assume h, rfl
-| (b :: l') := assume h, absurd (mem_cons_self b l') (h b)
-
-theorem mem_cons_of_mem (y : α) {a : α} {l : list α} : a ∈ l → a ∈ y :: l :=
-assume H, or.inr H
-
-@[simp]
-theorem mem_cons_iff (a y : α) (l : list α) : a ∈ y::l ↔ (a = y ∨ a ∈ l) :=
-iff.rfl
-
-theorem eq_or_mem_of_mem_cons {a y : α} {l : list α} : a ∈ y::l → a = y ∨ a ∈ l :=
-assume h, h
+attribute [simp] mem_nil_iff mem_cons_self mem_cons_iff
 
 theorem mem_singleton {a b : α} : a ∈ [b] → a = b :=
 suppose a ∈ [b], or.elim (eq_or_mem_of_mem_cons this)
@@ -439,13 +409,8 @@ end find
 /- nth element -/
 
 section nth
-@[simp]
-theorem nth_zero (a : α) (l : list α) : nth (a :: l) 0 = some a :=
-rfl
 
-@[simp]
-theorem nth_succ (a : α) (l : list α) (n : nat) : nth (a::l) (succ n) = nth l n :=
-rfl
+attribute [simp] nth_zero nth_succ
 
 theorem nth_eq_some : ∀ {l : list α} {n : nat}, n < length l → Σ a : α, nth l n = some a
 | ([] : list α) n h := absurd h (not_lt_zero _)
@@ -609,8 +574,11 @@ decidable.by_cases
   (suppose a = b, begin subst b, rewrite count_cons_self, apply le_succ end)
   (suppose a ≠ b, begin rw (count_cons_of_ne this), apply le_refl end)
 
+-- TODO(Jeremy): without the reflexivity, this yields the goal "1 = 1". the first is from has_one,
+-- the second is succ 0. Make sure the simplifier can eventually handle this.
+
 lemma count_singleton (a : α) : count a [a] = 1 :=
-by simp
+begin simp, reflexivity end
 
 @[simp]
 lemma count_append (a : α) : ∀ l₁ l₂, count a (l₁ ++ l₂) = count a l₁ + count a l₂

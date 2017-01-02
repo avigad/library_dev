@@ -31,11 +31,8 @@ theorem length_replicate : ∀ (i : ℕ) (a : α), length (replicate i a) = i
 end replicate
 
 /- map -/
-@[simp]
-theorem map_nil (f : α → β) : map f [] = [] := rfl
 
-@[simp]
-theorem map_cons (f : α → β) (a : α) (l : list α) : map f (a :: l) = f a :: map f l := rfl
+attribute [simp] map_nil map_cons
 
 @[simp]
 lemma map_concat (f : α → β) (a : α) : Πl, map f (concat l a) = concat (map f l) (f a)

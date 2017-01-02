@@ -7,7 +7,7 @@ open tactic super expr monad
 namespace intuit
 
 meta def check_model (intuit : tactic unit) : cdcl.solver (option cdcl.proof_term) :=
-do s ← state_t.read, ♯do
+do s ← state_t.read, monad_lift $ do
 hyps ← return $ s↣trail↣for (λe, e↣hyp),
 subgoal ← mk_meta_var s↣local_false,
 goals ← get_goals,
