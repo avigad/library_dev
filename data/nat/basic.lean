@@ -53,12 +53,14 @@ local attribute [simp] one_succ_zero
 
 theorem two_step_induction_on {P : ℕ → Prop} (a : ℕ) (H1 : P 0) (H2 : P 1)
     (H3 : ∀ (n : ℕ) (IH1 : P n) (IH2 : P (succ n)), P (succ (succ n))) : P a :=
-begin assert stronger : P a ∧ P (succ a), induction a, repeat { super } end
+begin assert stronger : P a ∧ P (succ a), induction a,
+      repeat { super with nat.one_succ_zero } end
 
 theorem sub_induction {P : ℕ → ℕ → Prop} (n m : ℕ) (H1 : ∀m, P 0 m)
    (H2 : ∀n, P (succ n) 0) (H3 : ∀n m, P n m → P (succ n) (succ m)) : P n m :=
 begin assert general : ∀m, P n m,
-      induction n, super, intro, induction m_1, super, super, super end
+      induction n, super with nat.one_succ_zero, intro, induction m_1,
+      repeat { super with nat.one_succ_zero } end
 
 /- addition -/
 
