@@ -90,9 +90,6 @@ theorem not_of_not_or_left {A B : Prop} (H : ¬ (A ∨ B)) : ¬ A := λ H', H (o
 
 theorem not_of_not_or_right {A B : Prop} (H : ¬ (A ∨ B)) : ¬ B := λ H', H (or.inr H')
 
-theorem forall_not_of_not_exists {A : Type} {P : A → Prop} (H : ¬ ∃ x, P x) : ∀ x, ¬ P x :=
-take x H', H (exists.intro x H')
-
 theorem exists_not_of_not_forall {A : Type} {P : A → Prop} (H : ¬ ∀ x, P x) : ∃ x, ¬ P x :=
 classical.by_contradiction
   (assume H' : ¬ ∃ x, ¬ P x,

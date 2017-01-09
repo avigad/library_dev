@@ -31,14 +31,12 @@ take l₁ l₂, assume Pe, tail_eq_of_cons_eq Pe
 
 /- append -/
 
-@[simp]
-theorem append_nil_left (t : list α) : [] ++ t = t :=
-rfl
+-- TODO(Jeremy): append_nil in the lean library should be nil_append
 
-attribute [simp] append_cons
+attribute [simp] cons_append nil_append
 
 @[simp]
-theorem append_nil_right (t : list α) : t ++ [] = t :=
+theorem append_nil (t : list α) : t ++ [] = t :=
 begin induction t with a t ih, reflexivity, simp [ih] end
 
 @[simp]
@@ -582,10 +580,11 @@ begin simp, reflexivity end
 
 @[simp]
 lemma count_append (a : α) : ∀ l₁ l₂, count a (l₁ ++ l₂) = count a l₁ + count a l₂
-| []      l₂ := begin rw [append_nil_left, count_nil, zero_add] end
+| []      l₂ := begin rw [nil_append, count_nil, zero_add] end
 | (b::l₁) l₂ := decidable.by_cases
-  (suppose a = b, by rw [-this, append_cons, count_cons_self, count_cons_self, succ_add, count_append])
-  (suppose a ≠ b, by rw [append_cons, count_cons_of_ne this, count_cons_of_ne this, count_append])
+  (suppose a = b, by rw [-this, cons_append, count_cons_self, count_cons_self, succ_add,
+                         count_append])
+  (suppose a ≠ b, by rw [cons_append, count_cons_of_ne this, count_cons_of_ne this, count_append])
 
 @[simp]
 lemma count_concat (a : α) (l : list α) : count a (concat l a) = succ (count a l) :=

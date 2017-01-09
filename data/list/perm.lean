@@ -120,7 +120,7 @@ take l, perm.symm (perm_cons_app a l)
 @[simp]
 theorem perm_app_comm {l₁ l₂ : list α} : (l₁++l₂) ~ (l₂++l₁) :=
 list.induction_on l₁
-  (by rw [append_nil_right, append_nil_left])
+  (by simp)
   (λ a t r, calc
     a::(t++l₂) ~ a::(l₂++t)   : skip a r
           ...  ~ l₂++t++[a]   : perm_cons_app _ _
@@ -413,7 +413,7 @@ match l₂ with
   end
 | [h₁] := λ e H₁ H₂ H₃,
   begin
-    rw append_cons at e, rw append_nil_left at e,
+    rw cons_append at e, rw nil_append at e,
     injection e with a_eq_h₁ aux,
     injection aux with b_eq_c l₁_eq_l₃,
     rw a_eq_h₁ at H₂, rw b_eq_c at H₂, rw l₁_eq_l₃ at H₂,
@@ -532,13 +532,13 @@ perm_induction_on p'
       (λ (s₁₁_eq : s₁₁ = []) (x_eq_a : x = a) (t₁_eq : t₁ = s₁₂),
         have s₁_p : s₁ ~ t₂, from calc
             s₁  = s₁₁ ++ s₁₂ : C₁₁
-            ... = t₁         : by rw [-t₁_eq, s₁₁_eq, append_nil_left]
+            ... = t₁         : by rw [-t₁_eq, s₁₁_eq, nil_append]
             ... ~ t₂         : p,
         discr C₂₂
           (λ (s₂₁_eq : s₂₁ = []) (x_eq_a : x = a) (t₂_eq: t₂ = s₂₂),
             calc
               s₁  ~ t₂         : s₁_p
-              ... = s₂₁ ++ s₂₂ : by rw [-t₂_eq, s₂₁_eq, append_nil_left]
+              ... = s₂₁ ++ s₂₂ : by rw [-t₂_eq, s₂₁_eq, nil_append]
               ... = s₂         : by rw C₂₁)
           (λ (ts₂₁ : list α) (s₂₁_eq : s₂₁ = x::ts₂₁) (t₂_eq : t₂ = ts₂₁++(a::s₂₂)),
             calc
@@ -559,13 +559,13 @@ perm_induction_on p'
               ... ~ ts₁₁++(a::s₁₂) : (perm_middle _ _ _)
               ... = t₁             : eq.symm t₁_eq
               ... ~ t₂             : p
-              ... = s₂             : by rw [t₂_eq, C₂₁, s₂₁_eq, append_nil_left])
+              ... = s₂             : by rw [t₂_eq, C₂₁, s₂₁_eq, nil_append])
           (λ (ts₂₁ : list α) (s₂₁_eq : s₂₁ = x::ts₂₁) (t₂_eq : t₂ = ts₂₁++(a::s₂₂)),
             have t₂_qeq : t₂ ≈ a|(ts₂₁++s₂₂), begin rw t₂_eq, apply qeq_app end,
             calc
               s₁  = x::(ts₁₁++s₁₂) : s₁_eq
               ... ~ x::(ts₂₁++s₂₂) : skip x (r t₁_qeq t₂_qeq)
-              ... = s₂             : by rw [-append_cons, -s₂₁_eq, C₂₁])) end)
+              ... = s₂             : by rw [-cons_append, -s₂₁_eq, C₂₁])) end)
   (λ x y t₁ t₂ p (r : ∀{a s₁ s₂}, t₁≈a|s₁ → t₂≈a|s₂ → s₁ ~ s₂) a s₁ s₂ e₁ e₂,
     match qeq_split e₁, qeq_split e₂ with
     | ⟨(s₁₁ : list α), (s₁₂ : list α), (C₁₁ : s₁ = s₁₁ ++ s₁₂), (C₁₂ : y::x::t₁ = s₁₁++(a::s₁₂))⟩,
@@ -574,25 +574,25 @@ perm_induction_on p'
       (λ (s₁₁_eq : s₁₁ = [])  (s₁₂_eq : s₁₂ = x::t₁) (y_eq_a : y = a),
         have s₁_p : s₁ ~ x::t₂, from calc
             s₁  = s₁₁ ++ s₁₂ : C₁₁
-            ... = x::t₁      : by rw [s₁₂_eq, s₁₁_eq, append_nil_left]
+            ... = x::t₁      : by rw [s₁₂_eq, s₁₁_eq, nil_append]
             ... ~ x::t₂      : skip x p,
         discr₂ C₂₂
           (λ (s₂₁_eq : s₂₁ = [])  (s₂₂_eq : s₂₂ = y::t₂) (x_eq_a : x = a),
             calc
               s₁  ~ x::t₂      : s₁_p
-              ... = s₂₁ ++ s₂₂ : by rw [x_eq_a, -y_eq_a, -s₂₂_eq, s₂₁_eq, append_nil_left]
+              ... = s₂₁ ++ s₂₂ : by rw [x_eq_a, -y_eq_a, -s₂₂_eq, s₂₁_eq, nil_append]
               ... = s₂         : by rw C₂₁)
           (λ (s₂₁_eq : s₂₁ = [x]) (y_eq_a : y = a) (t₂_eq : t₂ = s₂₂),
             calc
               s₁  ~ x::t₂      : s₁_p
-              ... = s₂₁ ++ s₂₂ : begin rw [t₂_eq, s₂₁_eq, append_cons], reflexivity end
+              ... = s₂₁ ++ s₂₂ : begin rw [t₂_eq, s₂₁_eq, cons_append], reflexivity end
               ... = s₂         : by rw C₂₁)
           (λ (ts₂₁ : list α) (s₂₁_eq : s₂₁ = x::y::ts₂₁) (t₂_eq : t₂ = ts₂₁++(a::s₂₂)),
             calc
               s₁  ~ x::t₂               : s₁_p
               ... = x::(ts₂₁++(y::s₂₂)) : by rw [t₂_eq, -y_eq_a]
               ... ~ x::y::(ts₂₁++s₂₂)   : perm.symm (skip x (perm_middle _ _ _))
-              ... = s₂₁ ++ s₂₂          : begin rw [s₂₁_eq, append_cons], reflexivity end
+              ... = s₂₁ ++ s₂₂          : begin rw [s₂₁_eq, cons_append], reflexivity end
               ... = s₂                  : by rw C₂₁))
       (λ (s₁₁_eq : s₁₁ = [y]) (x_eq_a : x = a) (t₁_eq : t₁ = s₁₂),
         have s₁_p : s₁ ~ y::t₂, from calc

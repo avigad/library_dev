@@ -80,13 +80,20 @@ def ordered_insert (a : α) : list α → list α
 | []       := [a]
 | (b :: l) := if a ≼ b then a :: (b :: l) else b :: ordered_insert l
 
-attribute [simp] ordered_insert.equations.eqn_1 ordered_insert.equations.eqn_2
+--@[simp]
+--theorem ordered_insert_nil (a : α) : ordered_insert a [] = [a] := rfl
+
+--@[simp]
+--theorem ordered_insert_cons (a b : α) (l : list α) :
+--  ordered_insert a (b :: l) = if a ≼ b then a :: (b :: l) else b :: ordered_insert a l :=
+--rfl
+
 
 def insertion_sort : list α → list α
 | []       := []
 | (b :: l) := ordered_insert b (insertion_sort l)
 
-attribute [simp] insertion_sort.equations.eqn_1 insertion_sort.equations.eqn_2
+--attribute [simp] insertion_sort.equations.eqn_1 insertion_sort.equations.eqn_2
 
 section correctness
 parameter [deceqα : decidable_eq α]
@@ -96,9 +103,9 @@ open perm
 -- TODO(Jeremy): anonymous type class parameters don't work well
 
 theorem count_ordered_insert_eq (b a : α) : ∀ l, count b (ordered_insert a l) = count b (a :: l)
-| []       := by simp
-| (c :: l) := if h : a ≼ c then by simp [if_pos, h]
-              else by simp [if_neg, h, count_cons', count_ordered_insert_eq]
+| []       := by simp [ordered_insert]
+| (c :: l) := if h : a ≼ c then begin unfold ordered_insert, simp [if_pos, h] end
+              else by simp [ordered_insert, if_neg, h, count_cons', count_ordered_insert_eq]
 
 theorem mem_ordered_insert_iff (b a : α) (l : list α) : b ∈ ordered_insert a l ↔ b ∈ a :: l :=
 begin repeat {rw mem_iff_count_pos}, simp [count_ordered_insert_eq] end
@@ -106,7 +113,7 @@ begin repeat {rw mem_iff_count_pos}, simp [count_ordered_insert_eq] end
 theorem perm_insertion_sort : ∀ l : list α, insertion_sort l ~ l
 | []       := perm.nil
 | (b :: l) := perm_of_forall_count_eq (take a,
-                by simp [count_ordered_insert_eq, count_cons',
+                by simp [insertion_sort, count_ordered_insert_eq, count_cons',
                          count_eq_count_of_perm (perm_insertion_sort l) a])
 
 section total_and_transitive
@@ -121,7 +128,7 @@ theorem sorted_ordered_insert (a : α) : ∀ l, sorted r l → sorted r (ordered
   have h₀ : ∀ c ∈ l, b ≼ c, from forall_mem_rel_of_sorted_cons r h,
   if h' : a ≼ b then
     begin
-      simp [if_pos, h'],
+      simp [ordered_insert, if_pos, h'],
       have ∀ c ∈ b :: l, a ≼ c, from
         take c, suppose c ∈ b :: l,
         or.elim (eq_or_mem_of_mem_cons this)
@@ -132,7 +139,7 @@ theorem sorted_ordered_insert (a : α) : ∀ l, sorted r l → sorted r (ordered
   else
     have b ≼ a, from or.resolve_left (totr a b) h',
     begin
-      simp [if_neg, ‹¬ a ≼ b›],
+      simp [ordered_insert, if_neg, ‹¬ a ≼ b›],
       have h₁ : sorted r (ordered_insert r a l), from sorted_ordered_insert l ‹sorted r l›,
       have h₂ : ∀ c ∈ ordered_insert r a l, b ≼ c, from
         take c,
@@ -168,17 +175,23 @@ def split : list α → list α × list α
 
 -- TODO(Jeremy): the cases is needed because the internal split_match gets a pair
 
+private theorem split_cons_cons_aux (a b : α) (l : list α) :
+  split (a :: b :: l) = match split l with
+                   | (l₁, l₂) := (a :: l₁, b :: l₂)
+                   end := rfl
+
+@[simp]
 theorem split_cons_cons (a b : α) (l : list α) :
   split (a :: b :: l) = (a :: (split l).1, b :: (split l).2) :=
-begin rw [split.equations.eqn_3], cases split l, reflexivity end
+begin rw [split_cons_cons_aux], cases split l, reflexivity end
 
-attribute [simp] split.equations.eqn_1 split.equations.eqn_2 split_cons_cons
+-- attribute [simp] split.equations.eqn_1 split.equations.eqn_2 split_cons_cons
 
 theorem length_split_fst_le : ∀ l : list α, length ((split l).1) ≤ length l
 | []            := nat.le_refl 0
 | [a]           := nat.le_refl 1
 | (a :: b :: l) := begin
-                     simp, rw [add_comm],
+                     simp [split_cons_cons], rw [add_comm],
                      transitivity,
                      { apply add_le_add_right (length_split_fst_le l) },
                      apply nat.le_succ

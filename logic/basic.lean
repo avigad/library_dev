@@ -285,8 +285,8 @@ Exists.rec h
 theorem exists_implies_distrib (p : A → Prop) (b : Prop) : ((∃ x, p x) → b) ↔ (∀ x, p x → b) :=
 iff.intro forall_implies_of_exists_implies exists_implies_of_forall_implies
 
-theorem forall_not_of_not_exists (h : ¬ ∃ x, p x) : ∀ x, ¬ p x :=
-forall_implies_of_exists_implies h
+--theorem forall_not_of_not_exists (h : ¬ ∃ x, p x) : ∀ x, ¬ p x :=
+--forall_implies_of_exists_implies h
 
 theorem not_exists_of_forall_not (h : ∀ x, ¬ p x) : ¬ ∃ x, p x :=
 exists_implies_of_forall_implies h

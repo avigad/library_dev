@@ -472,7 +472,7 @@ theorem disjoint_of_nodup_append : ∀ {l₁ l₂ : list α}, nodup (l₁++l₂)
 
 theorem nodup_append_of_nodup_of_nodup_of_disjoint :
   ∀ {l₁ l₂ : list α}, nodup l₁ → nodup l₂ → disjoint l₁ l₂ → nodup (l₁++l₂)
-| []      l₂ d₁ d₂ dsj := begin rw [append_nil_left], exact d₂ end
+| []      l₂ d₁ d₂ dsj := begin rw [nil_append], exact d₂ end
 | (x::xs) l₂ d₁ d₂ dsj :=
   have ndxs     : nodup xs,            from nodup_of_nodup_cons d₁,
   have disjoint xs l₂,                 from disjoint_of_disjoint_cons_left dsj,
