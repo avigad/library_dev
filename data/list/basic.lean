@@ -5,7 +5,7 @@ Authors: Parikshit Khanna, Jeremy Avigad, Leonardo de Moura, Floris van Doorn
 
 Basic properties of lists.
 -/
-import logic.basic data.nat.basic
+import ...logic.basic ..nat.basic
 open function nat
 
 namespace list
@@ -13,6 +13,8 @@ universe variable uu
 variable {α : Type uu}
 
 /- theorems -/
+
+lemma mem_cons_iff (a y : α) (l : list α) : a ∈ y :: l ↔ (a = y ∨ a ∈ l) := iff.rfl
 
 @[simp]
 lemma cons_ne_nil (a : α) (l : list α) : a::l ≠ [] :=
@@ -186,157 +188,6 @@ begin induction l with a l ih, contradiction, simp end
 
 attribute [simp] mem_nil_iff mem_cons_self mem_cons_iff
 
-theorem mem_singleton {a b : α} : a ∈ [b] → a = b :=
-suppose a ∈ [b], or.elim (eq_or_mem_of_mem_cons this)
-  (suppose a = b, this)
-  (suppose a ∈ [], absurd this (not_mem_nil a))
-
-@[simp] theorem mem_singleton_iff (a b : α) : a ∈ [b] ↔ a = b :=
-iff.intro mem_singleton begin intro h, simp [h] end
-
-theorem mem_of_mem_cons_of_mem {a b : α} {l : list α} : a ∈ b::l → b ∈ l → a ∈ l :=
-assume ainbl binl, or.elim (eq_or_mem_of_mem_cons ainbl)
-  (suppose a = b, begin subst a, exact binl end)
-  (suppose a ∈ l, this)
-
-theorem mem_or_mem_of_mem_append {a : α} {s t : list α} : a ∈ s ++ t → a ∈ s ∨ a ∈ t :=
-list.induction_on s or.inr
-  (take b s,
-    assume ih : a ∈ s ++ t → a ∈ s ∨ a ∈ t,
-    suppose a ∈ b::s ++ t,
-    have a = b ∨ a ∈ s ++ t, from this,
-    have a = b ∨ a ∈ s ∨ a ∈ t, from or_of_or_of_implies_right this ih,
-    show a ∈ b::s ∨ a ∈ t, from iff.mpr or.assoc this)
-
-theorem mem_append_of_mem_or_mem {a : α} {s t : list α} : a ∈ s ∨ a ∈ t → a ∈ s ++ t :=
-list.induction_on s
-  (take h, or.elim h false.elim id)
-  (take b s,
-    assume ih : a ∈ s ∨ a ∈ t → a ∈ s ++ t,
-    suppose a ∈ b::s ∨ a ∈ t,
-      or.elim this
-        (suppose a ∈ b::s,
-          or.elim (eq_or_mem_of_mem_cons this)
-            (suppose a = b, or.inl this)
-            (suppose a ∈ s, or.inr (ih (or.inl this))))
-        (suppose a ∈ t, or.inr (ih (or.inr this))))
-
-@[simp]
-theorem mem_append_iff (a : α) (s t : list α) : a ∈ s ++ t ↔ a ∈ s ∨ a ∈ t :=
-iff.intro mem_or_mem_of_mem_append mem_append_of_mem_or_mem
-
-theorem not_mem_of_not_mem_append_left {a : α} {s t : list α} : a ∉ s++t → a ∉ s :=
-λ nainst ains, absurd (mem_append_of_mem_or_mem (or.inl ains)) nainst
-
-theorem not_mem_of_not_mem_append_right {a : α} {s t : list α} : a ∉ s++t → a ∉ t :=
-λ nainst aint, absurd (mem_append_of_mem_or_mem (or.inr aint)) nainst
-
-theorem not_mem_append {a : α} {s t : list α} : a ∉ s → a ∉ t → a ∉ s++t :=
-λ nains naint ainst, or.elim (mem_or_mem_of_mem_append ainst)
-  (λ ains, by contradiction)
-  (λ aint, by contradiction)
-
-lemma length_pos_of_mem {a : α} : ∀ {l : list α}, a ∈ l → 0 < length l
-| []     := suppose a ∈ [], begin simp at this, contradiction end
-| (b::l) := suppose a ∈ b::l, zero_lt_succ _
-
-theorem mem_split {a : α} {l : list α} : a ∈ l → ∃ s t : list α, l = s ++ (a::t) :=
-list.induction_on l
-  (suppose a ∈ [], begin simp at this, contradiction end)
-  (take b l,
-    assume ih : a ∈ l → ∃ s t : list α, l = s ++ (a::t),
-    suppose a ∈ b::l,
-    or.elim (eq_or_mem_of_mem_cons this)
-      (suppose a = b, ⟨[], l, begin rw this, reflexivity end⟩)
-      (suppose a ∈ l,
-        match (ih this) with
-        | ⟨s, t, (h : l = s ++ (a::t))⟩ := ⟨b::s, t, begin rw h, reflexivity end⟩
-        end))
-
-theorem mem_append_left {a : α} {l₁ : list α} (l₂ : list α) : a ∈ l₁ → a ∈ l₁ ++ l₂ :=
-assume ainl₁, mem_append_of_mem_or_mem (or.inl ainl₁)
-
-theorem mem_append_right {a : α} (l₁ : list α) {l₂ : list α} : a ∈ l₂ → a ∈ l₁ ++ l₂ :=
-assume ainl₂, mem_append_of_mem_or_mem (or.inr ainl₂)
-
-theorem mem_of_ne_of_mem {a y : α} {l : list α} (h₁ : a ≠ y) (h₂ : a ∈ y :: l) : a ∈ l :=
-or.elim (eq_or_mem_of_mem_cons h₂) (λe, absurd e h₁) (λr, r)
-
-theorem ne_of_not_mem_cons {a b : α} {l : list α} : a ∉ b::l → a ≠ b :=
-assume nin aeqb, absurd (or.inl aeqb) nin
-
-theorem not_mem_of_not_mem_cons {a b : α} {l : list α} : a ∉ b::l → a ∉ l :=
-assume nin nainl, absurd (or.inr nainl) nin
-
-lemma not_mem_cons_of_ne_of_not_mem {a y : α} {l : list α} : a ≠ y → a ∉ l → a ∉ y::l :=
-assume P1 P2, not.intro (assume Pain, absurd (eq_or_mem_of_mem_cons Pain) (not_or P1 P2))
-
-lemma ne_and_not_mem_of_not_mem_cons {a y : α} {l : list α} : a ∉ y::l → a ≠ y ∧ a ∉ l :=
-assume P, and.intro (ne_of_not_mem_cons P) (not_mem_of_not_mem_cons P)
-
--- TODO(Jeremy): move this to data/list/set.lean
-
-definition sublist (l₁ l₂ : list α) := ∀ ⦃a : α⦄, a ∈ l₁ → a ∈ l₂
-
-instance : has_subset (list α) := ⟨sublist⟩
-
-@[simp]
-theorem nil_subset (l : list α) : [] ⊆ l :=
-λ b i, false.elim (iff.mp (mem_nil_iff b) i)
-
-@[simp]
-theorem subset.refl (l : list α) : l ⊆ l :=
-λ b i, i
-
-theorem subset.trans {l₁ l₂ l₃ : list α} (h₁ : l₁ ⊆ l₂) (h₂ : l₂ ⊆ l₃) : l₁ ⊆ l₃ :=
-λ b i, h₂ (h₁ i)
-
-@[simp]
-theorem subset_cons (a : α) (l : list α) : l ⊆ a::l :=
-λ b i, or.inr i
-
-theorem subset_of_cons_subset {a : α} {l₁ l₂ : list α} : a::l₁ ⊆ l₂ → l₁ ⊆ l₂ :=
-λ s b i, s (mem_cons_of_mem _ i)
-
-theorem cons_subset_cons  {l₁ l₂ : list α} (a : α) (s : l₁ ⊆ l₂) : (a::l₁) ⊆ (a::l₂) :=
-λ b hin, or.elim (eq_or_mem_of_mem_cons hin)
-  (λ e : b = a,  or.inl e)
-  (λ i : b ∈ l₁, or.inr (s i))
-
-@[simp]
-theorem subset_append_left (l₁ l₂ : list α) : l₁ ⊆ l₁++l₂ :=
-λ b i, iff.mpr (mem_append_iff b l₁ l₂) (or.inl i)
-
-@[simp]
-theorem subset_append_right (l₁ l₂ : list α) : l₂ ⊆ l₁++l₂ :=
-λ b i, iff.mpr (mem_append_iff b l₁ l₂) (or.inr i)
-
-theorem subset_cons_of_subset (a : α) {l₁ l₂ : list α} : l₁ ⊆ l₂ → l₁ ⊆ (a::l₂) :=
-λ (s : l₁ ⊆ l₂) (a : α) (i : a ∈ l₁), or.inr (s i)
-
-theorem subset_app_of_subset_left (l l₁ l₂ : list α) : l ⊆ l₁ → l ⊆ l₁++l₂ :=
-λ (s : l ⊆ l₁) (a : α) (ainl : a ∈ l),
-  have a ∈ l₁, from s ainl,
-  mem_append_of_mem_or_mem (or.inl this)
-
-theorem subset_app_of_subset_right (l l₁ l₂ : list α) : l ⊆ l₂ → l ⊆ l₁++l₂ :=
-λ (s : l ⊆ l₂) (a : α) (ainl : a ∈ l),
-  have a ∈ l₂, from s ainl,
-  mem_append_of_mem_or_mem (or.inr this)
-
-theorem cons_subset_of_subset_of_mem {a : α} {l m : list α} (ainm : a ∈ m) (lsubm : l ⊆ m) :
-  a::l ⊆ m :=
-take b, suppose b ∈ a::l,
-or.elim (eq_or_mem_of_mem_cons this)
-  (suppose b = a, begin subst b, exact ainm end)
-  (suppose b ∈ l, lsubm this)
-
-theorem app_subset_of_subset_of_subset {l₁ l₂ l : list α} (l₁subl : l₁ ⊆ l) (l₂subl : l₂ ⊆ l) :
-  l₁ ++ l₂ ⊆ l :=
-take a, suppose a ∈ l₁ ++ l₂,
-or.elim (mem_or_mem_of_mem_append this)
-  (suppose a ∈ l₁, l₁subl this)
-  (suppose a ∈ l₂, l₂subl this)
 
 /- find -/
 

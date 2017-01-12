@@ -6,7 +6,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 List combinators.
 -/
 -- TODO(Leo): uncomment data.equiv after refactoring
-import data.list.basic data.bool logic.basic -- data.equiv
+import .basic ..bool --data.bool logic.basic -- data.equiv
 open nat prod decidable function
 
 namespace list
