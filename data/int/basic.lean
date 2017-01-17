@@ -21,6 +21,9 @@ meta def simp_coe_out_attr : user_attribute :=
 
 run_command attribute.register ``simp_coe_out_attr
 
+instance : inhabited ℤ := ⟨0⟩
+meta instance : has_to_format ℤ := ⟨λ z, int.rec_on z (λ k, ↑k) (λ k, "-("++↑k++"+1)")⟩
+
 /-
 
 /- nat abs -/
