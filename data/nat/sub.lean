@@ -18,17 +18,6 @@ or.elim (le_total n m)
 protected theorem sub_eq_of_eq_add {n m k : ℕ} (h : k = n + m) : k - n = m :=
 begin rw [h, nat.add_sub_cancel_left] end
 
-protected theorem sub_le_sub_right {n m : ℕ} (h : n ≤ m) (k : ℕ) : n - k ≤ m - k :=
-or.elim (le_total n k)
-  (assume h' : n ≤ k, begin rw [sub_eq_zero_of_le h'], apply zero_le end)
-  (assume h' : n ≥ k,
-    begin
-      cases le.dest h with l hl,
-      cases le.dest h' with p hp,
-      rw [-hl, -hp, nat.add_sub_cancel_left, add_assoc, nat.add_sub_cancel_left],
-      apply le_add_right
-     end)
-
 protected theorem sub_le_sub_left {n m : ℕ} (h : n ≤ m) (k : ℕ) : k - m ≤ k - n :=
 begin
   cases le.dest h with l hl,

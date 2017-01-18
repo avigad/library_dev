@@ -5,7 +5,7 @@ Authors: Parikshit Khanna, Jeremy Avigad, Leonardo de Moura, Floris van Doorn
 
 Basic properties of lists.
 -/
-import ...logic.basic ..nat.basic
+import ...logic.basic ..nat.basic data.list.basic
 open function nat
 
 namespace list
@@ -49,9 +49,7 @@ begin induction s with a s ih, reflexivity, simp [ih] end
 
 attribute [simp] length_nil length_cons
 
-@[simp]
-theorem length_append (s t : list α) : length (s ++ t) = length s + length t :=
-begin induction s with a s ih, simp, simp [ih] end
+attribute [simp] length_append
 
 theorem eq_nil_of_length_eq_zero : ∀ {l : list α}, length l = 0 → l = []
 | []     h := rfl
@@ -79,9 +77,7 @@ begin induction l with b l ih, simp, simp [ih] end
 theorem concat_ne_nil (a : α) (l : list α) : concat l a ≠ [] :=
 begin induction l, repeat { intro h, contradiction } end
 
-@[simp]
-theorem length_concat (a : α) (l : list α) : length (concat l a) = length l + 1 :=
-begin rw [concat_eq_append, length_append], reflexivity end
+attribute [simp] length_concat
 
 @[simp]
 theorem concat_append (a : α) (l₁ l₂ : list α) : concat l₁ a ++ l₂ = l₁ ++ a :: l₂ :=
@@ -311,11 +307,6 @@ rfl
 end ith
 
 section firstn
-
-definition firstn : nat → list α → list α
-| 0     l      := []
-| (n+1) []     := []
-| (n+1) (a::l) := a :: firstn n l
 
 @[simp]
 lemma firstn_zero : ∀ (l : list α), firstn 0 l = [] :=

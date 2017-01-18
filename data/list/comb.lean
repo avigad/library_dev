@@ -6,7 +6,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 List combinators.
 -/
 -- TODO(Leo): uncomment data.equiv after refactoring
-import .basic ..bool --data.bool logic.basic -- data.equiv
+import .basic ..bool data.list.comb --data.bool logic.basic -- data.equiv
 open nat prod decidable function
 
 namespace list
@@ -69,12 +69,7 @@ theorem map_map (g : β → γ) (f : α → β) : ∀ l, map g (map f l) = map (
   show (g ∘ f) a :: map g (map f l) = map (g ∘ f) (a :: l),
   begin rw (map_map l), reflexivity end
 
-@[simp]
-theorem length_map (f : α → β) : ∀ l : list α, length (map f l) = length l
-| []       := rfl
-| (a :: l) :=
-  show length (map f l) + 1 = length l + 1,
-  from by rw (length_map l)
+attribute [simp] length_map 
 
 theorem eq_nil_of_map_eq_nil {f : α → β} {l :list α} (h : map f l = nil) : l = nil :=
 eq_nil_of_length_eq_zero (begin rw -(length_map f l), simp [h] end)
@@ -106,10 +101,10 @@ theorem eq_of_map_const {b₁ b₂ : β} : ∀ {l : list α}, b₁ ∈ map (cons
     (suppose b₁ = b₂, this)
     (suppose b₁ ∈ map (const α b₂) l, eq_of_map_const this)
 
-def map₂ (f : α → β → γ) : list α → list β → list γ
+/-def map₂ (f : α → β → γ) : list α → list β → list γ
 | []      _       := []
 | _       []      := []
-| (x::xs) (y::ys) := f x y :: map₂ xs ys
+| (x::xs) (y::ys) := f x y :: map₂ xs ys-/
 
 theorem map₂_nil1 (f : α → β → γ) : ∀ (l : list β), map₂ f [] l = []
 | []     := rfl
@@ -120,7 +115,7 @@ theorem map₂_nil2 (f : α → β → γ) : ∀ (l : list α), map₂ f l [] = 
 | (a::y) := rfl
 
 /- TODO(Jeremy): there is an overload ambiguity between min and nat.min -/
-theorem length_map₂ : ∀ (f : α → β → γ) x y, length (map₂ f x y) = _root_.min (length x) (length y)
+/-theorem length_map₂ : ∀ (f : α → β → γ) x y, length (map₂ f x y) = _root_.min (length x) (length y)
 | f []       [] := rfl
 | f (xh::xr) [] := rfl
 | f [] (yh::yr) := rfl
@@ -130,7 +125,7 @@ theorem length_map₂ : ∀ (f : α → β → γ) x y, length (map₂ f x y) = 
       ... = _root_.min (length xr) (length yr) + 1    : by rw length_map₂
       ... = _root_.min (succ (length xr)) (succ (length yr))
                                                       : begin rw min_succ_succ, reflexivity end
-      ... = _root_.min (length (xh::xr)) (length (yh::yr)) : rfl
+      ... = _root_.min (length (xh::xr)) (length (yh::yr)) : rfl-/
 
 /- filter -/
 @[simp]
