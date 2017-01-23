@@ -144,8 +144,6 @@ iff.trans (iff.trans or.comm (or_distrib c a b))
 
 /- iff -/
 
-definition iff_def : (a ↔ b) = ((a → b) ∧ (b → a)) := rfl
-
 theorem implies_iff {a : Prop} (n : Prop) (ha : a) : (a → b) ↔ b :=
 iff.intro (λf, f ha) implies_intro
 

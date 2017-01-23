@@ -43,11 +43,13 @@ section group
 end group
 
 /- transport versions to additive -/
+-- TODO(Jeremy): this is just a clone of the procedure in init/algebra/group.lean
 
-run_command do monad.mapm'
-    (λ p : name × name, transport_to_additive p.1 p.2)
-    [(`one_inv, `zero_inv),
-     (`left_inverse_inv, `left_inverse_neg),
+section
+open tactic
+
+def multiplicative_to_additive_pairs' :=  
+  [  (`left_inverse_inv, `left_inverse_neg),
      (`inv_eq_inv_iff_eq, `neg_eq_neg_iff_eq),
      (`inv_eq_one_iff_eq_one, `neg_eq_zero_iff_eq_zero),
      (`eq_one_of_inv_eq_one, `eq_zero_of_neg_eq_zero),
@@ -58,7 +60,20 @@ run_command do monad.mapm'
      (`mul_eq_iff_eq_mul_inv, `add_eq_iff_eq_add_neg)
      -- (`mul_eq_one_of_mul_eq_one, `add_eq_zero_of_add_eq_zero)   not needed for commutative groups
      -- (`muleq_one_iff_mul_eq_one, `add_eq_zero_iff_add_eq_zero)
-]
+  ]
+
+meta def transport_multiplicative_to_additive' : command :=
+let dict := rb_map.of_list multiplicative_to_additive_pairs' in
+list.foldl (λ t (p : name × name), do
+  env ← get_env,
+  if (env^.get p.2)^.to_bool = ff
+  then t >> transport_with_dict dict p.1 p.2
+  else t)
+skip multiplicative_to_additive_pairs'
+
+run_command transport_multiplicative_to_additive'
+
+end
 
 section add_group
   variable [add_group A]

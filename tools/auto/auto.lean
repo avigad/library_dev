@@ -117,7 +117,8 @@ or.elim (classical.em A)
 
 theorem contrapos {A B : Prop} (H : A → B) : ¬ B → ¬ A := λ H₁ H₂, H₁ (H H₂)
 
-theorem not_iff {A B : Prop} (H : ¬ (A ↔ B)) : ¬ ((A → B) ∧ (B → A)) := H
+theorem not_iff {A B : Prop} (H : ¬ (A ↔ B)) : ¬ ((A → B) ∧ (B → A)) :=
+λ H', H ((iff_iff_implies_and_implies A B)^.mpr H')
 
 theorem not_of_imp_false {A : Prop} (H : A → false) : ¬ A := H
 

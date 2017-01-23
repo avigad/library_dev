@@ -36,7 +36,7 @@ definition weak_order_Prop : weak_order Prop :=
 { le           := λx y, x → y,
   le_refl      := λx, id,
   le_trans     := λa b c h1 h2 x, h2 (h1 x),
-  le_antisymm  := λf g h1 h2, propext (and.intro h1 h2)
+  le_antisymm  := λf g h1 h2, propext (iff.intro h1 h2)
 }
 
 attribute [instance]
