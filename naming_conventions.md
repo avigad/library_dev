@@ -90,13 +90,6 @@ are automatically generated or not:
 - `true.intro`
 - `false.elim`
 
-General intro, elim, destruct operations, for example:
-
-- `dvd.intro`
-- `dvd.dest`
-- `dvd.elim`
-- `lt.refl`
-
 Places where projection notation is useful, for example:
 
 - `and.symm`
@@ -107,7 +100,16 @@ Places where projection notation is useful, for example:
 - `eq.trans`
 - `heq.symm`
 - `heq.trans`
+- `iff.symm`
+- `iff.refl`
 
+We generally restrict the use of dots to inductive types. So, for example, we use:
+
+- `dvd_intro`
+- `dvd_dest`
+- `dvd_elim`
+- `le_refl`
+- `le_trans`
 
 Axiomatic descriptions
 ----------------------
