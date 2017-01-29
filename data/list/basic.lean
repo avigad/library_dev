@@ -306,60 +306,60 @@ lemma ith_succ (a : α) (l : list α) (i : nat) (h : succ i < length (a::l))
 rfl
 end ith
 
-section firstn
+section taken
 
 @[simp]
-lemma firstn_zero : ∀ (l : list α), firstn 0 l = [] :=
+lemma taken_zero : ∀ (l : list α), taken 0 l = [] :=
 begin intros, reflexivity end
 
 @[simp]
-lemma firstn_nil : ∀ n, firstn n [] = ([] : list α)
+lemma taken_nil : ∀ n, taken n [] = ([] : list α)
 | 0     := rfl
 | (n+1) := rfl
 
-lemma firstn_cons : ∀ n (a : α) (l : list α), firstn (succ n) (a::l) = a :: firstn n l :=
+lemma taken_cons : ∀ n (a : α) (l : list α), taken (succ n) (a::l) = a :: taken n l :=
 begin intros, reflexivity end
 
-lemma firstn_all : ∀ (l : list α), firstn (length l) l = l
+lemma taken_all : ∀ (l : list α), taken (length l) l = l
 | []     := rfl
-| (a::l) := begin change a :: (firstn (length l) l) = a :: l, rw firstn_all end
+| (a::l) := begin change a :: (taken (length l) l) = a :: l, rw taken_all end
 
-lemma firstn_all_of_ge : ∀ {n} {l : list α}, n ≥ length l → firstn n l = l
+lemma taken_all_of_ge : ∀ {n} {l : list α}, n ≥ length l → taken n l = l
 | 0     []     h := rfl
 | 0     (a::l) h := absurd h (not_le_of_gt (zero_lt_succ _))
 | (n+1) []     h := rfl
 | (n+1) (a::l) h :=
   begin
-    change a :: firstn n l = a :: l,
-    rw [firstn_all_of_ge (le_of_succ_le_succ h)]
+    change a :: taken n l = a :: l,
+    rw [taken_all_of_ge (le_of_succ_le_succ h)]
   end
 
 -- TODO(Jeremy): restore when we have min
 /-
-lemma firstn_firstn : ∀ (n m) (l : list α), firstn n (firstn m l) = firstn (min n m) l
-| n         0        l      := sorry -- by rewrite [min_zero, firstn_zero, firstn_nil]
+lemma taken_taken : ∀ (n m) (l : list α), taken n (taken m l) = taken (min n m) l
+| n         0        l      := sorry -- by rewrite [min_zero, taken_zero, taken_nil]
 | 0         m        l      := sorry -- by rewrite [zero_min]
-| (succ n)  (succ m) nil    := sorry -- by rewrite [*firstn_nil]
-| (succ n)  (succ m) (a::l) := sorry -- by rewrite [*firstn_cons, firstn_firstn, min_succ_succ]
+| (succ n)  (succ m) nil    := sorry -- by rewrite [*taken_nil]
+| (succ n)  (succ m) (a::l) := sorry -- by rewrite [*taken_cons, taken_taken, min_succ_succ]
 -/
 
-lemma length_firstn_le : ∀ (n) (l : list α), length (firstn n l) ≤ n
-| 0        l      := begin rw [firstn_zero], reflexivity end
+lemma length_taken_le : ∀ (n) (l : list α), length (taken n l) ≤ n
+| 0        l      := begin rw [taken_zero], reflexivity end
 | (succ n) (a::l) := begin
-                       rw [firstn_cons, length_cons], apply succ_le_succ,
-                       apply length_firstn_le
+                       rw [taken_cons, length_cons], apply succ_le_succ,
+                       apply length_taken_le
                      end
-| (succ n) []     := begin rewrite [firstn_nil, length_nil], apply zero_le end
+| (succ n) []     := begin rewrite [taken_nil, length_nil], apply zero_le end
 
 -- TODO(Jeremy): restore when we have min
 /-
-lemma length_firstn_eq : ∀ (n) (l : list α), length (firstn n l) = min n (length l)
-| 0        l      := sorry -- by rewrite [firstn_zero, zero_min]
-| (succ n) (a::l) := sorry -- by rewrite [firstn_cons, *length_cons, *add_one, min_succ_succ,
-                                          length_firstn_eq]
-| (succ n) []     := sorry -- by rewrite [firstn_nil]
+lemma length_taken_eq : ∀ (n) (l : list α), length (taken n l) = min n (length l)
+| 0        l      := sorry -- by rewrite [taken_zero, zero_min]
+| (succ n) (a::l) := sorry -- by rewrite [taken_cons, *length_cons, *add_one, min_succ_succ,
+                                          length_taken_eq]
+| (succ n) []     := sorry -- by rewrite [taken_nil]
 -/
-end firstn
+end taken
 
 -- TODO(Jeremy): restore when we have nat.sub
 /-
