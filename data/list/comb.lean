@@ -69,7 +69,7 @@ theorem map_map (g : β → γ) (f : α → β) : ∀ l, map g (map f l) = map (
   show (g ∘ f) a :: map g (map f l) = map (g ∘ f) (a :: l),
   begin rw (map_map l), reflexivity end
 
-attribute [simp] length_map 
+attribute [simp] length_map
 
 theorem eq_nil_of_map_eq_nil {f : α → β} {l :list α} (h : map f l = nil) : l = nil :=
 eq_nil_of_length_eq_zero (begin rw -(length_map f l), simp [h] end)
@@ -287,7 +287,9 @@ theorem any_of_mem {p : α → bool} {a : α} : ∀ {l : list α}, a ∈ l → p
                       simp [bool.bor_eq_tt, any_of_mem h', h]
                     end)
 
-theorem exists_of_any_eq_tt {p : α → bool} : ∀{l : list α}, any l p = tt → ∃ a ∈ l, p a
+theorem exists_of_any_eq_tt {p : α → bool} : ∀{l : list α}, any l p = tt → ∃ a ∈ l, p a :=
+sorry
+/-
 | []     h := begin simp at h, contradiction end
 | (b::l) h := begin
                 simp [bool.bor_eq_tt] at h, cases h with h h,
@@ -296,6 +298,7 @@ theorem exists_of_any_eq_tt {p : α → bool} : ∀{l : list α}, any l p = tt �
                 simp at ha,
                 existsi a, simp [ha]
               end
+-/
 
 theorem any_eq_tt_iff {p : α → bool} {l : list α} : any l p = tt ↔ ∃ a ∈ l, p a = tt :=
 iff.intro exists_of_any_eq_tt (assume h, bexists.elim h (take a, any_of_mem))

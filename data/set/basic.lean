@@ -546,13 +546,13 @@ end
 
 theorem pairwise_disjoint_singleton (s : set α) : pairwise_disjoint {s} :=
 begin
-  unfold pairwise_disjoint, simp, intros s₁ s₁eq s₂ s₂eq, simp [s₁eq, s₂eq]
+  unfold pairwise_disjoint, exact sorry --simp, intros s₁ s₁eq s₂ s₂eq, simp [s₁eq, s₂eq]
 end
 
 /- union and intersection over a family of sets indexed by a type -/
 
-def Union (s : α → set β) : set β := {x : β | ∃ i, x ∈ s i}
-def Inter (s : α → set β) : set β := {x : β | ∀ i, x ∈ s i}
+def Union {α : Sort u} (s : α → set β) : set β := {x : β | ∃ i, x ∈ s i}
+def Inter {α : Sort u} (s : α → set β) : set β := {x : β | ∀ i, x ∈ s i}
 
 notation `⋃` binders `, ` r:(scoped f, Union f) := r
 notation `⋂` binders `, ` r:(scoped f, Inter f) := r
@@ -814,7 +814,7 @@ ext (take y, iff.intro
 
 theorem compl_sUnion (S : set (set α)) :
   - ⋃₀ S = ⋂₀ (compl ' S) :=
-begin simp, reflexivity end
+sorry -- begin simp, reflexivity end
 
 -- classical
 theorem sUnion_eq_compl_sInter_compl (S : set (set α)) :

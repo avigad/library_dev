@@ -33,7 +33,7 @@ theorem implies_false_iff (a : Prop) : (a → false) ↔ ¬ a := iff.rfl
 
 /- not -/
 
-theorem {u} not_elim {A : Type u} (H1 : ¬a) (H2 : a) : A := absurd H2 H1
+theorem {u} not_elim {A : Sort u} (H1 : ¬a) (H2 : a) : A := absurd H2 H1
 
 theorem not_not_of_not_implies : ¬(a → b) → ¬¬a :=
 contrapos not_elim

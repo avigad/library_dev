@@ -257,15 +257,15 @@ section nth
 
 attribute [simp] nth_zero nth_succ
 
-theorem nth_eq_some : ∀ {l : list α} {n : nat}, n < length l → Σ a : α, nth l n = some a
+theorem nth_eq_some : ∀ {l : list α} {n : nat}, n < length l → { a : α // nth l n = some a}
 | ([] : list α) n h := absurd h (not_lt_zero _)
 | (a::l) 0        h := ⟨a, rfl⟩
 | (a::l) (succ n) h :=
   have n < length l, from lt_of_succ_lt_succ h,
-  sigma.rec_on (nth_eq_some this)
+  subtype.rec_on (nth_eq_some this)
     (take b : α, take hb : nth l n = some b,
-      show Σ b : α, nth (a::l) (succ n) = some b,
-         from sigma.mk b (by rw [nth_succ, hb]))
+      show { b : α // nth (a::l) (succ n) = some b },
+         from subtype.tag b (by rw [nth_succ, hb]))
 
 theorem find_nth [decidable_eq α] {a : α} : ∀ {l : list α}, a ∈ l → nth l (find a l) = some a
 | []     ain   := absurd ain (not_mem_nil _)
