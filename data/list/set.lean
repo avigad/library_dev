@@ -95,12 +95,12 @@ by simp [erase_cons, if_neg, h]
 @[simp]
 lemma length_erase_of_mem {a : α} : ∀ {l}, a ∈ l → length (erase a l) = pred (length l)
 | []         h := rfl
-| [x]        h := begin simp at h, simp [h], reflexivity end
+| [x]        h := begin simp at h, simp [h] end
 | (x::y::xs) h := if h' : a = x then
-                    begin simp [h'], reflexivity end
+                    begin simp [h'] end
                   else
                     have ainyxs : a ∈ y::xs, from or_resolve_right h h',
-                    begin simp [h', length_erase_of_mem ainyxs], rw add_comm, reflexivity end
+                    begin simp [h', length_erase_of_mem ainyxs] end
 
 @[simp]
 lemma length_erase_of_not_mem {a : α} : ∀ {l}, a ∉ l → length (erase a l) = length l
@@ -227,7 +227,7 @@ theorem upto_succ (n : nat) : upto (succ n) = n :: upto n := rfl
 @[simp]
 theorem length_upto : ∀ n, length (upto n) = n
 | 0        := rfl
-| (succ n) := begin rw [upto_succ, length_cons, length_upto], reflexivity end
+| (succ n) := begin rw [upto_succ, length_cons, length_upto] end
 
 theorem upto_ne_nil_of_ne_zero {n : ℕ} (h : n ≠ 0) : upto n ≠ nil :=
 suppose upto n = nil,
@@ -574,7 +574,7 @@ assume nainl, calc
   erase_dup (a::l) = if a ∈ l then erase_dup l else a :: erase_dup l : rfl
               ...  = a :: erase_dup l                                : if_neg nainl
 
-theorem mem_erase_dup [decidable_eq α] {a : α} : ∀ {l}, a ∈ l → a ∈ erase_dup l
+theorem mem_erase_dup [decidable_eq α] {a : α} : ∀ {l : list α}, a ∈ l → a ∈ erase_dup l
 | []     h  := absurd h (not_mem_nil _)
 | (b::l) h  := by_cases
   (λ binl  : b ∈ l, or.elim (eq_or_mem_of_mem_cons h)
@@ -588,7 +588,7 @@ theorem mem_erase_dup [decidable_eq α] {a : α} : ∀ {l}, a ∈ l → a ∈ er
     (λ ainl : a ∈ l,
       begin rw [erase_dup_cons_of_not_mem nbinl], exact (or.inr (mem_erase_dup ainl)) end))
 
-theorem mem_of_mem_erase_dup [decidable_eq α] {a : α} : ∀ {l}, a ∈ erase_dup l → a ∈ l
+theorem mem_of_mem_erase_dup [decidable_eq α] {a : α} : ∀ {l : list α}, a ∈ erase_dup l → a ∈ l
 | []     h := begin rw [erase_dup_nil] at h, exact h end
 | (b::l) h := by_cases
   (λ binl  : b ∈ l,

@@ -336,10 +336,10 @@ theorem perm_of_forall_count_eq : ∀ {l₁ l₂ : list α}, (∀ a, count a l�
       take a,
       if h' : a = b then
         nat.succ_inj (calc
-          count a l + 1 = count a (b :: l)         : begin simp [h'], rw add_comm, reflexivity end
+          count a l + 1 = count a (b :: l)         : begin simp [h'], rw add_comm end
                    ... = count a l₂                : by rw h
                    ... = count a (b :: erase b l₂) : count_eq_count_of_perm (by assumption) a
-                   ... = count a (erase b l₂) + 1  : begin simp [h'], rw add_comm, reflexivity end)
+                   ... = count a (erase b l₂) + 1  : begin simp [h'], rw add_comm end)
       else
         calc
           count a l = count a (b :: l)          : by simp [h']
@@ -484,7 +484,7 @@ theorem mem_cons_of_qeq {a : α} : ∀ {l₁ l₂ : list α}, l₁≈a|l₂ → 
 theorem length_eq_of_qeq {a : α} {l₁ l₂ : list α} :
   l₁ ≈ a | l₂ → length l₁ = nat.succ (length l₂) :=
 begin
-  intro q, induction q with l b l l' q ih, simp, reflexivity, simp, rw ih, reflexivity
+  intro q, induction q with l b l l' q ih, simp, simp, rw ih
 end
 
 theorem qeq_of_mem {a : α} {l : list α} : a ∈ l → (∃ l', l ≈ a | l') :=
@@ -985,7 +985,7 @@ assume h, perm.induction_on h
     have x ∉ l₁,           from not_mem_of_nodup_cons ‹nodup (x::l₁)›,
     have y ∉ x::l₁,        from not_mem_of_nodup_cons nd,
     have x ≠ y,            from suppose x = y,
-                                begin subst x, exact absurd (mem_cons_self _ _) ‹y ∉ y::l₁› end,
+                                begin subst x, apply absurd (mem_cons_self _ _), apply ‹y ∉ y::l₁› end, -- this line used to be "exact absurd (mem_cons_self _ _) ‹y ∉ y::l₁›, but it's now a syntax error
     have y ∉ l₁,           from not_mem_of_not_mem_cons ‹y ∉ x::l₁›,
     have x ∉ y::l₁,        from not_mem_cons_of_ne_of_not_mem ‹x ≠ y› ‹x ∉ l₁›,
     have nodup (y::l₁),    from nodup_cons ‹y ∉ l₁› ‹nodup l₁›,

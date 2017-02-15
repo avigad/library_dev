@@ -305,7 +305,7 @@ iff.intro exists_of_any_eq_tt (assume h, bexists.elim h (take a, any_of_mem))
 
 /- bounded quantifiers over lists -/
 
-theorem forall_mem_nil (p : α → Prop) : ∀ x ∈ nil, p x :=
+theorem forall_mem_nil (p : α → Prop) : ∀ x ∈ @nil α, p x :=
 take x xnil, absurd xnil (not_mem_nil x)
 
 theorem forall_mem_cons {p : α → Prop} {a : α} {l : list α} (pa : p a) (h : ∀ x ∈ l, p x) :
@@ -329,7 +329,7 @@ iff.intro
   (λ h, ⟨of_forall_mem_cons h, forall_mem_of_forall_mem_cons h⟩)
   (λ h, forall_mem_cons h^.left h^.right)
 
-theorem not_exists_mem_nil (p : α → Prop) : ¬ ∃ x ∈ nil, p x :=
+theorem not_exists_mem_nil (p : α → Prop) : ¬ ∃ x ∈ @nil α, p x :=
 assume h, bexists.elim h (λ a anil, absurd anil (not_mem_nil a))
 
 theorem exists_mem_cons_of {p : α → Prop} {a : α} (l : list α) (h : p a) :
@@ -452,7 +452,7 @@ theorem length_mapαccumR₂ : ∀ (f : α → β → S → S × γ) (x : list �
     length (snd (mapαccumR₂ f (a::x) (b::y) c))
               = length (snd (mapαccumR₂ f x y c)) + 1  : rfl
           ... = _root_.min (length x) (length y) + 1             : by rw (length_mapαccumR₂ f x y c)
-          ... = _root_.min (succ (length x)) (succ (length y))   : begin rw min_succ_succ, reflexivity end
+          ... = _root_.min (succ (length x)) (succ (length y))   : begin rw min_succ_succ end
           ... = _root_.min (length (a::x)) (length (b::y))       : rfl
 | f (a::x) [] c := rfl
 | f [] (b::y) c := rfl
@@ -494,7 +494,7 @@ have snd (a₁, b₁) ∈ map snd (map (λ b, (a, b)) l), from mem_map snd ain,
 have b₁ ∈ map (λx, x) l, begin rw [map_map] at this, exact this end,
 begin rw [map_id] at this, exact this end
 
-theorem mem_product {a : α} {b : β} : ∀ {l₁ l₂}, a ∈ l₁ → b ∈ l₂ → (a, b) ∈ product l₁ l₂
+theorem mem_product {a : α} {b : β} : ∀ {l₁ l₂}, a ∈ l₁ → b ∈ l₂ → (a, b) ∈ @product α β l₁ l₂
 | []      l₂ h₁ h₂ := absurd h₁ (not_mem_nil _)
 | (x::l₁) l₂ h₁ h₂ :=
   or.elim (eq_or_mem_of_mem_cons h₁)
@@ -505,7 +505,7 @@ theorem mem_product {a : α} {b : β} : ∀ {l₁ l₂}, a ∈ l₁ → b ∈ l�
       have (a, b) ∈ product l₁ l₂, from mem_product ainl₁ h₂,
       begin rw [product_cons], exact mem_append_right _ this end)
 
-theorem mem_of_mem_product_left {a : α} {b : β} : ∀ {l₁ l₂}, (a, b) ∈ product l₁ l₂ → a ∈ l₁
+theorem mem_of_mem_product_left {a : α} {b : β} : ∀ {l₁ l₂}, (a, b) ∈ @product α β l₁ l₂ → a ∈ l₁
 | []      l₂ h := absurd h (not_mem_nil _)
 | (x::l₁) l₂ h :=
   or.elim (mem_or_mem_of_mem_append h)
@@ -516,7 +516,7 @@ theorem mem_of_mem_product_left {a : α} {b : β} : ∀ {l₁ l₂}, (a, b) ∈ 
       have a ∈ l₁, from mem_of_mem_product_left this,
       mem_cons_of_mem _ this)
 
-theorem mem_of_mem_product_right {a : α} {b : β} : ∀ {l₁ l₂}, (a, b) ∈ product l₁ l₂ → b ∈ l₂
+theorem mem_of_mem_product_right {a : α} {b : β} : ∀ {l₁ l₂}, (a, b) ∈ @product α β l₁ l₂ → b ∈ l₂
 | []      l₂ h := absurd h (not_mem_nil ((a, b)))
 | (x::l₁) l₂ h :=
   or.elim (mem_or_mem_of_mem_append h)

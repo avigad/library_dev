@@ -397,7 +397,7 @@ rfl
 lemma count_cons' (a b : α) (l : list α) :
   count a (b :: l) = count a l + (if a = b then 1 else 0) :=
 decidable.by_cases
-  (suppose a = b, begin rw [count_cons, if_pos this, if_pos this], reflexivity end)
+  (suppose a = b, begin rw [count_cons, if_pos this, if_pos this] end)
   (suppose a ≠ b, begin rw [count_cons, if_neg this, if_neg this], reflexivity end)
 
 
@@ -418,7 +418,7 @@ decidable.by_cases
 -- the second is succ 0. Make sure the simplifier can eventually handle this.
 
 lemma count_singleton (a : α) : count a [a] = 1 :=
-begin simp, reflexivity end
+by simp
 
 @[simp]
 lemma count_append (a : α) : ∀ l₁ l₂, count a (l₁ ++ l₂) = count a l₁ + count a l₂
@@ -430,7 +430,7 @@ lemma count_append (a : α) : ∀ l₁ l₂, count a (l₁ ++ l₂) = count a l�
 
 @[simp]
 lemma count_concat (a : α) (l : list α) : count a (concat l a) = succ (count a l) :=
-begin rw [concat_eq_append, count_append, count_singleton], reflexivity end
+by rw [concat_eq_append, count_append, count_singleton]
 
 lemma mem_of_count_pos : ∀ {a : α} {l : list α}, count a l > 0 → a ∈ l
 | a []     h := absurd h (lt_irrefl _)
