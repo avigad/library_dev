@@ -45,7 +45,7 @@ iff.intro (take H, true.intro) (take H x H1, absurd H1 (not_mem_empty _))
 
 definition univ : set α := λx, true
 
-theorem mem_univ (x : α) : x ∈ univ :=
+theorem mem_univ (x : α) : x ∈ @univ α :=
 by triv
 
 theorem mem_univ_iff (x : α) : x ∈ @univ α ↔ true := iff.rfl
@@ -233,7 +233,7 @@ theorem forall_of_forall_insert {P : α → Prop} {a : α} {s : set α} (h : ∀
 lemma bounded_forall_insert_iff {P : α → Prop} {a : α} {s : set α} :
   (∀ x ∈ insert a s, P x) ↔ P a ∧ (∀x ∈ s, P x) :=
 begin
-  apply iff.intro, all_goals (do intro `h, skip),
+  apply iff.intro, all_goals {do intro `h, skip},
   { apply and.intro,
     { apply h, apply mem_insert },
     { intros x hx, apply h, apply mem_insert_of_mem, assumption } },
@@ -513,7 +513,7 @@ lemma image_insert_eq {f : α → β} {a : α} {s : set α} :
   f ' insert a s = insert (f a) (f ' s) :=
 begin
   apply set.ext,
-  intro x, apply iff.intro, all_goals (do intro `h, skip),
+  intro x, apply iff.intro, all_goals {do intro `h, skip},
   { cases mem_image_dest h with y hy heq, rw heq^.symm, cases hy with y_eq,
     { rw y_eq, apply mem_insert },
     { apply mem_insert_of_mem, apply mem_image_of_mem, assumption } },
@@ -544,7 +544,7 @@ match hs, ht with
 | (or.inr sD), (or.inr tD) := hD s sD t tD hne
 end
 
-theorem pairwise_disjoint_singleton (s : set α) : pairwise_disjoint {s} :=
+theorem pairwise_disjoint_singleton (s : set α) : @pairwise_disjoint α {s} :=
 begin
   unfold pairwise_disjoint, exact sorry --simp, intros s₁ s₁eq s₂ s₂eq, simp [s₁eq, s₂eq]
 end
