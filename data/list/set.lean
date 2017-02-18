@@ -62,11 +62,8 @@ by simp [h]
 theorem forall_mem_insert_of_forall_mem {p : α → Prop} {a : α} {l : list α}
    (h₁ : p a) (h₂ : ∀ x ∈ l, p x) :
   ∀ x ∈ insert a l, p x :=
-sorry
-/-
 if h : a ∈ l then begin simp [h], exact h₂ end
 else begin simp [h], intros b hb, cases hb with h₃ h₃, {rw h₃, assumption}, exact h₂ _ h₃ end
--/
 
 end insert
 

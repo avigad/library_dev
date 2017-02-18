@@ -287,21 +287,17 @@ theorem any_of_mem {p : α → bool} {a : α} : ∀ {l : list α}, a ∈ l → p
                       simp [bool.bor_eq_tt, any_of_mem h', h]
                     end)
 
-theorem exists_of_any_eq_tt {p : α → bool} : ∀{l : list α}, any l p = tt → ∃ a ∈ l, p a :=
-sorry
-/-
+theorem exists_of_any_eq_tt {p : α → bool} : ∀ {l : list α}, any l p = tt → ∃ a : α, a ∈ l ∧ p a 
 | []     h := begin simp at h, contradiction end
 | (b::l) h := begin
                 simp [bool.bor_eq_tt] at h, cases h with h h,
                 { existsi b, simp [h]},
                 cases (exists_of_any_eq_tt h) with a ha,
-                simp at ha,
-                existsi a, simp [ha]
+                existsi a, apply (and.intro (or.inr ha^.left) ha^.right) 
               end
--/
 
-theorem any_eq_tt_iff {p : α → bool} {l : list α} : any l p = tt ↔ ∃ a ∈ l, p a = tt :=
-iff.intro exists_of_any_eq_tt (assume h, bexists.elim h (take a, any_of_mem))
+theorem any_eq_tt_iff {p : α → bool} {l : list α} : any l p = tt ↔ ∃ a : α, a ∈ l ∧ p a = tt :=
+iff.intro exists_of_any_eq_tt (begin intro h, cases h with a ha, apply any_of_mem ha^.left ha^.right end)
 
 /- bounded quantifiers over lists -/
 
