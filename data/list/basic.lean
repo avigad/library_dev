@@ -5,7 +5,7 @@ Authors: Parikshit Khanna, Jeremy Avigad, Leonardo de Moura, Floris van Doorn
 
 Basic properties of lists.
 -/
-import ...logic.basic ..nat.basic data.list.basic
+import ...logic.basic ..nat.basic
 open function nat
 
 namespace list
@@ -13,8 +13,6 @@ universe variable uu
 variable {α : Type uu}
 
 /- theorems -/
-
-lemma mem_cons_iff (a y : α) (l : list α) : a ∈ y :: l ↔ (a = y ∨ a ∈ l) := iff.rfl
 
 @[simp]
 lemma cons_ne_nil (a : α) (l : list α) : a::l ≠ [] :=
@@ -38,26 +36,14 @@ take l₁ l₂, assume Pe, tail_eq_of_cons_eq Pe
 attribute [simp] cons_append nil_append
 
 @[simp]
-theorem append_nil (t : list α) : t ++ [] = t :=
-begin induction t with a t ih, reflexivity, simp [ih] end
-
-@[simp]
 theorem append.assoc (s t u : list α) : s ++ t ++ u = s ++ (t ++ u) :=
 begin induction s with a s ih, reflexivity, simp [ih] end
 
 /- length -/
 
-attribute [simp] length_nil length_cons
+attribute [simp] length_cons
 
 attribute [simp] length_append
-
-theorem eq_nil_of_length_eq_zero : ∀ {l : list α}, length l = 0 → l = []
-| []     h := rfl
-| (a::s) h := by contradiction
-
-theorem ne_nil_of_length_eq_succ : ∀ {l : list α} {n : nat}, length l = succ n → l ≠ []
-| []     n h := by contradiction
-| (a::l) n h := begin intro h, contradiction end
 
 /- concat -/
 
@@ -68,10 +54,6 @@ rfl
 @[simp]
 theorem concat_cons (a b : α) (l : list α) : concat (a::l) b  = a::(concat l b) :=
 rfl
-
-@[simp]
-theorem concat_eq_append (a : α) (l : list α) : concat l a = l ++ [a] :=
-begin induction l with b l ih, simp, simp [ih] end
 
 @[simp]
 theorem concat_ne_nil (a : α) (l : list α) : concat l a ≠ [] :=
@@ -88,11 +70,6 @@ begin induction l₂ with b l₂ ih, repeat { simp } end
 
 /- last -/
 
-definition last : Π l : list α, l ≠ [] → α
-| []          h := absurd rfl h
-| [a]         h := a
-| (a₁::a₂::l) h := last (a₂::l) $ cons_ne_nil a₂ l
-
 @[simp]
 lemma last_singleton (a : α) (h : [a] ≠ []) : last [a] h = a :=
 rfl
@@ -106,67 +83,11 @@ theorem last_congr {l₁ l₂ : list α} (h₁ : l₁ ≠ []) (h₂ : l₂ ≠ [
   last l₁ h₁ = last l₂ h₂ :=
 by subst l₁
 
-
--- TODO(Jeremy): this was not easy. Is there are better proof? Can we automate it?
--- The commented-out version was "by rec_inst_simp"
-
-@[simp]
-theorem last_concat {a : α} (l : list α) : ∀ (h : concat l a ≠ []), last (concat l a) h = a :=
-begin
-  induction l with b l₁ ih,
-  { intro h, reflexivity},
-  induction l₁ with c l₂ ih',
-  { intro h, reflexivity},
-  rw [concat_cons, concat_cons], intro h, rw [last_cons_cons _ _ _ h],
-  rw [last_congr (cons_ne_nil c (concat l₂ a)) (concat_ne_nil _ _) (concat_cons c a l₂)^.symm],
-  rw ih
-end
-
-/- reverse -/
-
-@[simp]
-theorem reverse_nil : reverse (@nil α) = [] :=
-rfl
-
-@[simp]
-theorem reverse_cons (a : α) (l : list α) : reverse (a::l) = concat (reverse l) a :=
-have aux : ∀ l₁ l₂, reverse_core l₁ (concat l₂ a) = concat (reverse_core l₁ l₂) a,
-  begin
-    intros l₁, induction l₁ with b l₁ ih,
-    { intro l₂, reflexivity },
-    intro l₂, transitivity, apply (ih (b :: l₂)), reflexivity,
-  end,
-aux l nil
-
-@[simp]
-theorem reverse_singleton (a : α) : reverse [a] = [a] :=
-rfl
-
-@[simp]
-theorem reverse_append (s t : list α) : reverse (s ++ t) = (reverse t) ++ (reverse s) :=
-begin induction s with a s ih, simp, simp [ih] end
-
-@[simp]
-theorem reverse_reverse (l : list α) : reverse (reverse l) = l :=
-begin induction l with a l ih, simp, simp [ih] end
-
-theorem concat_eq_reverse_cons (a : α) (l : list α) : concat l a = reverse (a :: reverse l) :=
-begin induction l with a l ih, simp, simp [ih] end
-
-@[simp]
-theorem length_reverse (l : list α) : length (reverse l) = length l :=
-begin induction l with a l ih, simp, simp [ih] end
-
 /- head and tail -/
 
 @[simp]
 theorem head_cons [h : inhabited α] (a : α) (l : list α) : head (a::l) = a :=
 rfl
-
-@[simp]
-theorem head_append [h : inhabited α] (t : list α) {s : list α} (h : s ≠ []) :
-  head (s ++ t) = head s :=
-begin induction s with a s ih, contradiction, simp end
 
 @[simp]
 theorem tail_nil : tail (@nil α) = [] :=
@@ -175,10 +96,6 @@ rfl
 @[simp]
 theorem tail_cons (a : α) (l : list α) : tail (a::l) = l :=
 rfl
-
-@[simp]
-theorem cons_head_tail [h : inhabited α] {l : list α} (h : l ≠ []) : (head l)::(tail l) = l :=
-begin induction l with a l ih, contradiction, simp end
 
 /- list membership -/
 
@@ -189,10 +106,6 @@ attribute [simp] mem_nil_iff mem_cons_self mem_cons_iff
 
 section find
 variable [decidable_eq α]
-
-definition find : α → list α → nat
-| a []       := 0
-| a (b :: l) := if a = b then 0 else succ (find a l)
 
 @[simp]
 theorem find_nil (a : α) : find a [] = 0 :=
@@ -255,7 +168,7 @@ end find
 
 section nth
 
-attribute [simp] nth_zero nth_succ
+attribute [simp] nth_succ
 
 theorem nth_eq_some : ∀ {l : list α} {n : nat}, n < length l → { a : α // nth l n = some a}
 | ([] : list α) n h := absurd h (not_lt_zero _)
@@ -270,7 +183,7 @@ theorem nth_eq_some : ∀ {l : list α} {n : nat}, n < length l → { a : α // 
 theorem find_nth [decidable_eq α] {a : α} : ∀ {l : list α}, a ∈ l → nth l (find a l) = some a
 | []     ain   := absurd ain (not_mem_nil _)
 | (b::l) ainbl := decidable.by_cases
-  (λ aeqb : a = b, by rewrite [find_cons_of_eq _ aeqb, nth_zero, aeqb])
+  (λ aeqb : a = b, by rw [find_cons_of_eq _ aeqb]; simp [nth, aeqb])
   (λ aneb : a ≠ b, or.elim (eq_or_mem_of_mem_cons ainbl)
     (λ aeqb : a = b, absurd aeqb aneb)
     (λ ainl : a ∈ l, by rewrite [find_cons_of_ne _ aneb, nth_succ, find_nth ainl]))
@@ -349,7 +262,7 @@ lemma length_taken_le : ∀ (n) (l : list α), length (taken n l) ≤ n
                        rw [taken_cons, length_cons], apply succ_le_succ,
                        apply length_taken_le
                      end
-| (succ n) []     := begin rewrite [taken_nil, length_nil], apply zero_le end
+| (succ n) []     := begin simp [taken, length], apply zero_le end
 
 -- TODO(Jeremy): restore when we have min
 /-

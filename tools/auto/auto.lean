@@ -153,7 +153,7 @@ meta def head_symbol : expr → name
 | (pi a₁ a₂ a₃ a₄) := `pi
 | a                := `none
 
-private meta def whnf_red : expr → tactic expr := whnf_core reducible
+private meta def whnf_red (e : expr) : tactic expr := whnf e reducible
 
 meta def is_forall (e : expr) : tactic bool :=
 if head_symbol e ≠ `pi then return ff
@@ -196,7 +196,7 @@ do ht ← infer_type h,
 meta def simplify_goal' (t : command) (lemmas : list expr) : command :=
 simp_using lemmas
 meta def simp_core_at' (t : command) (lemmas : list expr) (h : expr) : command :=
-simp_core_at lemmas h
+simp_at h lemmas
 
 -- simp_add_prove_max_depth l d uses the simplifier as its own prover, recursing up to depth d
 meta def simp_add_prove_max_depth (lemmas : list expr) : ℕ → tactic unit
@@ -282,21 +282,23 @@ else
   hence can be applied in safe mode.
 -/
 
+check unify
 -- we really want: e₁ and e₂ can be unified without instantiating metavariables
 meta def unify_safe_core (t : transparency) (e₁ e₂ : expr) : tactic unit :=
-cond (has_meta_var e₁ || has_meta_var e₂) failed (unify_core t e₁ e₂)
+cond (has_meta_var e₁ || has_meta_var e₂) failed (unify e₁ e₂ t)
 
 meta def unify_safe (e₁ e₂ : expr) : tactic unit :=
 unify_safe_core semireducible e₁ e₂
 
+check apply
 -- we really want: try to apply e, without instantiation any metavariables in the goal
 -- maybe we also want the same for fapply?
 meta def apply_safe_core (t : transparency) (all : bool) (insts : bool) (e : expr) :
-  tactic unit :=
-apply_core t tt all insts e
+  tactic (list expr) :=
+apply_core e {md := t, approx := tt, all := all, use_instances := insts }
 
-meta def apply_safe : expr → tactic unit :=
-apply_safe_core semireducible ff tt
+meta def apply_safe (e : expr) : tactic (list expr) :=
+apply_core e {md := semireducible, approx := ff, all := tt}
 
 /- a safe version of assumption -/
 

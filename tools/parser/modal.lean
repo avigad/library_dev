@@ -7,6 +7,7 @@ A sample parser for modal logic.
 -/
 import .parser
 
+/-
 namespace modal
 
 def varname := string
@@ -61,7 +62,7 @@ namespace modal
 namespace form
 
 meta def to_expr : form → tactic expr
-| (var s)    := do e ← string.to_expr s, tactic.to_expr `(modal.form.var %%e)
+| (var s)    := do e ← tactic.to_expr ``(s), tactic.to_expr `(modal.form.var %%e)
 | bot        := tactic.to_expr `(bot)
 | (conj s t) := do e ← to_expr s, f ← to_expr t, tactic.to_expr `(modal.form.conj %%e %%f)
 | (disj s t) := do e ← to_expr s, f ← to_expr t, tactic.to_expr `(modal.form.disj %%e %%f)
@@ -139,3 +140,4 @@ example : num_atoms (by [modal] "◾ (p1 ∧ ◾ (p1 → p2)) → ◾ ◾ (p1 �
 example : (by [modal] "p ∧ q → p") = impl (conj (var "p") (var "q")) (var "p") := rfl
 
 end some_examples
+-/

@@ -6,7 +6,6 @@ Authors: Leonardo de Moura, Jeremy Avigad
 List permutations.
 -/
 import .basic .comb .set
-import data.list.basic
 
 -- TODO(Jeremy): Here is a common idiom: after simplifying, we have a goal 1 + t = nat.succ t
 -- and need to say rw [add_comm, reflexivity]. Can we get the simplifier to finish this off?

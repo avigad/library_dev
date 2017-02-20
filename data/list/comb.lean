@@ -32,74 +32,7 @@ end replicate
 
 /- map -/
 
-attribute [simp] map_nil map_cons
-
-@[simp]
-lemma map_concat (f : α → β) (a : α) : Πl, map f (concat l a) = concat (map f l) (f a)
-| nil    := rfl
-| (b::l) := begin rw [concat_cons, map_cons, map_cons, concat_cons, map_concat] end
-
-@[simp]
-lemma map_append (f : α → β) : ∀ l₁ l₂, map f (l₁++l₂) = (map f l₁)++(map f l₂)
-| nil    := take l, rfl
-| (a::l) := take l', by simp [map_append l]
-
-@[simp]
-lemma map_reverse (f : α → β) : Πl, map f (reverse l) = reverse (map f l)
-| nil    := rfl
-| (b::l) := begin simp [map_reverse l] end
-
-@[simp]
-lemma map_singleton (f : α → β) (a : α) : map f [a] = [f a] := rfl
-
-@[simp]
-theorem map_id : ∀ l : list α, map id l = l
-| []      := rfl
-| (x::xs) := by simp [map_id xs]
-
-@[simp]
-theorem map_id' {f : α → α} (h : ∀ x, f x = x) : ∀ l : list α, map f l = l
-| []      := rfl
-| (x::xs) := by simp [map_id' xs, h]
-
-@[simp]
-theorem map_map (g : β → γ) (f : α → β) : ∀ l, map g (map f l) = map (g ∘ f) l
-| []       := rfl
-| (a :: l) :=
-  show (g ∘ f) a :: map g (map f l) = map (g ∘ f) (a :: l),
-  begin rw (map_map l), reflexivity end
-
-attribute [simp] length_map
-
-theorem eq_nil_of_map_eq_nil {f : α → β} {l :list α} (h : map f l = nil) : l = nil :=
-eq_nil_of_length_eq_zero (begin rw -(length_map f l), simp [h] end)
-
-theorem mem_map (f : α → β) {a : α} {l : list α} (h : a ∈ l) : f a ∈ map f l :=
-begin
-  induction l with b l' ih,
-  { simp at h, contradiction },
-  simp at h, cases h with h h,
-  { simp [h] },
-  simp [ih h]
-end
-
-theorem exists_of_mem_map {f : α → β} {b : β} {l : list α} (h : b ∈ map f l) :
-  ∃ a, a ∈ l ∧ f a = b :=
-begin
-  induction l with c l' ih,
-  { simp at h, contradiction },
-  simp at h, cases h with h h,
-  { existsi c, simp [h] },
-  cases ih h with a ha, cases ha with ha₁ ha₂,
-  existsi a, simp [ha₁, ha₂]
-end
-
-theorem eq_of_map_const {b₁ b₂ : β} : ∀ {l : list α}, b₁ ∈ map (const α b₂) l → b₁ = b₂
-| []     h := absurd h (not_mem_nil b₁)
-| (a::l) h :=
-  or.elim (eq_or_mem_of_mem_cons h)
-    (suppose b₁ = b₂, this)
-    (suppose b₁ ∈ map (const α b₂) l, eq_of_map_const this)
+attribute [simp] map_cons
 
 /-def map₂ (f : α → β → γ) : list α → list β → list γ
 | []      _       := []
@@ -287,13 +220,13 @@ theorem any_of_mem {p : α → bool} {a : α} : ∀ {l : list α}, a ∈ l → p
                       simp [bool.bor_eq_tt, any_of_mem h', h]
                     end)
 
-theorem exists_of_any_eq_tt {p : α → bool} : ∀ {l : list α}, any l p = tt → ∃ a : α, a ∈ l ∧ p a 
+theorem exists_of_any_eq_tt {p : α → bool} : ∀ {l : list α}, any l p = tt → ∃ a : α, a ∈ l ∧ p a
 | []     h := begin simp at h, contradiction end
 | (b::l) h := begin
                 simp [bool.bor_eq_tt] at h, cases h with h h,
                 { existsi b, simp [h]},
                 cases (exists_of_any_eq_tt h) with a ha,
-                existsi a, apply (and.intro (or.inr ha^.left) ha^.right) 
+                existsi a, apply (and.intro (or.inr ha^.left) ha^.right)
               end
 
 theorem any_eq_tt_iff {p : α → bool} {l : list α} : any l p = tt ↔ ∃ a : α, a ∈ l ∧ p a = tt :=
@@ -474,7 +407,7 @@ theorem product_cons (a : α) (l₁ : list α) (l₂ : list β)
 
 theorem product_nil : ∀ (l : list α), product l (@nil β) = []
 | []     := rfl
-| (a::l) := begin rw [product_cons, map_nil, product_nil], reflexivity end
+| (a::l) := begin rw [product_cons, product_nil], reflexivity end
 
 theorem eq_of_mem_map_pair₁  {a₁ a : α} {b₁ : β} {l : list β} :
   (a₁, b₁) ∈ map (λ b, (a, b)) l → a₁ = a :=
@@ -523,7 +456,7 @@ theorem mem_of_mem_product_right {a : α} {b : β} : ∀ {l₁ l₂}, (a, b) ∈
 
 theorem length_product :
   ∀ (l₁ : list α) (l₂ : list β), length (product l₁ l₂) = length l₁ * length l₂
-| []      l₂ := begin rw [length_nil, zero_mul], reflexivity end
+| []      l₂ := begin simp, reflexivity end
 | (x::l₁) l₂ :=
   have length (product l₁ l₂) = length l₁ * length l₂, from length_product l₁ l₂,
   by rw [product_cons, length_append, length_cons,
@@ -597,7 +530,7 @@ lemma exists_of_mem_dmap : ∀ {l : list α} {b : β}, b ∈ dmap p f l → ∃ 
 
 lemma map_dmap_of_inv_of_pos {g : β → α} (Pinv : ∀ a (Pa : p a), g (f a Pa) = a) :
                           ∀ {l : list α}, (∀ ⦃a⦄, a ∈ l → p a) → map g (dmap p f l) = l
-| []     := assume Pl, by rw [dmap_nil, map_nil]
+| []     := assume Pl, by rw [dmap_nil]; reflexivity
 | (a::l) := assume Pal,
             have Pa : p a, from Pal (mem_cons_self _ _),
             have Pl : ∀ a, a ∈ l → p a,

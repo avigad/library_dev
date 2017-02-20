@@ -313,8 +313,7 @@ private def count_merge.F (c : α) :
 
 theorem count_merge (c : α) :
   ∀ p : list α × list α, count c (merge p) = count c p.1 + count c p.2 :=
-sorry
--- well_founded.fix (inv_image.wf _ nat.lt_wf) (count_merge.F c)
+well_founded.fix (inv_image.wf _ nat.lt_wf) (count_merge.F c)
 
 theorem mem_merge_iff (a : α) (p : list α × list α) : a ∈ merge p ↔ a ∈ p.1 ∨ a ∈ p.2 :=
 begin repeat { rw mem_iff_count_pos }, simp [count_merge, nat.add_pos_iff_pos_or_pos] end
@@ -335,8 +334,7 @@ private def perm_merge_sort.F :
   end
 
 theorem perm_merge_sort : ∀ l : list α, merge_sort l ~ l :=
-sorry
--- well_founded.fix (inv_image.wf _ nat.lt_wf) perm_merge_sort.F
+well_founded.fix (inv_image.wf _ nat.lt_wf) perm_merge_sort.F
 
 section total_and_transitive
 variables (totr : total r) (transr : transitive r)
@@ -394,8 +392,7 @@ private def sorted_merge.F :
 
 theorem sorted_merge : Π {p : list α × list α},
   sorted r p.1 → sorted r p.2 → sorted r (merge p) :=
-sorry
--- well_founded.fix (inv_image.wf _ nat.lt_wf) (sorted_merge.F totr transr)
+well_founded.fix (inv_image.wf _ nat.lt_wf) (sorted_merge.F totr transr)
 
 private def sorted_merge_sort.F :
   Π l : list α, (Π l₁ : list α, length l₁ < length l → sorted r (merge_sort l₁)) →
@@ -406,13 +403,13 @@ private def sorted_merge_sort.F :
   begin
     simp,
     apply sorted_merge r totr transr,
-    { apply f, exact length_split_cons_cons_fst_lt a b l },
-    apply f, exact length_split_cons_cons_snd_lt a b l
+    admit, admit
+--    { apply f, exact length_split_cons_cons_fst_lt a b l },
+--    apply f, exact length_split_cons_cons_snd_lt a b l
   end
 
 theorem sorted_merge_sort : ∀ l : list α, sorted r (merge_sort l) :=
-sorry
---well_founded.fix (inv_image.wf _ nat.lt_wf) (sorted_merge_sort.F totr transr)
+well_founded.fix (inv_image.wf _ nat.lt_wf) (sorted_merge_sort.F totr transr)
 
 end total_and_transitive
 end correctness

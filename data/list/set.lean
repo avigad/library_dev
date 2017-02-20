@@ -512,7 +512,7 @@ have disj₂ : disjoint l₁ (a::l₂), from disjoint.comm (disjoint_cons_of_not
 nodup_append_of_nodup_of_nodup_of_disjoint d₂ d₄ disj₂
 
 theorem nodup_map {f : α → β} (inj : injective f) : ∀ {l : list α}, nodup l → nodup (map f l)
-| []      n := begin rw [map_nil], apply nodup_nil end
+| []      n := begin apply nodup_nil end
 | (x::xs) n :=
   have nxinxs : x ∉ xs,           from not_mem_of_nodup_cons n,
   have ndxs   : nodup xs,         from nodup_of_nodup_cons n,
