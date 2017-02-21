@@ -59,17 +59,21 @@ end some_examples
 
 namespace modal
 
+meta instance : has_quote varname := string.has_quote
+
 namespace form
 
-meta def to_expr : form → tactic expr
-| (var s)    := do e ← tactic.to_expr ``(s), tactic.to_expr `(modal.form.var %%e)
-| bot        := tactic.to_expr `(bot)
-| (conj s t) := do e ← to_expr s, f ← to_expr t, tactic.to_expr `(modal.form.conj %%e %%f)
-| (disj s t) := do e ← to_expr s, f ← to_expr t, tactic.to_expr `(modal.form.disj %%e %%f)
-| (impl s t) := do e ← to_expr s, f ← to_expr t, tactic.to_expr `(modal.form.impl %%e %%f)
-| (neg s)    := do e ← to_expr s, tactic.to_expr `(modal.form.neg %%e)
-| (box s)    := do e ← to_expr s, tactic.to_expr `(modal.form.box %%e)
-| (diam s)   := do e ← to_expr s, tactic.to_expr `(modal.form.diam %%e)
+meta def quote : form → pexpr
+| (var s)    := ``(var %%(has_quote.quote s))
+| bot        := ``(bot)
+| (conj s t) := ``(conj %%(quote s) %%(quote t))
+| (disj s t) := ``(disj %%(quote s) %%(quote t))
+| (impl s t) := ``(impl %%(quote s) %%(quote t))
+| (neg s)    := ``(neg %%(quote s))
+| (box s)    := ``(box %%(quote s))
+| (diam s)   := ``(diam %%(quote s))
+
+meta instance : has_quote form := ⟨quote⟩
 
 end form
 
@@ -117,7 +121,7 @@ parse (apply form) s
 
 meta def build_form_from_string (s : string) : tactic unit :=
 match form_of_string s with
-| some f := modal.form.to_expr f >>= tactic.exact
+| some f := tactic.to_expr (quote f) >>= tactic.exact
 | none   := tactic.fail ("failed to parse " ++ s)
 end
 
