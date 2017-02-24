@@ -9,29 +9,9 @@ have h3 : a ≤ b, from le_of_lt_succ h1,
 or.elim (eq_or_lt_of_not_lt h2) (λ h, h) (λ h, absurd h (not_lt_of_ge h3))
 
 
-instance fin_dec (n : ℕ) : Π (P : fin n → Prop) [hd : decidable_pred P], decidable (∀ k : fin n, P k) :=
-nat.rec_on n
-  (λ P hd, decidable.is_true (λ k, absurd (fin.is_lt k) (not_lt_zero _))) -- n = 0
-  (λ k ih P hd, -- n = succ k
-  decidable.rec_on (hd (fin.mk k (lt_succ_self _)))
-    (λ h, decidable.is_false (λ h1, h (h1 _))) -- P k is false
-    (λ h, -- P k is true
-    let lP := (λ l : fin k, P (raise_fin l)) in
-    have lPd : decidable_pred lP, from
-      take l, decidable.rec_on (hd (raise_fin l)) decidable.is_false decidable.is_true,
-    decidable.rec_on (@ih lP lPd)
-      (λ h1, decidable.is_false (λ h2, h1 (λ l, h2 _))) -- (∀ l : fin k, P l) is false
-      (λ h1, decidable.is_true (λ l, fin.rec_on l  -- (∀ l : fin k, P l) is true
-        (λ val is_lt, if hval : val < k then
-          suffices lP (fin.mk val hval), from this,
-          h1 _
-        else
-          have hvk : val = k, from eq_of_lt_succ_of_not_lt is_lt hval,
-          begin revert is_lt, rw hvk, intro, apply h end)))))
-
--- eqn compiler error. replace with this when bug fixed
---set_option eqn_compiler.zeta true
-/-instance fin_dec' : Π (n : ℕ) (P : fin n → Prop) [hd : decidable_pred P], decidable (∀ k : fin n, P k)
+section
+set_option eqn_compiler.zeta true
+instance fin_dec : Π (n : ℕ) (P : fin n → Prop) [hd : decidable_pred P], decidable (∀ k : fin n, P k)
 | 0 P hd := decidable.is_true (λ k, absurd (fin.is_lt k) (not_lt_zero _))
 | (k+1) P hd :=
   match hd (fin.mk k (lt_succ_self _)) with
@@ -40,7 +20,7 @@ nat.rec_on n
     let lP := (λ l : fin k, P (raise_fin l)) in
     have lPd : decidable_pred lP, from
       take l, decidable.rec_on (hd (raise_fin l)) decidable.is_false decidable.is_true,
-    match @fin_dec' k lP lPd with
+    match @fin_dec k lP lPd with
     | decidable.is_false h1 := decidable.is_false (λ h2, h1 (λ l, h2 _))
     | decidable.is_true h1 := decidable.is_true (λ l, fin.rec_on l
        (λ val is_lt, if hval : val < k then
@@ -50,7 +30,8 @@ nat.rec_on n
          have hvk : val = k, from eq_of_lt_succ_of_not_lt is_lt hval,
          begin revert is_lt, rw hvk, intro, apply h end))
     end
-  end-/
+  end
+end
 
 instance fin_to_nat (n : ℕ) : has_coe (fin n) nat := ⟨fin.val⟩
 instance fin_to_int (n : ℕ) : has_coe (fin n) int := ⟨λ k, ↑(fin.val k)⟩
