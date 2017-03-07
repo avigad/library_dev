@@ -139,7 +139,7 @@ meta def collect_props : list expr → tactic (list expr)
   props   ← collect_props hs,
   ht      ← infer_type h,
   htt     ← infer_type ht,
-  (unify htt prop >> return (h :: props)) <|> return props
+  (unify htt ```(Prop) >> return (h :: props)) <|> return props
 
 meta def unfold_all (ns : list name) : tactic unit :=
 do dunfold ns, local_context >>= collect_props >>= monad.mapm' (dunfold_at ns)
@@ -159,10 +159,10 @@ meta def is_forall (e : expr) : tactic bool :=
 if head_symbol e ≠ `pi then return ff
    else do
      et ← infer_type e,
-     if et ≠ prop then return ff
+     if et ≠ ```(Prop) then return ff
      else do
        dt ← infer_type (binding_domain e),
-       if dt ≠ prop then return tt else return ff
+       if dt ≠ ```(Prop) then return tt else return ff
 
 meta def is_negation (e : expr) : tactic bool :=
 do e' ← whnf_red e,
@@ -812,7 +812,7 @@ do h' ← find_hyp_with_type (binding_domain ht),
 meta def deploy_imp_elim_at (h : expr) : tactic unit :=
 do ht ← infer_type h >>= whnf_red,
    dt ← infer_type (binding_domain ht),
-   if dt ≠ prop then failed
+   if dt ≠ ```(Prop) then failed
    else do
      conc ← return (binding_body ht) >>= whnf_red,
      if head_symbol conc = ``false then
@@ -831,7 +831,7 @@ meta def imp_elim_rule : elim_rule :=
 meta def deploy_imp_classical_elim_at (h : expr) : tactic unit :=
 do ht ← infer_type h >>= whnf_red,
    dt ← infer_type (binding_domain ht),
-   if dt ≠ prop then failed
+   if dt ≠ ```(Prop) then failed
    else monad.cond (is_negation ht)
      failed
      (deploy_elim_at ``imp_classical_elim 3 4 h)
@@ -907,7 +907,7 @@ meta def not_exists_elim_rule : elim_rule :=
 meta def deploy_imp_intuit_belim_at (h : expr) (cont : tactic unit) : tactic unit :=
 do ht ← infer_type h >>= whnf_red,
    dt ← infer_type (binding_domain ht),
-   if dt ≠ prop then failed
+   if dt ≠ ```(Prop) then failed
    else deploy_belim_choices [deploy_elim_at ``imp_intuit_elim 3 4, deploy_clear_at] h cont
 
 @[auto.belim_rule]
@@ -977,10 +977,10 @@ do ht ← infer_type h,
    if head_symbol ht ≠ `pi then return h
    else do
      htt ← infer_type ht,
-     if htt ≠ prop then return h
+     if htt ≠ ```(Prop) then return h
      else do
        dt ← infer_type (binding_domain ht),
-       if dt = prop then return h
+       if dt = ```(Prop) then return h
        else do
          v ← mk_meta_var (binding_domain ht),
          apply_to_metavars_while_universal_aux unit.star (expr.app h v)

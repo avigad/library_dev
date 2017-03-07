@@ -118,13 +118,13 @@ namespace bool
 
   @[simp]
   theorem bnot_bnot (a : bool) : bnot (bnot a) = a :=
-  begin cases a, repeat { simp } end
+  by cases a; simp; simp
 
   theorem eq_tt_of_bnot_eq_ff {a : bool} : bnot a = ff → a = tt :=
-  begin cases a, simp, intros, contradiction, simp end
+  by cases a; simp; simp
 
   theorem eq_ff_of_bnot_eq_tt {a : bool} : bnot a = tt → a = ff :=
-  begin cases a, simp, simp, intros, contradiction end
+  by cases a; simp; simp
 
   definition bxor : bool → bool → bool
   | ff ff := ff
