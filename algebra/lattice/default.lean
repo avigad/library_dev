@@ -1,2 +1,2 @@
-import .basic .complete_lattice
+import .basic .bounded_lattice .boolean_algebra .complete_lattice
 

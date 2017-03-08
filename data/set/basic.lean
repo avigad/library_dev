@@ -11,7 +11,7 @@ Authors Jeremy Avigad, Leonardo de Moura
 -/
 import logic.basic data.set  -- from the library in the main repo
 import ...algebra.lattice
-open function tactic set
+open function tactic set lattice
 
 universes u v w
 variables {α : Type u} {β : Type v} {γ : Type w}
@@ -33,7 +33,7 @@ theorem subset_inter {s t r : set α} (rs : r ⊆ s) (rt : r ⊆ t) : r ⊆ s �
 λ x xr, and.intro (rs xr) (rt xr)
 
 instance lattice_set : complete_lattice (set α) :=
-{ complete_lattice .
+{ lattice.complete_lattice .
   le           := subset,
   le_refl      := subset.refl,
   le_trans     := take a b c, subset.trans,

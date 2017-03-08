@@ -3,7 +3,7 @@ Copyright (c) 2017 Johannes Hölzl. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Johannes Hölzl
 
-Type class hierarchy for boolean algebras.
+Type class hierarchy for Boolean algebras.
 -/
 
 
@@ -11,6 +11,8 @@ import .bounded_lattice
 
 universes u
 variables {α : Type u} {x y z : α}
+
+namespace lattice
 
 class distrib_lattice α extends lattice α :=
 (sup_inf : ∀x y z : α, x ⊔ (y ⊓ z) = (x ⊔ y) ⊓ (x ⊔ z))
@@ -32,7 +34,7 @@ calc x ⊓ (y ⊔ z) = (x ⊓ (x ⊔ z)) ⊓ (y ⊔ z)       : by rw [inf_sup_se
              ... = (x ⊓ y) ⊔ (x ⊓ z)             : by rw [sup_inf_left]
 
 lemma inf_sup_right : (y ⊔ z) ⊓ x = (y ⊓ x) ⊔ (z ⊓ x) :=
-by simp [inf_sup_left, λy:α, @inf_comm α _ y x]
+by simp [inf_sup_left, λy:α, @inf_comm α _ y x] 
 
 end distrib_lattice
 
@@ -65,10 +67,10 @@ boolean_algebra.sub_eq x y
 
 lemma neg_unique (i : x ⊓ y = ⊥) (s : x ⊔ y = ⊤) : - x = y :=
 have (- x ⊓ x) ⊔ (- x ⊓ y) = (y ⊓ x) ⊔ (y ⊓ - x),
-  by simp [i, @inf_comm _ _ y],
+  by rsimp,
 have - x ⊓ (x ⊔ y) = y ⊓ (x ⊔ - x),
-  by rw [-inf_sup_left, -inf_sup_left] at this; assumption,
-by simp [i, s] at this; assumption
+  begin [smt] eblast_using inf_sup_left end,
+by rsimp
 
 @[simp]
 lemma neg_top : - ⊤ = (⊥:α) :=
@@ -78,28 +80,36 @@ neg_unique (by simp) (by simp)
 lemma neg_bot : - ⊥ = (⊤:α) :=
 neg_unique (by simp) (by simp)
 
-@[simp] -- name! In which structure should neg neg be in? lattice namespace?!
-lemma neg_neg' : - (- x) = x :=
+@[simp]
+lemma neg_neg : - (- x) = x :=
 neg_unique (by simp) (by simp)
+
+lemma neg_eq_neg_of_eq (h : - x = - y) : x = y :=
+have - - x = - - y,
+  from congr_arg neg h,
+by simp [neg_neg] at this; assumption
 
 @[simp]
 lemma neg_eq_neg_iff : - x = - y ↔ x = y :=
-⟨suppose -x = -y,
-  have - - x = - - y, from congr_arg neg this,
-  show x = y, by simp [neg_neg'] at this; assumption,
-  congr_arg neg⟩
+⟨neg_eq_neg_of_eq, congr_arg neg⟩
 
 @[simp]
 lemma neg_inf : - (x ⊓ y) = -x ⊔ -y :=
-neg_unique
-  (calc x ⊓ y ⊓ (-x ⊔ -y) = (y ⊓ (x ⊓ - x)) ⊔ (x ⊓ (y ⊓ - y)) : by rw [inf_sup_left]; cc
-                       ... = ⊥ : by simp)
-  (calc (x ⊓ y) ⊔ (- x ⊔ - y) = (- y ⊔ (x ⊔ - x)) ⊓ (- x ⊔ (y ⊔ - y)) : by rw [sup_inf_right]; cc
-                           ... = ⊤ : by simp)
+neg_unique -- TODO: try rsimp if it supports custom lemmas
+  (calc (x ⊓ y) ⊓ (- x ⊔ - y) = (y ⊓ (x ⊓ - x)) ⊔ (x ⊓ (y ⊓ - y)) : by rw [inf_sup_left]; ac_refl
+                          ... = ⊥ : by simp)
+  (calc (x ⊓ y) ⊔ (- x ⊔ - y) = (- y ⊔ (x ⊔ - x)) ⊓ (- x ⊔ (y ⊔ - y)) : by rw [sup_inf_right]; ac_refl
+                          ... = ⊤ : by simp)
 
 @[simp]
 lemma neg_sup : - (x ⊔ y) = -x ⊓ -y :=
-have - -x ⊔ - -y = - (-x ⊓ -y), from neg_inf^.symm,
-by rw [neg_neg', neg_neg'] at this; rw [this, neg_neg']
+begin [smt] eblast_using [neg_neg, neg_inf] end
+
+lemma neg_le_neg (h : y ≤ x) : - x ≤ - y :=
+le_of_inf_eq $ 
+  calc -x ⊓ -y = - (x ⊔ y) : neg_sup^.symm
+           ... = -x        : congr_arg neg $ sup_of_le_left h
 
 end boolean_algebra
+
+end lattice

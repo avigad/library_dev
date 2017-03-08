@@ -13,6 +13,8 @@ import .basic
 universes u v
 variable {α : Type u}
 
+namespace lattice
+
 /- Bounded lattices -/
 
 class bounded_lattice (α : Type u) extends lattice α, order_top α, order_bot α
@@ -31,7 +33,7 @@ instance semilattice_sup_bot_of_bounded_lattice (α : Type u) [bl : bounded_latt
 
 /- Prop instance -/
 instance bounded_lattice_Prop : bounded_lattice Prop :=
-{ bounded_lattice .
+{ lattice.bounded_lattice .
   le           := λa b, a → b,
   le_refl      := take _, id,
   le_trans     := take a b c f g, g ∘ f,
@@ -89,3 +91,5 @@ instance bounded_lattice_fun {α : Type u} {β : Type v} [bounded_lattice β] :
 
   bot          := λa, bot,
   bot_le       := take f a, bot_le }
+
+end lattice

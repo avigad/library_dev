@@ -11,6 +11,7 @@ import ..order
 universes u v w
 
 /- TODO: automatic construction of dual definitions / theorems -/
+namespace lattice
 
 reserve infixl ` ⊓ `:70
 reserve infixl ` ⊔ `:65
@@ -101,6 +102,9 @@ le_antisymm (sup_le h (le_refl _)) le_sup_right
 lemma sup_le_sup (h₁ : a ≤ b) (h₂ : c ≤ d) : a ⊔ c ≤ b ⊔ d :=
 sup_le (le_sup_left_of_le h₁) (le_sup_right_of_le h₂)
 
+lemma le_of_sup_eq (h : a ⊔ b = b) : a ≤ b :=
+h ▸ le_sup_left
+
 @[simp]
 lemma sup_idem : a ⊔ a = a :=
 sup_of_le_left (le_refl _)
@@ -158,6 +162,9 @@ le_antisymm inf_le_right (le_inf h (le_refl _))
 
 lemma inf_le_inf (h₁ : a ≤ b) (h₂ : c ≤ d) : a ⊓ c ≤ b ⊓ d :=
 le_inf (inf_le_left_of_le h₁) (inf_le_right_of_le h₂)
+
+lemma le_of_inf_eq (h : a ⊓ b = a) : a ≤ b :=
+h ▸ inf_le_right
 
 @[simp]
 lemma inf_idem : a ⊓ a = a :=
@@ -287,3 +294,5 @@ instance lattice_of_decidable_linear_order {α : Type u} [o : decidable_linear_o
   inf_le_left  := min_le_left,
   inf_le_right := min_le_right,
   le_inf       := take a b c, le_min }
+
+end lattice
