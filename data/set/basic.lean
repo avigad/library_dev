@@ -641,7 +641,7 @@ show (⨅x ∈ s, t x) ≤ t x,
 @[simp]
 theorem bInter_empty (u : α → set β) : (⋂ x ∈ (∅ : set α), u x) = univ :=
 show (⨅x ∈ (∅ : set α), u x) = ⊤, -- simplifier should be able to rewrite x ∈ ∅ to false.
-  from infi_empty
+  from infi_emptyset
 
 @[simp]
 theorem bInter_univ (u : α → set β) : (⋂ x ∈ @univ α, u x) = ⋂ x, u x :=
@@ -674,7 +674,7 @@ by simp
 
 @[simp]
 theorem bUnion_empty (s : α → set β) : (⋃ x ∈ (∅ : set α), s x) = ∅ :=
-supr_empty
+supr_emptyset
 
 @[simp]
 theorem bUnion_univ (s : α → set β) : (⋃ x ∈ @univ α, s x) = ⋃ x, s x :=
