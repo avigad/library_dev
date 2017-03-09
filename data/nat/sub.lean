@@ -69,11 +69,6 @@ have succ (k - n) ≤ m, from
         ...     = m              : by rewrite nat.add_sub_cancel_left,
 lt_of_succ_le this
 
-theorem le_of_sub_eq_zero {m n : ℕ} (h : m - n = 0) : m ≤ n :=
-le_of_not_gt
-  (suppose m > n,
-    have m - n > 0, from nat.sub_pos_of_lt this,
-    show false, from begin rw h at this, exact not_lt_zero _ this end)
 
 /- distance -/
 
@@ -91,9 +86,9 @@ by simp [dist.def, nat.sub_self]
 
 theorem eq_of_dist_eq_zero {n m : ℕ} (h : dist n m = 0) : n = m :=
 have n - m = 0, from eq_zero_of_add_eq_zero_right h,
-have n ≤ m, from le_of_sub_eq_zero this,
+have n ≤ m, from nat.le_of_sub_eq_zero this,
 have m - n = 0, from eq_zero_of_add_eq_zero_left h,
-have m ≤ n, from le_of_sub_eq_zero this,
+have m ≤ n, from nat.le_of_sub_eq_zero this,
 le_antisymm ‹n ≤ m› ‹m ≤ n›
 
 theorem dist_eq_zero {n m : ℕ} (h : n = m) : dist n m = 0 :=

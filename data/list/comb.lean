@@ -311,13 +311,6 @@ theorem zip_nil_left (l : list α) : zip ([] : list β) l = [] := rfl
 theorem zip_nil_right (l : list α) : zip l ([] : list β) = [] :=
 begin cases l, reflexivity, reflexivity end
 
-def unzip : list (α × β) → list α × list β
-| []            := ([], [])
-| ((a, b) :: l) :=
-  match (unzip l) with
-  | (la, lb) := (a :: la, b :: lb)
-  end
-
 @[simp]
 theorem unzip_nil : unzip (@nil (α × β)) = ([], []) := rfl
 
