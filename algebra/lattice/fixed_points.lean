@@ -14,6 +14,8 @@ variables {α : Type u} {β : Type v} {γ : Type w}
 lemma ge_of_eq [weak_order α] {a b : α} : a = b → a ≥ b :=
 λ h, h ▸ le_refl a
 
+namespace lattice
+
 section fixedpoint
 variables [complete_lattice α] {f : α → α}
 
@@ -118,3 +120,5 @@ le_antisymm
   (le_gfp $ le_gfp $ le_of_eq $ gfp_eq $ take a b h, m h h)
 
 end fixedpoint_eqn
+
+end lattice

@@ -11,13 +11,10 @@ universes u v w
 variables {α : Type u} {β : Type v} {ι : Sort w}
 
 namespace lattice
-open lattice
 
 class complete_distrib_lattice α extends complete_lattice α :=
   (sup_Inf : ∀a s, a ⊔ Inf s = (⨅ b ∈ s, a ⊔ b))
   (inf_Sup : ∀a s, a ⊓ Sup s = (⨆ b ∈ s, a ⊓ b))
-
-
 
 class complete_boolean_algebra α extends boolean_algebra α, complete_distrib_lattice α
 
