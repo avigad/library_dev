@@ -136,9 +136,7 @@ theorem foldr_cons (f : α → β → β) (b : β) (a : α) (l : list α) :
 
 section foldl_eq_foldr
   -- foldl and foldr coincide when f is commutative and associative
-  variable {f : α → α → α}
-  premise (hcomm  : ∀ a b, f a b = f b a)
-  premise (hassoc : ∀ a b c, f (f a b) c = f a (f b c))
+  variables {f : α → α → α} (hcomm  : ∀ a b, f a b = f b a) (hassoc : ∀ a b c, f (f a b) c = f a (f b c))
   include hcomm hassoc
 
   theorem foldl_eq_of_comm_of_assoc : ∀ a b l, foldl f a (b::l) = f b (foldl f a l)

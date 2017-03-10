@@ -15,4 +15,4 @@ meta def my_tac : tactic expr :=
 do A ← to_expr `(true ∧ true),
    mk_inhabitant_using A (trace_state >> repeat constructor)
 
-run_command my_tac >>= trace
+run_cmd my_tac >>= trace

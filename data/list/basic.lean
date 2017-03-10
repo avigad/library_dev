@@ -178,7 +178,7 @@ theorem nth_eq_some : ∀ {l : list α} {n : nat}, n < length l → { a : α // 
   subtype.rec_on (nth_eq_some this)
     (take b : α, take hb : nth l n = some b,
       show { b : α // nth (a::l) (succ n) = some b },
-         from subtype.tag b (by rw [nth_succ, hb]))
+         from ⟨b, by rw [nth_succ, hb]⟩)
 
 theorem find_nth [decidable_eq α] {a : α} : ∀ {l : list α}, a ∈ l → nth l (find a l) = some a
 | []     ain   := absurd ain (not_mem_nil _)

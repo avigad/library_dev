@@ -71,7 +71,7 @@ list.foldl (λ t (p : name × name), do
   else t)
 skip multiplicative_to_additive_pairs'
 
-run_command transport_multiplicative_to_additive'
+run_cmd transport_multiplicative_to_additive'
 
 end
 

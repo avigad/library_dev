@@ -323,12 +323,12 @@ eq.trans supr_union $ congr_arg (λx:α, x ⊔ (⨆x∈s, f x)) this
 @[simp]
 lemma infi_singleton {f : β → α} {b : β} : (⨅ x ∈ (singleton b : set β), f x) = f b :=
 show (⨅ x ∈ insert b (∅ : set β), f x) = f b,
-  by simp
+  begin simp, rw [infi_const], simp, assumption end /- TODO: what to do with infi_const? -/
 
 @[simp]
 lemma supr_singleton {f : β → α} {b : β} : (⨆ x ∈ (singleton b : set β), f x) = f b :=
 show (⨆ x ∈ insert b (∅ : set β), f x) = f b,
-  by simp
+  begin simp, rw [supr_const], simp, assumption end /- TODO: what to do with supr_const? -/
 
 /- supr and infi under Type -/
 

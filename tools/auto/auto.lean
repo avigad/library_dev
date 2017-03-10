@@ -282,7 +282,6 @@ else
   hence can be applied in safe mode.
 -/
 
-check unify
 -- we really want: e₁ and e₂ can be unified without instantiating metavariables
 meta def unify_safe_core (t : transparency) (e₁ e₂ : expr) : tactic unit :=
 cond (has_meta_var e₁ || has_meta_var e₂) failed (unify e₁ e₂ t)
@@ -290,7 +289,6 @@ cond (has_meta_var e₁ || has_meta_var e₂) failed (unify e₁ e₂ t)
 meta def unify_safe (e₁ e₂ : expr) : tactic unit :=
 unify_safe_core semireducible e₁ e₂
 
-check apply
 -- we really want: try to apply e, without instantiation any metavariables in the goal
 -- maybe we also want the same for fapply?
 meta def apply_safe_core (t : transparency) (all : bool) (insts : bool) (e : expr) :
@@ -423,7 +421,7 @@ meta def intro_rule_attr : caching_user_attribute (intro_rule_database) :=
   mk_cache := intro_rule_database_of_list_name,
   dependencies := [] }
 
-run_command attribute.register ``intro_rule_attr
+run_cmd attribute.register ``intro_rule_attr
 
 meta def elim_rule_database_of_list_name (ns : list name) : tactic (elim_rule_database) :=
 do env ← get_env,
@@ -438,7 +436,7 @@ meta def elim_rule_attr : caching_user_attribute (elim_rule_database) :=
   mk_cache := elim_rule_database_of_list_name,
   dependencies := [] }
 
-run_command attribute.register ``elim_rule_attr
+run_cmd attribute.register ``elim_rule_attr
 
 meta def nelim_rule_attr : caching_user_attribute (elim_rule_database) :=
 { name     := `auto.nelim_rule,
@@ -446,7 +444,7 @@ meta def nelim_rule_attr : caching_user_attribute (elim_rule_database) :=
   mk_cache := elim_rule_database_of_list_name,
   dependencies := [] }
 
-run_command attribute.register ``nelim_rule_attr
+run_cmd attribute.register ``nelim_rule_attr
 
 meta def bintro_rule_database_of_list_name (ns : list name) : tactic (bintro_rule_database) :=
 do env ← get_env,
@@ -461,7 +459,7 @@ meta def bintro_rule_attr : caching_user_attribute (bintro_rule_database) :=
   mk_cache := bintro_rule_database_of_list_name,
   dependencies := [] }
 
-run_command attribute.register ``bintro_rule_attr
+run_cmd attribute.register ``bintro_rule_attr
 
 meta def belim_rule_database_of_list_name (ns : list name) : tactic (belim_rule_database) :=
 do env ← get_env,
@@ -476,7 +474,7 @@ meta def belim_rule_attr : caching_user_attribute (belim_rule_database) :=
   mk_cache := belim_rule_database_of_list_name,
   dependencies := [] }
 
-run_command attribute.register ``belim_rule_attr
+run_cmd attribute.register ``belim_rule_attr
 
 meta def bnelim_rule_attr : caching_user_attribute (belim_rule_database) :=
 { name     := `auto.bnelim_rule,
@@ -484,7 +482,7 @@ meta def bnelim_rule_attr : caching_user_attribute (belim_rule_database) :=
   mk_cache := belim_rule_database_of_list_name,
   dependencies := [] }
 
-run_command attribute.register ``bnelim_rule_attr
+run_cmd attribute.register ``bnelim_rule_attr
 
 
 /- intro rules -/
