@@ -411,7 +411,7 @@ theorem mem_of_mem_map_pair₁ {a₁ a : α} {b₁ : β} {l : list β} :
   (a₁, b₁) ∈ map (λ b, (a, b)) l → b₁ ∈ l :=
 assume ain,
 have snd (a₁, b₁) ∈ map snd (map (λ b, (a, b)) l), from mem_map snd ain,
-have b₁ ∈ map (λx, x) l, begin rw [map_map] at this, exact this end,
+have b₁ ∈ map id l, begin rw [map_map] at this, exact this end,
 begin rw [map_id] at this, exact this end
 
 theorem mem_product {a : α} {b : β} : ∀ {l₁ l₂}, a ∈ l₁ → b ∈ l₂ → (a, b) ∈ @product α β l₁ l₂
