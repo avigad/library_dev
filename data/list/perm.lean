@@ -25,7 +25,7 @@ infix ~ := perm
 
 theorem eq_nil_of_perm_nil {l₁ : list α} (p : ([] : list α) ~ l₁) : l₁ = ([] : list α) :=
 have gen : ∀ (l₂ : list α) (p : l₂ ~ l₁), l₂ = ([] : list α) → l₁ = ([] : list α), from
-  take l₂ p, perm.induction_on p
+  take l₂ p, perm.rec_on p
     (λ h, h)
     (begin intros, contradiction end)
     (begin intros, contradiction end)
@@ -34,7 +34,7 @@ gen [] p rfl
 
 theorem not_perm_nil_cons (x : α) (l : list α) : ¬ [] ~ (x::l) :=
 have gen : ∀ (l₁ l₂ : list α) (p : l₁ ~ l₂), l₁ = [] → l₂ = (x::l) → false, from
-  take l₁ l₂ p, perm.induction_on p
+  take l₁ l₂ p, perm.rec_on p
     (begin intros, contradiction end)
     (begin intros, contradiction end)
     (begin intros, contradiction end)
@@ -53,7 +53,7 @@ protected theorem refl : ∀ (l : list α), l ~ l
 
 @[symm]
 protected theorem symm : ∀ {l₁ l₂ : list α}, l₁ ~ l₂ → l₂ ~ l₁ :=
-take l₁ l₂ p, perm.induction_on p
+take l₁ l₂ p, perm.rec_on p
   nil
   (λ x l₁ l₂ p₁ r₁, skip x r₁)
   (λ x y l, swap y x l)
@@ -69,7 +69,7 @@ protected definition is_setoid (α : Type) : setoid (list α) :=
 setoid.mk (@perm α) (perm.eqv α)
 
 theorem mem_of_perm {a : α} {l₁ l₂ : list α} : l₁ ~ l₂ → a ∈ l₁ → a ∈ l₂ :=
-assume p, perm.induction_on p
+assume p, perm.rec_on p
   (λ h, h)
   (λ x l₁ l₂ p₁ r₁ i, or.elim (eq_or_mem_of_mem_cons i)
     (suppose a = x,  begin rw this, apply mem_cons_self end)
@@ -88,14 +88,14 @@ theorem mem_iff_mem_of_perm {a : α} {l₁ l₂ : list α} (h : l₁ ~ l₂) : a
 iff.intro (mem_of_perm h) (mem_of_perm h^.symm)
 
 theorem perm_app_left {l₁ l₂ : list α} (t₁ : list α) : l₁ ~ l₂ → (l₁++t₁) ~ (l₂++t₁) :=
-assume p, perm.induction_on p
+assume p, perm.rec_on p
   (perm.refl (list.nil ++ t₁))
   (λ x l₁ l₂ p₁ r₁, skip x r₁)
   (λ x y l, swap x y _)
   (λ l₁ l₂ l₃ p₁ p₂ r₁ r₂, trans r₁ r₂)
 
 theorem perm_app_right (l : list α) {t₁ t₂ : list α} : t₁ ~ t₂ → (l++t₁) ~ (l++t₂) :=
-list.induction_on l
+list.rec_on l
   (λ p, p)
   (λ x xs r p, skip x (r p))
 
@@ -118,7 +118,7 @@ take l, perm.symm (perm_cons_app a l)
 
 @[simp]
 theorem perm_app_comm {l₁ l₂ : list α} : (l₁++l₂) ~ (l₂++l₁) :=
-list.induction_on l₁
+list.rec_on l₁
   (by simp)
   (λ a t r, calc
     a::(t++l₂) ~ a::(l₂++t)   : skip a r
@@ -127,7 +127,7 @@ list.induction_on l₁
           ...  ~ l₂++(a::t)   : perm_app_right l₂ (perm.symm (perm_cons_app a t)))
 
 theorem length_eq_length_of_perm {l₁ l₂ : list α} : l₁ ~ l₂ → length l₁ = length l₂ :=
-assume p, perm.induction_on p
+assume p, perm.rec_on p
   rfl
   (λ x l₁ l₂ p r, by rw [length_cons, length_cons, r])
   (λ x y l, by repeat { rw length_cons })
@@ -135,7 +135,7 @@ assume p, perm.induction_on p
 
 theorem eq_singleton_of_perm_inv (a : α) {l : list α} : [a] ~ l → l = [a] :=
 have gen : ∀ l₂, perm l₂ l → l₂ = [a] → l = [a], from
-  take l₂, assume p, perm.induction_on p
+  take l₂, assume p, perm.rec_on p
     (λ e, e)
     (λ x l₁ l₂ p r e,
       begin
@@ -200,7 +200,7 @@ theorem perm_erase [decidable_eq α] {a : α} : ∀ {l : list α}, a ∈ l → l
 -- attribute [congr]
 theorem erase_perm_erase_of_perm [decidable_eq α] (a : α) {l₁ l₂ : list α} :
   l₁ ~ l₂ → erase a l₁ ~ erase a l₂ :=
-assume p, perm.induction_on p
+assume p, perm.rec_on p
   nil
   (λ x t₁ t₂ p r,
     by_cases
@@ -232,8 +232,8 @@ theorem perm_induction_on {P : list α → list α → Prop} {l₁ l₂ : list �
   P l₁ l₂ :=
 have P_refl : ∀ l, P l l, from
   take l,
-  list.induction_on l h₁ (λ x xs ih, h₂ x xs xs (perm.refl xs) ih),
-perm.induction_on p h₁ h₂ (λ x y l, h₃ x y l l (perm.refl l) (P_refl l)) h₄
+  list.rec_on l h₁ (λ x xs ih, h₂ x xs xs (perm.refl xs) ih),
+perm.rec_on p h₁ h₂ (λ x y l, h₃ x y l l (perm.refl l) (P_refl l)) h₄
 
 theorem xswap {l₁ l₂ : list α} (x y : α) : l₁ ~ l₂ → x::y::l₁ ~ y::x::l₂ :=
 assume p, calc
@@ -313,7 +313,7 @@ variable [decα : decidable_eq α]
 include decα
 
 theorem count_eq_count_of_perm {l₁ l₂ : list α} : l₁ ~ l₂ → ∀ a, count a l₁ = count a l₂ :=
-suppose l₁ ~ l₂, perm.induction_on this
+suppose l₁ ~ l₂, perm.rec_on this
   (λ a, rfl)
   (λ x l₁ l₂ p h a, begin simp [count_cons', h a] end)
   (λ x y l a, begin simp [count_cons'] end)
@@ -441,7 +441,7 @@ open qeq
 notation l' `≈`:50 a `|` l:50 := qeq a l l'
 
 lemma perm_of_qeq {a : α} {l₁ l₂ : list α} : l₁≈a|l₂ → l₁~a::l₂ :=
-assume q, qeq.induction_on q
+assume q, qeq.rec_on q
   (λ h, perm.refl (a :: h))
   (λ b t₁ t₂ q₁ r₁, calc
      b::t₂ ~ b::a::t₁ : skip b r₁
@@ -487,7 +487,7 @@ begin
 end
 
 theorem qeq_of_mem {a : α} {l : list α} : a ∈ l → (∃ l', l ≈ a | l') :=
-list.induction_on l
+list.rec_on l
   (λ h : a ∈ ([] : list α), absurd h (not_mem_nil a))
   (λ b bs r ainbbs, or.elim (eq_or_mem_of_mem_cons ainbbs)
     (λ aeqb  : a = b,
@@ -837,7 +837,7 @@ theorem perm_union_right (l : list α) {t₁ t₂ : list α} : t₁ ~ t₂ → (
 begin
   intro h, generalize l l, clear l,
   exact
-    perm.induction_on h
+    perm.rec_on h
       (λ l, perm.refl l)
       (take x t₁ t₂,
         assume ht : t₁ ~ t₂,
@@ -874,7 +874,7 @@ section perm_inter
 variable [decidable_eq α]
 
 theorem perm_inter_left {l₁ l₂ : list α} (t₁ : list α) : l₁ ~ l₂ → (inter l₁ t₁) ~ (inter l₂ t₁) :=
-assume p, perm.induction_on p
+assume p, perm.rec_on p
   (perm.refl _)
   (λ x l₁ l₂ p₁ r₁, by_cases
     (λ xint₁  : x ∈ t₁, begin rw [inter_cons_of_mem _ xint₁, inter_cons_of_mem _ xint₁],
@@ -900,7 +900,7 @@ assume p, perm.induction_on p
   (λ l₁ l₂ l₃ p₁ p₂ r₁ r₂, trans r₁ r₂)
 
 theorem perm_inter_right (l : list α) {t₁ t₂ : list α} : t₁ ~ t₂ → (inter l t₁) ~ (inter l t₂) :=
-list.induction_on l
+list.rec_on l
   (λ p, by simp [inter_nil])
   (λ x xs r p, by_cases
     (λ xint₁  : x ∈ t₁,
@@ -970,7 +970,7 @@ theorem perm_ext : ∀ {l₁ l₂ : list α}, nodup l₁ → nodup l₂ → (∀
 end ext
 
 theorem nodup_of_perm_of_nodup {l₁ l₂ : list α} : l₁ ~ l₂ → nodup l₁ → nodup l₂ :=
-assume h, perm.induction_on h
+assume h, perm.rec_on h
   (λ h, h)
   (λ a l₁ l₂ p ih nd,
     have nodup l₁, from nodup_of_nodup_cons nd,
@@ -995,7 +995,7 @@ assume h, perm.induction_on h
 section product
 theorem perm_product_left {l₁ l₂ : list α} (t₁ : list β) :
   l₁ ~ l₂ → (product l₁ t₁) ~ (product l₂ t₁) :=
-assume p : l₁ ~ l₂, perm.induction_on p
+assume p : l₁ ~ l₂, perm.rec_on p
   (perm.refl _)
   (λ x l₁ l₂ p r, perm_app (perm.refl (map _ t₁)) r)
   (λ x y l,
@@ -1009,7 +1009,7 @@ assume p : l₁ ~ l₂, perm.induction_on p
 
 theorem perm_product_right (l : list α) {t₁ t₂ : list β} :
   t₁ ~ t₂ → (product l t₁) ~ (product l t₂) :=
-list.induction_on l
+list.rec_on l
   (λ p, by simp [nil_product])
   (λ (a : α) (t : list α) (r : t₁ ~ t₂ → product t t₁ ~ product t t₂) (p : t₁ ~ t₂),
     perm_app (perm_map (λ b : β, (a, b)) p) (r p))
@@ -1024,7 +1024,7 @@ end product
 -- attribute [congr]
 theorem perm_filter {l₁ l₂ : list α} {p : α → Prop} [decidable_pred p] :
   l₁ ~ l₂ → (filter p l₁) ~ (filter p l₂) :=
-assume u, perm.induction_on u
+assume u, perm.rec_on u
   perm.nil
   (take x l₁' l₂',
     assume u' : l₁' ~ l₂',

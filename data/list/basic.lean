@@ -124,7 +124,7 @@ assume n, if_neg n
 
 @[simp]
 theorem find_of_not_mem {l : list α} {a : α} : ¬a ∈ l → find a l = length l :=
-list.induction_on l
+list.rec_on l
    (suppose ¬a ∈ [], rfl)
    (take b l,
       assume ih : ¬a ∈ l → find a l = length l,
@@ -134,7 +134,7 @@ list.induction_on l
         begin rw [find_cons, if_neg this^.left, ih this^.right], reflexivity end)
 
 lemma find_le_length {a : α} {l : list α} : find a l ≤ length l :=
-list.induction_on l
+list.rec_on l
   (by simp)
   (take b l, assume ih : find a l ≤ length l,
    show find a (b::l) ≤ length (b::l), from
