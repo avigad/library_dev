@@ -6,6 +6,42 @@ Authors: Jeremy Avigad
 Monadic parsing, following Graham Hutton and Erik Meijer, "Monadic Parsing in Haskell," 1998.
 -/
 
+/- auxiliary -/
+
+@[simp]
+lemma {u v} pair_eta {α : Type u} {β : Type v} : ∀{p : α × β}, (p.1, p.2) = p
+| (a, b) := rfl
+
+lemma {u} list.join_append {α : Type u} :
+  ∀xs ys : list (list α), list.join (xs ++ ys) = list.join xs ++ list.join ys
+| [] ys      := by simp [list.join]
+| (x::xs) ys := by simp [list.join, list.join_append]
+
+@[simp]
+lemma {u v} list.bind_nil {α : Type u} {β : Type v} {f : α → list β} : list.bind [] f = [] :=
+rfl
+
+@[simp]
+lemma {u v} list.bind_cons {α : Type u} {β : Type v} {f : α → list β} {x : α} {xs : list α} :
+  list.bind (x :: xs) f = f x ++ list.bind xs f :=
+rfl
+
+@[simp]
+lemma {u v} list.bind_append {α : Type u} {β : Type v} {f : α → list β} :
+  ∀xs ys : list α, list.bind (xs ++ ys) f = list.bind xs f ++ list.bind ys f
+| [] _ := by simp
+| (x::xs) _ := by simp [list.bind_append xs]
+
+lemma {u v w} list.bind_assoc {α : Type u} {β : Type v} {γ : Type w} {f : α → list β} {g : β → list γ} :
+  ∀xs, list.bind (list.bind xs f) g = list.bind xs (λx, list.bind (f x) g)
+| []      := by simp [list.map, list.join, list.bind]
+| (x::xs) := by simp [list.join_append, list.bind_assoc xs]
+
+lemma {u v} list.bind_singleton {α : Type u} {β : Type v} {f : α → β} :
+  ∀xs, list.bind xs (λx, [f x]) = list.map f xs
+| [] := by simp
+| (x :: xs) := by simp [list.bind_singleton xs]
+
 -- TODO(Jeremy): move this
 namespace char
 
@@ -75,16 +111,20 @@ def parser (α : Type) : Type := string → list (α × string)
 @[inline] def parser_pure (a : α) : parser α := λ s, [(a, s)]
 
 @[inline] def parser_bind (a : parser α) (b : α → parser β) : parser β :=
-λ s, list.join $ list.for (a s) $ (λ p, b p.1 p.2)
+λ s, list.bind (a s) (λ p, b p.1 p.2)
 
 instance monad_parser : monad parser :=
 { map                   := @parser_fmap,
   pure                  := @parser_pure,
   bind                  := @parser_bind,
-  id_map                := sorry,
-  pure_bind             := sorry,
-  bind_assoc            := sorry,
-  bind_pure_comp_eq_map := sorry }
+  id_map                := take α p, funext $ take s,
+    by simp [parser_fmap]; exact list.map_id _,
+  pure_bind             := take α β a f, funext $ take s,
+    by simp [parser_bind, parser_pure],
+  bind_assoc            := take α β γ p f g, funext $ take s, 
+    by simp [parser_bind, list.bind_assoc],
+  bind_pure_comp_eq_map := take α β f p, funext $ take s,
+    by simp [parser_bind, parser_pure, parser_fmap, list.bind_singleton, function.comp] }
 
 def list.deterministic_or : list α → list α → list α
 | [] []      := []
