@@ -395,6 +395,7 @@ theorem sorted_merge : Π {p : list α × list α},
   sorted r p.1 → sorted r p.2 → sorted r (merge p) :=
 well_founded.fix (inv_image.wf _ nat.lt_wf) (sorted_merge.F totr transr)
 
+
 private def sorted_merge_sort.F :
   Π l : list α, (Π l₁ : list α, length l₁ < length l → sorted r (merge_sort l₁)) →
     sorted r (merge_sort l)
@@ -404,9 +405,13 @@ private def sorted_merge_sort.F :
   begin
     simp,
     apply sorted_merge r totr transr,
-    admit, admit
---    { apply f, exact length_split_cons_cons_fst_lt a b l },
---    apply f, exact length_split_cons_cons_snd_lt a b l
+    -- this should be handled by the simplifier, i.e. cancel out +1 and rewrite _ < _ + 1 to _ <= _
+    { apply f,
+      show length (split l)^.fst + (1 + 0) < length l + (1 + 1),
+        from add_lt_add_of_le_of_lt (length_split_fst_le l) (add_lt_add_of_le_of_lt (le_refl 1) zero_lt_one) },
+    { apply f,
+      show length (split l)^.snd + (1 + 0) < length l + (1 + 1),
+        from add_lt_add_of_le_of_lt (length_split_snd_le l) (add_lt_add_of_le_of_lt (le_refl 1) zero_lt_one) }
   end
 
 theorem sorted_merge_sort : ∀ l : list α, sorted r (merge_sort l) :=

@@ -329,6 +329,11 @@ iff.intro
          match hepx : _ → ∃ x, p x ∨ q x with ⟨x, hpx⟩  := ⟨x, or.inl hpx⟩ end)
       (assume ⟨x, hqx⟩, ⟨x, or.inr hqx⟩))
 
+@[simp]
+theorem exists_and_iff_and_exists {q : Prop} {p : A → Prop} :
+  (∃x, q ∧ p x) ↔ q ∧ (∃x, p x) :=
+⟨take ⟨x, hq, hp⟩, ⟨hq, x, hp⟩, take ⟨hq, x, hp⟩, ⟨x, hq, hp⟩⟩
+
 end quantifiers
 
 /- classical versions -/
@@ -344,6 +349,11 @@ decidable.exists_not_of_not_forall h
 
 theorem not_forall_iff_exists_not (p : A → Prop) : (¬ ∀ x, p x) ↔ (∃ x, ¬ p x) :=
 decidable.not_forall_iff_exists_not p
+
+theorem forall_or_iff_or_forall {q : Prop} {p : A → Prop} :
+  (∀x, q ∨ p x) ↔ q ∨ (∀x, p x) :=
+⟨take h, if hq : q then or.inl hq else or.inr $ take x, or.resolve_left (h x) hq, 
+  take h x, or.imp_right (suppose ∀x, p x, this x) h⟩
 
 end classical
 

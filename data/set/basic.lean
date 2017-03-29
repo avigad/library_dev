@@ -131,6 +131,7 @@ or.elim H₁ H₂ H₃
 
 theorem mem_union_iff (x : α) (a b : set α) : x ∈ a ∪ b ↔ x ∈ a ∨ x ∈ b := iff.rfl
 
+@[simp]
 theorem mem_union_eq (x : α) (a b : set α) : x ∈ a ∪ b = (x ∈ a ∨ x ∈ b) := rfl
 
 attribute [simp] union_self union_empty empty_union -- union_comm union_assoc
@@ -601,12 +602,12 @@ by simp [compl_compl]
 
 theorem inter_distrib_Union_left (s : set β) (t : α → set β) :
   s ∩ (⋃ i, t i) = ⋃ i, s ∩ t i :=
-sorry -- complete_distrib_lattice
+set.ext (by simp)
 
 -- classical
 theorem union_distrib_Inter_left (s : set β) (t : α → set β) :
   s ∪ (⋂ i, t i) = ⋂ i, s ∪ t i :=
-sorry -- complete_distrib_lattice, really classical?
+set.ext $ take x, by simp [classical.forall_or_iff_or_forall]
 
 /- bounded unions and intersections -/
 
@@ -756,10 +757,15 @@ theorem sUnion_image (f : α → set β) (s : set α) : ⋃₀ (f ' s) = ⋃ x �
 @[simp]
 theorem sInter_image (f : α → set β) (s : set α) : ⋂₀ (f ' s) = ⋂ x ∈ s, f x := Inf_image
 
-
 theorem compl_sUnion (S : set (set α)) :
   - ⋃₀ S = ⋂₀ (compl ' S) :=
-sorry -- begin simp, reflexivity end
+set.ext $ take x,
+  ⟨suppose ¬ (∃s∈S, x ∈ s), take s h,
+    match s, h with
+    ._, ⟨t, hs, rfl⟩ := take h, this ⟨t, hs, h⟩
+    end,
+    suppose ∀s, s ∈ compl ' S → x ∈ s,
+    take ⟨t, tS, xt⟩, this (compl t) (mem_image_of_mem _ tS) xt⟩
 
 -- classical
 theorem sUnion_eq_compl_sInter_compl (S : set (set α)) :
