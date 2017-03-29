@@ -77,7 +77,7 @@ theorem and_imp_iff (a b c : Prop) : (a ∧ b → c) ↔ (a → b → c) :=
 iff.intro (λ h a b, h ⟨a, b⟩) and.rec
 
 theorem and_not_self_iff (a : Prop) : a ∧ ¬ a ↔ false :=
-iff.intro (assume h, (h↣right) (h↣left)) (assume h, h↣elim)
+iff.intro (assume h, (h^.right) (h^.left)) (assume h, h^.elim)
 
 theorem not_and_self_iff (a : Prop) : ¬ a ∧ a ↔ false :=
 iff.intro (assume ⟨hna, ha⟩, hna ha) false.elim
@@ -316,8 +316,8 @@ iff.intro (Exists.rec (λ x (hpx : p), hpx)) (λ hp, ⟨default A, hp⟩)
 
 theorem forall_and_distrib (p q : A → Prop) : (∀ x, p x ∧ q x) ↔ (∀ x, p x) ∧ (∀ x, q x) :=
 iff.intro
-  (assume h, ⟨(take x, (h x)↣left), (take x, (h x)↣right)⟩)
-  (assume h x, ⟨h↣left x, h↣right x⟩)
+  (assume h, ⟨(take x, (h x)^.left), (take x, (h x)^.right)⟩)
+  (assume h x, ⟨h^.left x, h^.right x⟩)
 
 theorem exists_or_distrib (p q : A → Prop) : (∃ x, p x ∨ q x) ↔ (∃ x, p x) ∨ (∃ x, q x) :=
 iff.intro
@@ -435,8 +435,8 @@ iff_true_intro (λ h hrx, trivial)
 
 theorem bforall_and_distrib : (∀ x, p x ∧ q x) ↔ (∀ x, p x) ∧ (∀ x, q x) :=
 iff.intro
-  (assume h, ⟨(take x, (h x)↣left), (take x, (h x)↣right)⟩)
-  (assume h x, ⟨h↣left x, h↣right x⟩)
+  (assume h, ⟨(take x, (h x)^.left), (take x, (h x)^.right)⟩)
+  (assume h x, ⟨h^.left x, h^.right x⟩)
 
 theorem bexists_or_distrib (r p q : A → Prop) :
   (∃ x (hrx : r x), p x ∨ q x) ↔ (∃ x (hrx : r x), p x) ∨ (∃ x (hrx : r x), q x) :=

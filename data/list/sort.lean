@@ -321,15 +321,16 @@ begin repeat { rw mem_iff_count_pos }, simp [count_merge, nat.add_pos_iff_pos_or
 private def perm_merge_sort.F :
   Π l : list α, (Π l₁ : list α, length l₁ < length l → merge_sort l₁ ~ l₁) →
     merge_sort l ~ l
-| []  f           := perm.refl _
-| [a] f           := perm.refl _
+| []  f           := by simp; exact perm.refl _
+| [a] f           := by simp; exact perm.refl _
 | (a :: b :: l) f :=
   perm.perm_of_forall_count_eq
   begin
     intro c,
     pose hrec₁ := perm.count_eq_count_of_perm (f _ (length_split_cons_cons_fst_lt a b l)) c,
     pose hrec₂ := perm.count_eq_count_of_perm (f _ (length_split_cons_cons_snd_lt a b l)) c,
-    simp at hrec₁, simp at hrec₁, simp at hrec₂, simp at hrec₂,
+    simp at hrec₁,
+    simp at hrec₂,
     simp [hrec₁, hrec₂, count_merge, count_split, count_cons']
   end
 
@@ -397,8 +398,8 @@ well_founded.fix (inv_image.wf _ nat.lt_wf) (sorted_merge.F totr transr)
 private def sorted_merge_sort.F :
   Π l : list α, (Π l₁ : list α, length l₁ < length l → sorted r (merge_sort l₁)) →
     sorted r (merge_sort l)
-| []            f := sorted_nil r
-| [a]           f := sorted_singleton r a
+| []            f := by simp; exact sorted_nil r
+| [a]           f := by simp; exact sorted_singleton r a
 | (a :: b :: l) f :=
   begin
     simp,

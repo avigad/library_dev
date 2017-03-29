@@ -77,10 +77,14 @@ def parser (α : Type) : Type := string → list (α × string)
 @[inline] def parser_bind (a : parser α) (b : α → parser β) : parser β :=
 λ s, list.join $ list.for (a s) $ (λ p, b p.1 p.2)
 
-instance : monad parser :=
-{ map  := @parser_fmap,
-  pure := @parser_pure,
-  bind := @parser_bind }
+instance monad_parser : monad parser :=
+{ map                   := @parser_fmap,
+  pure                  := @parser_pure,
+  bind                  := @parser_bind,
+  id_map                := sorry,
+  pure_bind             := sorry,
+  bind_assoc            := sorry,
+  bind_pure_comp_eq_map := sorry }
 
 def list.deterministic_or : list α → list α → list α
 | [] []      := []
@@ -88,9 +92,7 @@ def list.deterministic_or : list α → list α → list α
 | (x::xs) _  := [x]
 
 instance : alternative parser :=
-{ map  := @parser_fmap,
-  pure := @parser_pure,
-  seq  := take α β, seq_app,
+{ monad_parser with
   failure := λ a s, [],
   orelse := λ a p₁ p₂ s, list.deterministic_or (p₁ s) (p₂ s) }
 

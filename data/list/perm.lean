@@ -452,12 +452,12 @@ theorem qeq_app : ∀ (l₁ : list α) (a : α) (l₂ : list α), l₁ ++ (a :: 
 | (a::ains)     b l₂ := qcons a (qeq_app ains b l₂)
 
 theorem mem_head_of_qeq {a : α} : ∀ {l₁ l₂ : list α}, l₁ ≈ a | l₂ → a ∈ l₁
-| ._ ._ (qhead .a l)            := mem_cons_self a l
-| ._ ._ (@qcons .α .a b l l' q) := mem_cons_of_mem b (mem_head_of_qeq q)
+| ._ ._ (qhead .(a) l)            := mem_cons_self a l
+| ._ ._ (@qcons .(α) .(a) b l l' q) := mem_cons_of_mem b (mem_head_of_qeq q)
 
 theorem mem_tail_of_qeq {a : α} : ∀ {l₁ l₂ : list α}, l₁ ≈ a | l₂ → ∀ {b}, b ∈ l₂ → b ∈ l₁
-| ._ ._ (qhead .a l)            b bl  := mem_cons_of_mem a bl
-| ._ ._ (@qcons .α .a c l l' q) b bcl :=
+| ._ ._ (qhead .(a) l)            b bl  := mem_cons_of_mem a bl
+| ._ ._ (@qcons .(α) .(a) c l l' q) b bcl :=
   or.elim (eq_or_mem_of_mem_cons bcl)
     (take bc : b = c,
       begin rw bc, apply mem_cons_self end)
@@ -466,8 +466,8 @@ theorem mem_tail_of_qeq {a : α} : ∀ {l₁ l₂ : list α}, l₁ ≈ a | l₂ 
       mem_cons_of_mem c bl')
 
 theorem mem_cons_of_qeq {a : α} : ∀ {l₁ l₂ : list α}, l₁≈a|l₂ → ∀ {b}, b ∈ l₁ → b ∈ a::l₂
-| ._ ._ (qhead .a l)            b bal                  := bal
-| ._ ._ (@qcons .α .a c l l' q) b (bcl' : b ∈ c :: l') :=
+| ._ ._ (qhead ._ l)            b bal                  := bal
+| ._ ._ (@qcons ._ ._ c l l' q) b (bcl' : b ∈ c :: l') :=
   show b ∈ a :: c :: l, from
     or.elim (eq_or_mem_of_mem_cons bcl')
       (take bc : b = c,
@@ -501,8 +501,8 @@ list.rec_on l
          exists.intro (b::l') this)))
 
 theorem qeq_split {a : α} : ∀ {l l' : list α}, l'≈a|l → ∃ l₁ l₂, l = l₁ ++ l₂ ∧ l' = l₁ ++ (a::l₂)
-| ._ ._ (qhead .a l)            := ⟨[], l, by simp⟩
-| ._ ._ (@qcons .α .a c l l' q) :=
+| ._ ._ (qhead ._ l)            := ⟨[], l, by simp⟩
+| ._ ._ (@qcons ._ ._ c l l' q) :=
   match (qeq_split q) with
   | ⟨l₁, l₂, h₁, h₂⟩ := ⟨c :: l₁, l₂, by simp [h₁, h₂]⟩
   end
