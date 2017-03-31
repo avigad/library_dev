@@ -54,14 +54,14 @@ def is_whitespace : char → Prop
 instance decidable_is_whitespace : decidable_pred is_whitespace :=
 begin intro c, delta is_whitespace, apply_instance end
 
-def is_alpha (c : char) : Prop :=
-let n := to_nat c in n >= 65 ∧ n <= 122
-
 def is_upper (c : char) : Prop :=
-let n := to_nat c in n >= 65 ∧ n <= 96
+c.val ≥ 65 ∧ c.val ≤ 90
 
 def is_lower (c : char) : Prop :=
-let n := to_nat c in n >= 65 ∧ n <= 96
+c.val ≥ 97 ∧ c.val ≤ 122
+
+def is_alpha (c : char) : Prop :=
+c.is_upper ∨ c.is_lower
 
 def is_digit (c : char) : Prop :=
 let n := to_nat c in n >= 48 ∧ n <= 57
@@ -77,14 +77,14 @@ let n := to_nat c in
 if n >= 65 ∧ n <= 90 then of_nat (n + 32) else c
 
 -- TODO(Jeremy): automate this boilerplate
-instance decidable_is_alpha : decidable_pred is_alpha :=
-begin intro c, delta is_alpha, apply_instance end
-
 instance decidable_is_upper : decidable_pred is_upper :=
 begin intro c, delta is_upper, apply_instance end
 
 instance decidable_is_lower : decidable_pred is_lower :=
 begin intro c, delta is_lower, apply_instance end
+
+instance decidable_is_alpha : decidable_pred is_alpha :=
+begin intro c, delta is_alpha, apply_instance end
 
 instance decidable_is_digit : decidable_pred is_digit :=
 begin intro c, delta is_digit, apply_instance end
