@@ -63,7 +63,7 @@ end
 
 end intuit
 
-meta def intuit : tactic unit := intuit.solve ()
+meta def intuit : tactic unit := _root_.intuit.solve ()
 
 example (a b) : a → (a → b) → b := by intuit
 example (a b c) : (a → c) → (c → b) → ((a → b) → a) → a := by intuit
