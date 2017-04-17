@@ -67,8 +67,8 @@ lemma le_dual_eq_le {α : Type} (wo : weak_order α) (a b : α) :
 rfl
 
 lemma comp_le_comp_left_of_monotone [weak_order α] [weak_order β] [weak_order γ]
-  {f : β → α} {g h : γ → β} (m_f : monotone f) (le : g ≤ h) : f ∘ g ≤ f ∘ h :=
-take x, m_f (le x)
+  {f : β → α} {g h : γ → β} (m_f : monotone f) (le_gh : g ≤ h) : le.{max w u} (f ∘ g) (f ∘ h) :=
+take x, m_f (le_gh x)
 
 section monotone
 variables [weak_order α] [weak_order γ]

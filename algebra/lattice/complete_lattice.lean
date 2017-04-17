@@ -409,7 +409,7 @@ instance complete_lattice_Prop : complete_lattice Prop :=
   Sup    := λs, ∃a∈s, a,
   le_Sup := take s a h p, ⟨a, h, p⟩,
   Sup_le := take s a h ⟨b, h', p⟩, h b h' p,
-  Inf    := λs, ∀a∈s, a,
+  Inf    := λs, ∀a:Prop, a∈s → a,
   Inf_le := take s a h p, p a h,
   le_Inf := take s a h p b hb, h b hb p }
 
