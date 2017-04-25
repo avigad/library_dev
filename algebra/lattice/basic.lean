@@ -8,6 +8,8 @@ Defines the inf/sup (semi)-lattice with optionally top/bot type class hierarchy.
 
 import ..order
 
+set_option old_structure_cmd true
+
 universes u v w
 
 /- TODO: automatic construction of dual definitions / theorems -/

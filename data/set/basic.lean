@@ -553,12 +553,12 @@ end image
 /- union and intersection over a family of sets indexed by a type -/
 
 @[reducible]
-def Union {α : Sort u} (s : α → set β) : set β := supr s
+def Union' {α : Sort u} (s : α → set β) : set β := supr s
 
 @[reducible]
 def Inter {α : Sort u} (s : α → set β) : set β := infi s
 
-notation `⋃` binders `, ` r:(scoped f, Union f) := r
+notation `⋃` binders `, ` r:(scoped f, Union' f) := r
 notation `⋂` binders `, ` r:(scoped f, Inter f) := r
 
 @[simp]

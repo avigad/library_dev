@@ -10,6 +10,8 @@ Includes the Prop and fun instances.
 
 import .basic
 
+set_option old_structure_cmd true
+
 universes u v
 variable {α : Type u}
 
@@ -20,16 +22,16 @@ namespace lattice
 class bounded_lattice (α : Type u) extends lattice α, order_top α, order_bot α
 
 instance semilattice_inf_top_of_bounded_lattice (α : Type u) [bl : bounded_lattice α] : semilattice_inf_top α :=
-{ bl with le_top := take x, le_top }
+{ bl with le_top := take x, @le_top α _ x }
 
 instance semilattice_inf_bot_of_bounded_lattice (α : Type u) [bl : bounded_lattice α] : semilattice_inf_bot α :=
-{ bl with bot_le := take x, bot_le }
+{ bl with bot_le := take x, @bot_le α _ x }
 
 instance semilattice_sup_top_of_bounded_lattice (α : Type u) [bl : bounded_lattice α] : semilattice_sup_top α :=
-{ bl with le_top := take x, le_top }
+{ bl with le_top := take x, @le_top α _ x }
 
 instance semilattice_sup_bot_of_bounded_lattice (α : Type u) [bl : bounded_lattice α] : semilattice_sup_bot α :=
-{ bl with bot_le := take x, bot_le }
+{ bl with bot_le := take x, @bot_le α _ x }
 
 /- Prop instance -/
 instance bounded_lattice_Prop : bounded_lattice Prop :=

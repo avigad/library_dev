@@ -7,6 +7,8 @@ Theory of complete lattices.
 -/
 import .bounded_lattice
 
+set_option old_structure_cmd true
+
 universes u v w w₂
 variables {α : Type u} {β : Type v} {ι : Sort w} {ι₂ : Sort w₂}
 
@@ -15,8 +17,6 @@ namespace set
 theorem subset_union_left (s t : set α) : s ⊆ s ∪ t := λ x H, or.inl H
 
 theorem subset_union_right (s t : set α) : t ⊆ s ∪ t := λ x H, or.inr H
-
-definition univ : set α := λx, true
 
 end set
 
