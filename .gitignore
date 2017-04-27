@@ -1,6 +1,4 @@
 .#*
-flycheck*
-*.[cio]lean
-*.d
-/.ninja*
-/build.ninja
+*.olean
+/_target
+/leanpkg.path
