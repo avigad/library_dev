@@ -1,18 +1,15 @@
 /-
 Copyright (c) 2014 Jeremy Avigad. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors Jeremy Avigad, Leonardo de Moura
+Author: Jeremy Avigad
 
--- TODO: in emacs mode, change "\sub" to regular subset, use "\ssub" for strict,
-         similarly for "\sup"
-
--- QUESTION: can make the first argument in ∀ x ∈ a, ... implicit?
--- QUESTION: how should we handle facts that only hold classically?
+Test examples for "finish".
 -/
 import logic.basic data.set  -- from the library in the main repo
 import ....algebra.lattice
-import ...tactic.simp_tactic
-open function tactic set lattice
+import ...tactic.simp_tactic ..finish
+
+open function lattice auto
 
 universes u v w
 variables {α : Type u} {β : Type v} {γ : Type w}
@@ -23,27 +20,19 @@ namespace set
 lemma mem_set_of {a : α} {p : α → Prop} : a ∈ {a | p a} = p a :=
 rfl
 
--- TODO: write a tactic to unfold specific instances of generic notation?
+-- TODO(Jeremy): write a tactic to unfold specific instances of generic notation?
 theorem subset_def {s t : set α} : (s ⊆ t) = ∀ x, x ∈ s → x ∈ t := rfl
 theorem union_def {s₁ s₂ : set α} : s₁ ∪ s₂ = {a | a ∈ s₁ ∨ a ∈ s₂} := rfl
 theorem inter_def {s₁ s₂ : set α} : s₁ ∩ s₂ = {a | a ∈ s₁ ∧ a ∈ s₂} := rfl
 
+--open tactic expr
+
+--set_option pp.all true
 theorem union_subset {s t r : set α} (sr : s ⊆ r) (tr : t ⊆ r) : s ∪ t ⊆ r :=
 begin
-  dsimp_all [subset_def, union_def],
-  intros x h,
-  cases h; back_chaining_using_hs
+  simp_all [subset_def, union_def],
+  finish
 end
-
-theorem union_subset' {s t r : set α} (sr : s ⊆ r) (tr : t ⊆ r) : s ∪ t ⊆ r :=
-begin
-  dsimp_all [subset_def, union_def],
-  begin [smt]
-    intros x h,
-    destruct h; cc --tactic.back_chaining_using_hs
-  end
-end
-
 
 theorem inter_subset_left (s t : set α) : s ∩ t ⊆ s := λ x H, and.left H
 
@@ -52,26 +41,7 @@ theorem inter_subset_right (s t : set α) : s ∩ t ⊆ t := λ x H, and.right H
 theorem subset_inter {s t r : set α} (rs : r ⊆ s) (rt : r ⊆ t) : r ⊆ s ∩ t :=
 begin
   dsimp_all [subset_def, inter_def],
-  intros x h,
-  split; back_chaining_using_hs
-end
-
-example (x y z : ℕ) (p : ℕ → Prop) (h₀ : x = y) (h₁ : y = z) (h₂ : ∀ w, w = z → p w) : p x :=
-begin [smt]
-  apply h₂
-end
-
-example (x y z : ℕ) (p q : ℕ → Prop) (h₀ : x = y) (h₁ : y = z) (h₂ : ∀ w, w = z → p w)
-  (h₃ : ∀ x, p x → q x) : q x :=
-begin [smt]
-  add_lemma h₂,
-  apply h₃,
-  ematch
-end
-
-example (x y z : ℕ) (p : ℕ → Prop) (h₀ : x = y) (h₁ : y = z) (h₂ : ∀ w, w = z → p w) : p x :=
-begin [smt]
-  tactic.back_chaining_using_hs
+  finish
 end
 
 

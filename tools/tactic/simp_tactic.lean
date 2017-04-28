@@ -151,16 +151,14 @@ meta def simp_all (s : simp_lemmas) (cfg : simp_config := {}) : tactic unit :=
 do ctx ← local_context,
    let ns := ctx.map local_pp_name,
    revert_lst ctx,
-   S     ← simp_lemmas.mk_default,
-   simp_intro_lst_using' ns S {}
+   simp_intro_lst_using' ns s {}
 
 -- simplify all the hypotheses and the goal, using preceding hypotheses along the way
 meta def simph_all (s : simp_lemmas) (cfg : simp_config := {}) : tactic unit :=
 do ctx ← local_context,
    let ns := ctx.map local_pp_name,
    revert_lst ctx,
-   S     ← simp_lemmas.mk_default,
-   simp_intro_lst_using' ns S {}
+   simp_intro_lst_using' ns s {}
 
 
 /- Interactive tactics -/
@@ -212,7 +210,8 @@ private meta def simp_lemmas.append_pexprs : simp_lemmas → list pexpr → tact
 | s (l::ls) := do new_s ← simp_lemmas.add_pexpr s l, simp_lemmas.append_pexprs new_s ls
 
 -- copied from library
-private meta def mk_simp_set (attr_names : list name) (hs : list pexpr) (ex : list name) : tactic simp_lemmas :=
+-- TODO(Jeremy): note this is not private, because it is used by auto
+meta def mk_simp_set (attr_names : list name) (hs : list pexpr) (ex : list name) : tactic simp_lemmas :=
 do s₀ ← join_user_simp_lemmas attr_names,
    s₁ ← simp_lemmas.append_pexprs s₀ hs,
    -- add equational lemmas, if any
@@ -284,7 +283,7 @@ do ctx ← local_context,
    try tactic.triv, try (tactic.reflexivity reducible)
 
 /-- Simplifies all the hypotheses and the goal, using preceding hypotheses along the way. -/
-meta def simph_all (hs : parse opt_qexpr_list) (attr_names : parse with_ident_list)
+meta def simph_all (hs : parse opt_qexpr_list)  (attr_names : parse with_ident_list)
   (ids : parse without_ident_list) (cfg : simp_config := {}) : tactic unit :=
 do ctx ← local_context,
    let ns := ctx.map local_pp_name,

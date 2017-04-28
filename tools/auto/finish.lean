@@ -4,13 +4,13 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jeremy Avigad
 
 These tactics do straightforward things: they call the simplifier, split conjunctive assumptions,
-eliminate existential quantifiers on the left, look for contradictions. They rely on ematching and
-congruence closure to try to finish off a goal at the end.
+eliminate existential quantifiers on the left, and look for contradictions. They rely on ematching 
+and congruence closure to try to finish off a goal at the end.
 
 The procedures *do* split on disjunctions and recreate the smt state for each terminal call, so
-they are meant to be used on small, straightforward problems.
+they are only meant to be used on small, straightforward problems.
 
-(For more substantial automation, I will experiment with a procedure that similar things but
+(For more substantial automation, I will experiment with a procedure that does similar things but
 says within a single smt state, uses e-matching to chain forward with new facts, and splits
 only as a last resort.)
 
@@ -23,7 +23,9 @@ We provide the following tactics:
 All can take a list of simplifier rules, typically definitions that should be expanded.
 (The equations and identities should not refer to the local context.)
 
-The variants ifinish, iclarify, and isafe restrict to intuitionistic logic.
+The variants ifinish, iclarify, and isafe restrict to intuitionistic logic. They do not work
+well with the current heuristic instantiation method used by ematch, so they should be revisited
+when the API changes.
 -/
 import ..tactic.simp_tactic ...logic.basic
 open tactic expr
@@ -35,7 +37,19 @@ iff.intro (λ h, ⟨λ hp, (h hp).left, λ hp, (h hp).right⟩) (λ h hp, ⟨h.l
 theorem curry_iff (p q r : Prop) : (p ∧ q → r) ↔ (p → q → r) :=
 iff.intro (λ h hp hq, h ⟨hp, hq⟩) (λ h ⟨hp, hq⟩, h hp hq)
 
+theorem iff_def (p q : Prop) : (p ↔ q) ↔ (p → q) ∧ (q → p) :=
+⟨ λh, ⟨h.1, h.2⟩, λ ⟨h₁, h₂⟩, ⟨h₁, h₂⟩ ⟩ 
+
 namespace auto
+
+/- Utilities -/
+
+meta def whnf_reducible (e : expr) : tactic expr := whnf e reducible
+
+-- stolen from interactive.lean
+private meta def add_simps : simp_lemmas → list name → tactic simp_lemmas
+| s []      := return s
+| s (n::ns) := do s' ← s.add_simp n, add_simps s' ns
 
 /-
   Configuration information for the auto tactics.
@@ -57,7 +71,7 @@ h p id
 
 meta def preprocess_goal (cfg : auto_config) : tactic unit :=
 do repeat (intro1 >> skip),
-   tgt ← target >>= whnf,
+   tgt ← target >>= whnf_reducible,
    if (¬ (is_false tgt)) then
      if cfg.classical then
        (mk_mapp ``classical.by_contradiction [some tgt]) >>= apply >> intro1 >> skip
@@ -68,20 +82,21 @@ do repeat (intro1 >> skip),
      skip
 
 /-
-  Normalize hypotheses. Bring conjunctions to the outside (for splitting),
-  bring universal quantifiers to the outside (for ematching).
+  Normalize hypotheses. Bring conjunctions to the outside (for splitting), bring universal quantifiers to the 
+  outside (for ematching). The classical normalizer eliminates a → b in favor of ¬ a ∨ b.
 
-  The classical normalizer eliminates a → b in favor of ¬ a ∨ b, but maybe this is not so important.
-
-  TODO (Jeremy): using the simplifier this way is inefficient; use ext_simplify_core instead.
+  TODO (Jeremy): using the simplifier this way is inefficient. In particular, negations should be
+  eliminated from the top down. Use ext_simplify_core instead.
 -/
 
--- stolen from interactive.lean
-private meta def add_simps : simp_lemmas → list name → tactic simp_lemmas
-| s []      := return s
-| s (n::ns) := do s' ← s.add_simp n, add_simps s' ns
+def logic_eval_simps : list name :=
+[ ``not_true, ``not_false, 
+   ``or_true, ``or_false, ``true_or, ``false_or, 
+   ``true_and, ``and_true, ``false_and, ``and_false,
+   ``true_implies_iff, ``false_implies_iff, ``implies_true_iff, ``implies_false_iff]
 
-meta def common_normalize_lemma_names : list name :=
+def common_normalize_lemma_names : list name :=
+logic_eval_simps ++
 [``and_assoc, ``or_assoc,
   -- negations
   ``not_or_iff,
@@ -95,10 +110,9 @@ meta def common_normalize_lemma_names : list name :=
   -- bring out universal quantifiers
   ``exists_implies_distrib,
   -- good for intuitionistic logic
-  ``curry_iff
-]
+  ``curry_iff]
 
-meta def classical_normalize_lemma_names : list name :=
+def classical_normalize_lemma_names : list name :=
 common_normalize_lemma_names ++
 [ -- negations
   ``classical.not_not_iff,
@@ -124,44 +138,30 @@ do simps ← if cfg.classical then
              add_simps simp_lemmas.mk common_normalize_lemma_names,
    local_context >>= monad.mapm' (normalize_hyp simps)
 
--- for testing
-section
-  variables a b c d : Prop
-  variables (p q : ℕ → Prop) (r : ℕ → ℕ → Prop)
-
-  example (h₁ : ¬ (a → b ∨ c)) (h₂ : ¬ (b ∨ ¬ c)) : true :=
-  begin
-    normalize_hyps {classical := false},
-    triv
-  end
-
-  example (h : ¬ ∀ x, (∃ y, r x y) → p x) : true :=
-  begin
-    normalize_hyps {},
-    triv
-  end
-end
-
-/- exists elims -/
+/- 
+  Eliminate existential quantifiers. 
+-/
 
 -- eliminate an existential quantifier if there is one
 meta def eelim : tactic unit :=
 do ctx ← local_context,
    first $ ctx.for $ λ h,
-     do t ← infer_type h >>= whnf,
+     do t ← infer_type h >>= whnf_reducible,
         guard (is_app_of t ``Exists),
         to_expr ``(exists.elim %%h) >>= apply >> intros >> clear h
 
 -- eliminate all existential quantifiers, fails if there aren't any
 meta def eelims : tactic unit := eelim >> repeat eelim
 
-/- subst -/
+/- 
+  Substitute if there is a hypothesis x = t or t = x. 
+-/
 
 -- carries out a subst if there is one, fails otherwise
 meta def do_subst : tactic unit :=
 do ctx ← local_context,
    first $ ctx.for $ λ h,
-     do t ← infer_type h >>= whnf,
+     do t ← infer_type h >>= whnf_reducible,
         match t with
         | ```(%%a = %%b) := subst h
         | _              := failed
@@ -169,12 +169,16 @@ do ctx ← local_context,
 
 meta def do_substs : tactic unit := do_subst >> repeat do_subst
 
+/- 
+  Split all conjunctions.
+-/
+
 -- Assumes pr is a proof of t. Adds the consequences of t to the context
 -- and returns tt if anything nontrivial has been added.
-meta def add_conjuncts (cfg : auto_config) : expr → expr → tactic bool :=
+meta def add_conjuncts : expr → expr → tactic bool :=
 λ pr t,
 let assert_consequences := λ e t, mcond (add_conjuncts e t) skip (assertv_fresh t e >> skip) in
-do t' ← whnf t,
+do t' ← whnf_reducible t,
    match t' with
    | ```(%%a ∧ %%b) :=
      do e₁ ← mk_app ``and.left [pr],
@@ -182,82 +186,64 @@ do t' ← whnf t,
         e₂ ← mk_app ``and.right [pr],
         assert_consequences e₂ b,
         return tt
+  | ```(true) :=
+     do return tt
   | _ := return ff
 end
 
 -- return tt if any progress is made
-meta def split_hyp (cfg : auto_config) (h : expr) : tactic bool :=
+meta def split_hyp (h : expr) : tactic bool :=
 do t ← infer_type h,
-   mcond (add_conjuncts cfg h t) (clear h >> return tt) (return ff)
+   mcond (add_conjuncts h t) (clear h >> return tt) (return ff)
 
 -- return tt if any progress is made
-meta def split_hyps_aux (cfg :auto_config) : list expr → tactic bool
+meta def split_hyps_aux : list expr → tactic bool
 | []        := return ff
-| (h :: hs) := do b₁ ← split_hyp cfg h,
+| (h :: hs) := do b₁ ← split_hyp h,
                   b₂ ← split_hyps_aux hs,
                   return (b₁ || b₂)
 
 -- fail if no progress is made
-meta def split_hyps (cfg : auto_config) : tactic unit :=
+meta def split_hyps : tactic unit :=
 do ctx ← local_context,
-   mcond (split_hyps_aux cfg ctx) skip failed
+   mcond (split_hyps_aux ctx) skip failed
 
-/- safe forward reasoning:
+/- 
+  Use each hypothesis to simplify the others. For example, given a and a → b, we get b, and given
+  a ∨ b ∨ c and ¬ b we get a ∨ c.
 
-   h : a → b ==> h : b     if we have a
-   h : a → b ==> h : ¬ a   if we can refute b
-   h : a ∨ b ==> h : b,    if we can refute a
-   h : a ∨ b ==> h : a,    if we can refute b
-
-   -- TODO: be more agressive about trying to prove / refute the side conditions?
+  TODO(Jeremy): use a version of simp_at_using_hs that takes simp lemmas
 -/
 
--- given t and ctx, produces a proof of ¬ t or fails
-meta def refute (t : expr) (ctx : list expr) : tactic expr :=
-do (find_same_type ```(¬ %%t) ctx) <|>
-   (match t with
-     | ```(¬ %%t') :=
-       do h' ← find_same_type t' ctx,
-          mk_app ``not_not_intro [t', h']
-     | _ := failed
-     end)
+meta def self_simplify_hyps_aux : tactic unit :=
+do ctx ← local_context,
+   extra_simps ← mmap mk_const logic_eval_simps,
+   first $ ctx.for $ λ h,
+     do t ← infer_type h,
+        mcond (is_prop t) (simp_at_using_hs h extra_simps) failed
+  
+meta def self_simplify_hyps : tactic unit :=
+self_simplify_hyps_aux >> repeat self_simplify_hyps_aux
 
-meta def chain_forward_using_hyp (h : expr) : tactic unit :=
-do t ← infer_type h >>= whnf,
-   ctx ← local_context,
-   match t with
-   | ```(%%a → %%b) :=
-     (do h' ← find_same_type a ctx,
-         assertv_fresh (h h') b,
-         clear h) <|>
-     do h' ← refute b ctx,
-        e ← mk_app ``contrapos [a, b, h, h'],
-        assertv_fresh e ```(¬ %%a),
-        clear h
-   | ```(%%a ∨ %%b) :=
-     (do h' ← refute a ctx,
-         e ← mk_app ``or.resolve_left [a, b, h, h'],
-         assertv_fresh e b,
-         clear h) <|>
-     do h' ← refute a ctx,
-        e ← mk_app ``or.resolve_right [a, b, h, h'],
-        assertv_fresh e a,
-        clear h
-   | _ := failed
-   end
+/-
+  Eagerly apply all the preprocessing rules.
+-/
 
-meta def apply_nonsplitting_rules (cfg : auto_config) : tactic unit :=
+meta def preprocess_hyps (cfg : auto_config) : tactic unit :=
 do repeat (intro1 >> skip),
    preprocess_goal cfg,
    normalize_hyps cfg,
-   try do_substs,
-   repeat (split_hyps cfg <|> eelim <|>
-     do ctx ← local_context,
-        first $ ctx^.for chain_forward_using_hyp)
+   repeat (trace "preprocess_hyps" >> (do_substs <|> split_hyps <|> eelim <|> self_simplify_hyps))
 
-/- terminal tactic -/
+/-
+  The terminal tactic, used to try to finish off goals:
+  - Call the simplifier again.
+  - Call the contradiction tactic.
+  - Open an SMT state, and use ematching and congruence closure, with all the universal
+    statements in the context.
 
-private meta def simp_all_default := simp_lemmas.mk_default >>= simp_all
+  TODO(Jeremy): allow users to specify extra theorems for ematching?
+-/
 
 meta def mk_hinst_lemmas : list expr → smt_tactic hinst_lemmas
 | [] := return hinst_lemmas.mk
@@ -273,37 +259,41 @@ meta def mk_hinst_lemmas : list expr → smt_tactic hinst_lemmas
                   | _ := return his
                   end
 
-meta def done (cfg : auto_config := {}) : tactic unit :=
-do if cfg^.use_simp then simp_all_default else skip,
+meta def done (s : simp_lemmas) (cfg : auto_config := {}) : tactic unit :=
+do if cfg^.use_simp then simp_all s else skip,
    contradiction <|>
-   (do revert_all,
-       using_smt
+   (solve1 $ 
+     (do revert_all,
+         using_smt
          (do smt_tactic.intros,
              ctx ← local_context,
              hs ← mk_hinst_lemmas ctx,
---           smt_tactic.trace_state,
---           l ← smt_tactic.get_facts,
---           smt_tactic.trace l,
-             smt_tactic.repeat (smt_tactic.ematch_using hs >> smt_tactic.try smt_tactic.close)))
+             smt_tactic.repeat (smt_tactic.ematch_using hs >> smt_tactic.try smt_tactic.close))))
 
-/- tactics that introduce additional goals -/
+/-
+  Tactics that perform case splits. 
+-/
 
 inductive case_option
-| force | at_most_one | accept
+| force        -- fail unless all goals are solved
+| at_most_one  -- leave at most one goal
+| accept       -- leave as many goals as necessary
 
 private meta def case_cont (s : case_option) (cont : case_option → tactic unit) : tactic unit :=
 do match s with
    | case_option.force := cont case_option.force >> cont case_option.force
-   | case_option.at_most_one := (cont case_option.force >> cont case_option.at_most_one) <|>
-                                 (swap >> cont case_option.force >> cont case_option.at_most_one)
+   | case_option.at_most_one :=
+       -- if the first one succeeds, commit to it, and try the second 
+       (mcond (cont case_option.force >> return tt) (cont case_option.at_most_one) skip) <|>
+       -- otherwise, try the second
+       (swap >> cont case_option.force >> cont case_option.at_most_one)
    | case_option.accept := focus [cont case_option.accept, cont case_option.accept]
    end
 
--- possible outcomes:
+-- three possible outcomes:
 --   finds something to case, the continuations succeed ==> returns tt
 --   finds something to case, the continutations fail ==> fails
 --   doesn't find anything to case ==> returns ff
-
 meta def case_hyp (h : expr) (s : case_option) (cont : case_option → tactic unit) : tactic bool :=
 do t ← infer_type h,
    match t with
@@ -311,130 +301,74 @@ do t ← infer_type h,
    | _              := return ff
    end
 
-meta def case_some_hyp_aux (s : case_option) (cont : case_option → tactic unit) : list expr → tactic bool
+meta def case_some_hyp_aux (s : case_option) (cont : case_option → tactic unit) : 
+  list expr → tactic bool
 | []      := return ff
 | (h::hs) := mcond (case_hyp h s cont) (return tt) (case_some_hyp_aux hs)
 
 meta def case_some_hyp (s : case_option) (cont : case_option → tactic unit) : tactic bool :=
 local_context >>= case_some_hyp_aux s cont
 
-meta def safe_core (cfg : auto_config) : case_option → tactic unit :=
-λ s,
-do if cfg^.use_simp then simp_all_default else skip,
-   apply_nonsplitting_rules cfg,
-   done cfg <|>
-     (mcond (case_some_hyp s safe_core)
+/-
+  The main tactics.
+-/
+
+meta def safe_core (s : simp_lemmas) (cfg : auto_config) : case_option → tactic unit :=
+λ co,
+do if cfg^.use_simp then simp_all s else skip,
+   preprocess_hyps cfg,
+   done s cfg <|>
+     (mcond (case_some_hyp co safe_core)
        skip
-       (match s with
-         | case_option.force       := done cfg
-         | case_option.at_most_one := try (done cfg)
-         | case_option.accept      := try (done cfg)
+       (match co with
+         | case_option.force       := done s cfg
+         | case_option.at_most_one := try (done s cfg)
+         | case_option.accept      := try (done s cfg)
          end))
 
-meta def clarify (cfg : auto_config := {}) : tactic unit := safe_core cfg case_option.at_most_one
-meta def safe (cfg : auto_config := {}) : tactic unit := safe_core cfg case_option.accept
-meta def finish (cfg : auto_config := {}) : tactic unit := safe_core cfg case_option.force
+meta def clarify (s : simp_lemmas) (cfg : auto_config := {}) : tactic unit := safe_core s cfg case_option.at_most_one
+meta def safe (s : simp_lemmas) (cfg : auto_config := {}) : tactic unit := safe_core s cfg case_option.accept
+meta def finish (s : simp_lemmas) (cfg : auto_config := {}) : tactic unit := safe_core s cfg case_option.force
 
-meta def iclarify (cfg : auto_config := {}) : tactic unit := clarify { cfg with classical := false }
-meta def isafe (cfg : auto_config := {}) : tactic unit := safe { cfg with classical := false }
-meta def ifinish (cfg : auto_config := {}) : tactic unit := finish { cfg with classical := false }
+meta def iclarify (s : simp_lemmas) (cfg : auto_config := {}) : tactic unit := clarify s {cfg with classical := false}
+meta def isafe (s : simp_lemmas) (cfg : auto_config := {}) : tactic unit := safe s {cfg with classical := false}
+meta def ifinish (s : simp_lemmas) (cfg : auto_config := {}) : tactic unit := finish s {cfg with classical := false}
 
 end auto
 
 open auto
 
+namespace tactic
+namespace interactive
 
-/- main tactics -/
+open lean lean.parser interactive interactive.types
 
-example (m n k : ℕ) (h : n = m) (h' : k = m) : n = k :=
-by done
+local postfix `?`:9001 := optional
+local postfix *:9001 := many
 
-/- tests -/
+meta def clarify (hs : parse opt_qexpr_list) (cfg : auto_config := {}) : tactic unit := 
+do s ← mk_simp_set [] hs [],
+   auto.clarify s cfg
 
-section
+meta def safe (hs : parse opt_qexpr_list) (cfg : auto_config := {}) : tactic unit := 
+do s ← mk_simp_set [] hs [],
+   auto.safe s cfg
 
-variables a b c d : Prop
+meta def finish (hs : parse opt_qexpr_list) (cfg : auto_config := {}) : tactic unit := 
+do s ← mk_simp_set [] hs [],
+   auto.finish s cfg
 
-example : a ∧ b → a := by finish
-example : a → (a → b) → (b → c) ∧ (d → ¬ c) → ¬ d := by finish
+meta def iclarify (hs : parse opt_qexpr_list) (cfg : auto_config := {}) : tactic unit := 
+do s ← mk_simp_set [] hs [],
+   auto.iclarify s cfg
 
-example : a ∨ b → b ∨ a := by finish {use_simp := false}
+meta def isafe (hs : parse opt_qexpr_list) (cfg : auto_config := {}) : tactic unit := 
+do s ← mk_simp_set [] hs [],
+   auto.isafe s cfg
 
-example : a ∨ b ∨ c → b ∨ a :=
-begin
-  safe, -- TODO: get the forward chaining result.
-  admit
-end
+meta def ifinish (hs : parse opt_qexpr_list) (cfg : auto_config := {}) : tactic unit := 
+do s ← mk_simp_set [] hs [],
+   auto.ifinish s cfg
 
-example : ¬ (a ↔ ¬ a) :=
-begin
-  finish
-end
-
-example : a ∨ b ∨ c → b ∨ a :=
-begin
-  clarify,
-  admit
-end
-
-example : a ∨ b ∨ c ∨ d → b ∨ a :=
-begin
-  safe,
-  admit
-end
-
-end
-
-section
-
-variables (a b c : ℕ) (p q : ℕ → Prop) (r : ℕ → ℕ → Prop)
-variables (P Q R : Prop)
-variable  (g : bool → nat)
-
-example (h₁ : ∀ x, p x → q x) (h₂ : ∀ x, p x) : q a :=
-by finish
-
-example (h₁ : p a) : ∃ x, p x :=
-by finish
-
-example (h₁ : p a) (h₂ : p b) (h₃ : q b) : ∃ x, p x ∧ q x :=
-by finish
-
-example (h : ∃ x, p x ∧ r x x) (h' : ∀ x, r x x → q x) : ∃ x, p x ∧ q x :=
-by finish
-
-example (h : ∃ x, q x ∧ p x)  : ∃ x, p x ∧ q x :=
-by finish
-
-example (h₁ : ∀ x, q x → p x) (h₃ : q a)  : ∃ x, p x :=
-by finish
-
-example (h₁ : ∀ x, p x → q x → false) (h₂ : p a) (h₃ : p b) (h₄ : q b) : false :=
-by finish
-
-example (h : ∀ x, p x) (h₁ : ∀ x, p x → q x) : ∀ x, q x :=
-by finish
-
-example (h : ∃ x, p x) (h₁ : ∀ x, p x → q x) : ∃ x, q x :=
-by finish
-
-example (f : Prop) (h : p a) (h₁ : ∀ x, p x → q x) (h₂ : ∀ x, q x → f) : f :=
-begin [smt]
-  note h₃ := h₁ _ h,    -- curiously: this is needed
-  ematch_using [h, h₁, h₂]
-end
-
-example (f : Prop) (h : p a) (h₁ : ∀ x, ¬ p x ∨ q x) (h₂ : ∀ x, ¬ q x ∨ f) : f :=
-begin [smt]
-  ematch_using [h, h₁, h₂],
-  smt_tactic.get_facts >>= smt_tactic.trace,
-  ematch_using [h, h₁, h₂],
-end
-
-example (h : ¬ ∀ x, ¬ p x) (h₁ : ∀ x, p x → q x) (h₂ : ∀ x, ¬ q x) : false :=
-by finish
-
-example (h : p a) (h' : p a → false) : false :=
-by finish
-
-end
+end interactive
+end tactic
