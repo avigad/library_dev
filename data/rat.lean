@@ -69,6 +69,11 @@ instance setoid_rat.rel : setoid rat.num_denum :=
     take  ⟨n₁, ⟨d₁, _⟩⟩ ⟨n₂, ⟨d₂, _⟩⟩ h, h^.symm,
     take a b c, rel_trans⟩}
 
+@[simp]
+protected theorem rel_eq {n₁ d₁ n₂ d₂ : ℤ} { h₁ : d₁ > 0 } { h₂ : d₂ > 0 } : 
+  @setoid.r rat.num_denum _ (n₁, ⟨d₁, h₁⟩) (n₂, ⟨d₂, h₂⟩) = (n₁ * d₂ = n₂ * d₁) :=
+rfl
+
 end rat
 
 def rat := quotient rat.setoid_rat.rel
@@ -156,7 +161,7 @@ quotient.lift inv' $ λ⟨n₁, ⟨d₁, h₁⟩⟩ ⟨n₂, ⟨d₂, h₂⟩⟩
       begin
         rw [inv'_neg this, inv'_neg ‹n₁ < 0›],
         apply quotient.sound,
-        simp [rat.rel, h_eq]
+        simp [h_eq]
       end)
     (suppose n₁ > 0, 
       have n₂ * d₁ > 0,
@@ -166,7 +171,7 @@ quotient.lift inv' $ λ⟨n₁, ⟨d₁, h₁⟩⟩ ⟨n₂, ⟨d₂, h₂⟩⟩
       begin
         rw [inv'_pos this, inv'_pos ‹n₁ > 0›],
         apply quotient.sound,
-        simp [rat.rel, h_eq]
+        simp [h_eq]
       end)
 
 instance : has_inv ℚ := ⟨rat.inv⟩
