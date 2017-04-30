@@ -7,21 +7,21 @@ variable {α : Type}
 example (s t u : set ℕ) (h : s ⊆ t ∩ u) (h' : u ⊆ s) : u ⊆ s → true :=
 begin
   dunfold_all subset inter,
-  trace_state,
+--  trace_state,
   intro1, triv
 end
 
 example (s t u : set ℕ) (h : s ⊆ t ∩ u) (h' : u ⊆ s) : u ⊆ s → true :=
 begin
   delta_all subset inter,
-  trace_state,
+--  trace_state,
   intro1, triv
 end
 
 example (x y z : ℕ) (h'' : true) (h : 0 + y = x) (h' : 0 + y = z) : x = z + 0 :=
 begin
   simp_all,
-  trace_state,
+--  trace_state,
   rw [-h, -h']
 end
 
