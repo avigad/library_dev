@@ -1,6 +1,11 @@
-import data.set.basic
+import ..data.set.basic
 
 universes u v
+
+@[simp]
+lemma subtype.eta {α : Type u} {p : α → Prop} {a : subtype p} {h : p (a.val)} :
+  {subtype . val := a.val, property := h} = a :=
+by cases a; refl
 
 def arity (α : Type u) : nat → Type u
 | 0     := α
@@ -212,9 +217,9 @@ namespace classical
         rw @quotient.sound pSet _ _ _ h,
         exact (definable.resp (F ⟦y⟧)).2 },
       exact funext (λq, quotient.induction_on q $ λx,
-        by simp[resp.f]; exact @definable.eq _ _ (I ⟦x⟧))
+        by simp[resp.f]; exact @definable.eq _ (F ⟦x⟧) (I ⟦x⟧))
     end
-    local attribute [instance] prop_decidable
+  local attribute [instance] prop_decidable
 end classical
 
 namespace Set
@@ -350,7 +355,7 @@ namespace Set
     ⟨λ⟨z, h⟩, ⟨⟦z⟧, h⟩, λ⟨z, h⟩, quotient.induction_on z (λz h, ⟨z, h⟩) h⟩)
 
   @[simp] theorem Union_singleton {x : Set.{u}} : Union (@insert Set.{u} _ _ x ∅) = x :=
-  ext $ λy, by simp; exact ⟨λ⟨z, zx, yz⟩, by simp at zx; rwa -zx, λyx, ⟨x, by simp, yx⟩⟩
+  ext $ λy, by simp; exact ⟨λ⟨z, zx, yz⟩, by rwa [zx] at yz, λyx, ⟨x, by simp, yx⟩⟩
 
   theorem singleton_inj {x y : Set.{u}} (H : @insert Set.{u} Set.{u} _ x ∅ = @insert Set _ _ y ∅) : x = y :=
   let this := congr_arg Union H in by rwa [Union_singleton, Union_singleton] at this
