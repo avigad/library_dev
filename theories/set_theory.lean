@@ -204,7 +204,7 @@ namespace classical
   noncomputable def all_definable : Π {n} (F : arity Set.{u} n), definable n F
   | 0     F := let p := @quotient.exists_rep pSet _ F in
                definable.eq_mk ⟨some p, equiv.refl _⟩ (some_spec p)
-  | (n+1) F := begin
+  | (n+1) (F : Set → arity Set.{u} n) := begin
       note I := λx, (all_definable (F x)),
       refine definable.eq_mk ⟨λx:pSet, (@definable.resp _ _ (I ⟦x⟧)).1, _⟩ _,
       { dsimp[arity.equiv],
@@ -212,8 +212,7 @@ namespace classical
         rw @quotient.sound pSet _ _ _ h,
         exact (definable.resp (F ⟦y⟧)).2 },
       exact funext (λq, quotient.induction_on q $ λx,
-        have ∀h, definable.resp (F ⟦x⟧) = ⟨(definable.resp (F ⟦x⟧)).val, h⟩, from λh, subtype.eq rfl,
-        by simp[resp.f]; rw -this; exact @definable.eq _ _ (I ⟦x⟧))
+        by simp[resp.f]; exact @definable.eq _ _ (I ⟦x⟧))
     end
     local attribute [instance] prop_decidable
 end classical
@@ -319,9 +318,7 @@ namespace Set
       λ⟨a, b, qb, ab⟩, ⟨⟨b, qb⟩, ab⟩,
       λ⟨b, qb⟩, let ⟨a, ab⟩ := βα b in ⟨⟨a, b, qb, ab⟩, ab⟩⟩⟩⟩
 
-  notation `𝒫` := powerset
-
-  @[simp] theorem mem_powerset {x y : Set} : y ∈ 𝒫 x ↔ @subset _ Set.has_subset y x :=
+  @[simp] theorem mem_powerset {x y : Set} : y ∈ powerset x ↔ @subset _ Set.has_subset y x :=
   quotient.induction_on₂ x y (λ⟨α, A⟩ ⟨β, B⟩,
     show @_root_.mem _ _ pSet.has_mem ⟨β, B⟩ (pSet.powerset ⟨α, A⟩) ↔ _,
       by rw [mem_powerset, subset_iff])
@@ -415,23 +412,14 @@ namespace Set
   def pair_sep (p : Set.{u} → Set.{u} → Prop) (x y : Set.{u}) : Set.{u} :=
   @sep _ _ _ (λz, ∃a ∈ x, ∃b ∈ y, z = pair a b ∧ p a b) (powerset (powerset (x ∪ y)))
 
-  /- This is very slow -/
-  @[simp] def mem_pair_sep {p} {x y z : Set.{u}} : z ∈ pair_sep p x y ↔ ∃a ∈ x, ∃b ∈ y, z = pair a b ∧ p a b := by
-  refine iff.trans mem_sep ⟨and.right, λe, ⟨_, e⟩⟩;
-  exact match z, e with ._, ⟨a, ax, b, bY, rfl, pab⟩ :=
-    by simp; intros u uz; simp[pair] at uz;
-    exact match u, uz with
-    | ._, or.inl rfl :=
-      by simp; intros v vu; simp at vu; cases vu; simp;
-      exact or.inl ax
-    | ._, or.inr rfl :=
-      by simp; intros v vu; simp at vu; simp;
-      exact match v, vu with
-      | ._, or.inl rfl := or.inl ax
-      | ._, or.inr rfl := or.inr bY
-      end
-    end
-  end
+  @[simp] theorem mem_pair_sep {p} {x y z : Set.{u}} : z ∈ pair_sep p x y ↔ ∃a ∈ x, ∃b ∈ y, z = pair a b ∧ p a b := by
+  refine iff.trans mem_sep ⟨and.right, λe, ⟨_, e⟩⟩; exact
+  let ⟨a, ax, b, bY, ze, pab⟩ := e in by rw ze; exact
+  mem_powerset.2 (λu uz, mem_powerset.2 $ (mem_pair.1 uz).elim
+    (λua, by rw ua; exact λv vu, by rw mem_singleton.1 vu; exact mem_union.2 (or.inl ax))
+    (λuab, by rw uab; exact λv vu, (mem_pair.1 vu).elim
+      (λva, by rw va; exact mem_union.2 (or.inl ax))
+      (λvb, by rw vb; exact mem_union.2 (or.inr bY))))
 
   def pair_inj {x y x' y' : Set.{u}} (H : pair x y = pair x' y') : x = x' ∧ y = y' := begin
     note ae := ext_iff.2 H,
@@ -536,7 +524,7 @@ namespace Class
   def powerset (x : Class) : Class := Cong_to_Class (set.powerset x)
   notation `𝒫` := powerset
 
-  def Union (x : Class) : Class := set.Union (Class_to_Cong x)
+  def Union (x : Class) : Class := set.sUnion (Class_to_Cong x)
   notation `⋃` := Union
 
   theorem of_Set.inj {x y : Set.{u}} (h : (x : Class.{u}) = y) : x = y :=
@@ -595,10 +583,9 @@ namespace Class
   theorem fval_ex (F A : Class.{u}) : F ′ A ∈ univ.{u} := iota_ex _
 end Class
 
-/- TODO(digama0): fix coercions
 namespace Set
   @[simp] def map_fval {f : Set.{u} → Set.{u}} [H : pSet.definable 1 f] {x y : Set.{u}} (h : y ∈ x) :
-    Set.map f x ′ y = f y :=
+    (Set.map f x ′ y : Class.{u}) = f y :=
   Class.iota_val _ _ (λz, by simp; exact
     ⟨λ⟨w, wz, pr⟩, let ⟨wy, fw⟩ := Set.pair_inj pr in by rw[-fw, wy],
     λe, by cases e; exact ⟨_, h, rfl⟩⟩)
@@ -614,7 +601,6 @@ namespace Set
   def choice_is_func : is_func x (Union x) (choice x) :=
   (@map_is_func _ (classical.all_definable _) _ _).2 $ λy yx, by simp; exact ⟨y, yx, choice_mem_aux x h y yx⟩
 
-  def choice_mem (y : Set.{u}) (yx : y ∈ x) : choice x ′ y ∈ (y : Class) :=
+  def choice_mem (y : Set.{u}) (yx : y ∈ x) : (choice x ′ y : Class.{u}) ∈ (y : Class.{u}) :=
   by delta choice; rw map_fval yx; simp[choice_mem_aux x h y yx]
 end Set
--/
