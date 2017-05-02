@@ -116,7 +116,7 @@ namespace pSet
   def powerset : pSet → pSet
   | ⟨α, A⟩ := ⟨set α, λp, ⟨{a // p a}, λx, A x.1⟩⟩
 
-  theorem mem_powerset : Π {x y : pSet}, y ∈ powerset x ↔ @subset _ pSet.has_subset.{u} y x
+  theorem mem_powerset : Π {x y : pSet}, y ∈ powerset x ↔ @has_subset.subset _ pSet.has_subset.{u} y x
   | ⟨α, A⟩ ⟨β, B⟩ := ⟨λ⟨p, e⟩, (subset.congr_left e).2 $ λ⟨a, pa⟩, ⟨a, equiv.refl (A a)⟩,
     λβα, ⟨{a | ∃b, equiv (B b) (A a)}, λb, let ⟨a, ba⟩ := βα b in ⟨⟨a, b, ba⟩, ba⟩,
      λ⟨a, b, ba⟩, ⟨b, ba⟩⟩⟩
@@ -239,7 +239,7 @@ namespace Set
   instance : has_subset Set :=
   ⟨Set.subset⟩
 
-  theorem subset_iff : Π (x y : pSet), @subset _ Set.has_subset ⟦x⟧ ⟦y⟧ ↔ x ⊆ y
+  theorem subset_iff : Π (x y : pSet), @has_subset.subset _ Set.has_subset ⟦x⟧ ⟦y⟧ ↔ x ⊆ y
   | ⟨α, A⟩ ⟨β, B⟩ := ⟨λh a, @h ⟦A a⟧ (mem.mk A a),
     λh z, quotient.induction_on z (λz ⟨a, za⟩, let ⟨b, ab⟩ := h a in ⟨b, equiv.trans za ab⟩)⟩
 
@@ -323,9 +323,9 @@ namespace Set
       λ⟨a, b, qb, ab⟩, ⟨⟨b, qb⟩, ab⟩,
       λ⟨b, qb⟩, let ⟨a, ab⟩ := βα b in ⟨⟨a, b, qb, ab⟩, ab⟩⟩⟩⟩
 
-  @[simp] theorem mem_powerset {x y : Set} : y ∈ powerset x ↔ @subset _ Set.has_subset y x :=
+  @[simp] theorem mem_powerset {x y : Set} : y ∈ powerset x ↔ @has_subset.subset _ Set.has_subset y x :=
   quotient.induction_on₂ x y (λ⟨α, A⟩ ⟨β, B⟩,
-    show @_root_.mem _ _ pSet.has_mem ⟨β, B⟩ (pSet.powerset ⟨α, A⟩) ↔ _,
+    show @has_mem.mem _ _ pSet.has_mem ⟨β, B⟩ (pSet.powerset ⟨α, A⟩) ↔ _,
       by rw [mem_powerset, subset_iff])
 
   theorem Union_lem {α β : Type u} (A : α → pSet) (B : β → pSet)
@@ -387,7 +387,7 @@ namespace Set
 
   theorem induction_on {p : Set → Prop} (x) (h : ∀x, (∀y ∈ x, p y) → p x) : p x :=
   quotient.induction_on x $ λu, pSet.rec_on u $ λα A IH, h _ $ λy,
-  show @_root_.mem _ _ Set.has_mem y ⟦⟨α, A⟩⟧ → p y, from
+  show @has_mem.mem _ _ Set.has_mem y ⟦⟨α, A⟩⟧ → p y, from
   quotient.induction_on y (λv ⟨a, ha⟩, by rw (@quotient.sound pSet _ _ _ ha); exact IH a)
 
   theorem regularity (x : Set.{u}) (h : x ≠ ∅) : ∃ y ∈ x, x ∩ y = ∅ :=
@@ -415,7 +415,7 @@ namespace Set
   @insert Set.{u} _ _ (@insert Set.{u} _ _ y {x}) {insert x (∅ : Set.{u})}
 
   def pair_sep (p : Set.{u} → Set.{u} → Prop) (x y : Set.{u}) : Set.{u} :=
-  @sep _ _ _ (λz, ∃a ∈ x, ∃b ∈ y, z = pair a b ∧ p a b) (powerset (powerset (x ∪ y)))
+  @has_sep.sep _ _ _ (λz, ∃a ∈ x, ∃b ∈ y, z = pair a b ∧ p a b) (powerset (powerset (x ∪ y)))
 
   @[simp] theorem mem_pair_sep {p} {x y z : Set.{u}} : z ∈ pair_sep p x y ↔ ∃a ∈ x, ∃b ∈ y, z = pair a b ∧ p a b := by
   refine iff.trans mem_sep ⟨and.right, λe, ⟨_, e⟩⟩; exact
@@ -472,7 +472,7 @@ namespace Set
   f ⊆ prod x y ∧ ∀z:Set.{u}, z ∈ x → ∃! w, pair z w ∈ f
 
   def funs (x y : Set.{u}) : Set.{u} :=
-  @sep _ _ _ (λf, is_func x y f) (powerset (prod x y))
+  @has_sep.sep _ _ _ (λf, is_func x y f) (powerset (prod x y))
 
   @[simp] def mem_funs {x y f : Set.{u}} : f ∈ funs x y ↔ is_func x y f :=
   by simp[funs]; exact ⟨and.left, λh, ⟨h, h.left⟩⟩
@@ -545,7 +545,8 @@ namespace Class
 
   @[simp] theorem subset_hom (x y : Set.{u}) : (x : Class.{u}) ⊆ y ↔ x ⊆ y := iff.refl _
 
-  @[simp] theorem sep_hom (p : Set.{u} → Prop) (x : Set.{u}) : ↑{y ∈ x | p y} = @sep Set.{u} Class.{u} _ (λy, p y) x :=
+  @[simp] theorem sep_hom (p : Set.{u} → Prop) (x : Set.{u}) :
+    ↑{y ∈ x | p y} = @has_sep.sep Set.{u} Class.{u} _ (λy, p y) x :=
   set.ext $ λy, Set.mem_sep
 
   @[simp] theorem empty_hom : ↑(∅ : Set.{u}) = (∅ : Class.{u}) :=

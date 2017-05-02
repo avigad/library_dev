@@ -86,12 +86,12 @@ neg_unique (by simp) (by simp)
 
 lemma neg_eq_neg_of_eq (h : - x = - y) : x = y :=
 have - - x = - - y,
-  from congr_arg neg h,
+  from congr_arg has_neg.neg h,
 by simp [neg_neg] at this; assumption
 
 @[simp]
 lemma neg_eq_neg_iff : - x = - y ↔ x = y :=
-⟨neg_eq_neg_of_eq, congr_arg neg⟩
+⟨neg_eq_neg_of_eq, congr_arg has_neg.neg⟩
 
 @[simp]
 lemma neg_inf : - (x ⊓ y) = -x ⊔ -y :=
@@ -108,7 +108,7 @@ begin [smt] eblast_using [neg_neg, neg_inf] end
 lemma neg_le_neg (h : y ≤ x) : - x ≤ - y :=
 le_of_inf_eq $ 
   calc -x ⊓ -y = - (x ⊔ y) : neg_sup^.symm
-           ... = -x        : congr_arg neg $ sup_of_le_left h
+           ... = -x        : congr_arg has_neg.neg $ sup_of_le_left h
 
 end boolean_algebra
 

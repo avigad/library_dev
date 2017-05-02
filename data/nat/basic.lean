@@ -88,9 +88,6 @@ theorem one_add (n : ℕ) : 1 + n = succ n := by simp
 
 local attribute [simp] one_add
 
-theorem succ_eq_add_one (n : ℕ) : succ n = n + 1 :=
-rfl
-
 end nat
 
 section

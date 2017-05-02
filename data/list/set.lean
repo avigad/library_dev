@@ -12,6 +12,9 @@ open nat function decidable
 universe variables uu vv
 variables {α : Type uu} {β : Type vv}
 
+lemma one_add_eq_succ (n : ℕ) : 1 + n = succ n :=
+by rw [add_comm]
+
 namespace list
 
 section insert
@@ -94,10 +97,10 @@ lemma length_erase_of_mem {a : α} : ∀ {l}, a ∈ l → length (erase a l) = p
 | []         h := rfl
 | [x]        h := begin simp at h, simp [h] end
 | (x::y::xs) h := if h' : a = x then
-                    begin simp [h'] end
+                    by simp [h', one_add_eq_succ]
                   else
                     have ainyxs : a ∈ y::xs, from or_resolve_right h h',
-                    begin simp [h', length_erase_of_mem ainyxs] end
+                    by simp [h', length_erase_of_mem ainyxs, one_add_eq_succ]
 
 @[simp]
 lemma length_erase_of_not_mem {a : α} : ∀ {l}, a ∉ l → length (erase a l) = length l
@@ -333,7 +336,7 @@ section inter
 variable [decidable_eq α]
 
 @[simp]
-theorem inter_nil (l : list α) : inter [] l = [] := rfl
+theorem inter_nil (l : list α) : [] ∩ l = [] := rfl
 
 @[simp]
 theorem inter_cons_of_mem {a : α} (l₁ : list α) {l₂ : list α} (h : a ∈ l₂) :
@@ -342,14 +345,14 @@ if_pos h
 
 @[simp]
 theorem inter_cons_of_not_mem {a : α} (l₁ : list α) {l₂ : list α} (h : a ∉ l₂) :
-  inter (a::l₁) l₂ = inter l₁ l₂ :=
+  (a::l₁) ∩ l₂ = l₁ ∩ l₂ :=
 if_neg h
 
-theorem mem_of_mem_inter_left : ∀ {l₁ l₂ : list α} {a : α}, a ∈ inter l₁ l₂ → a ∈ l₁
+theorem mem_of_mem_inter_left : ∀ {l₁ l₂ : list α} {a : α}, a ∈ l₁ ∩ l₂ → a ∈ l₁
 | []      l₂ a i := absurd i (not_mem_nil a)
 | (b::l₁) l₂ a i := by_cases
   (λ binl₂  : b ∈ l₂,
-    have aux : a ∈ b :: inter l₁ l₂, begin rw [inter_cons_of_mem _ binl₂] at i, exact i end,
+    have aux : a ∈ b :: l₁ ∩ l₂, begin rw [inter_cons_of_mem _ binl₂] at i, exact i end,
     or.elim (eq_or_mem_of_mem_cons aux)
       (λ aeqb : a = b, begin rw [aeqb], apply mem_cons_self end)
       (λ aini, mem_cons_of_mem _ (mem_of_mem_inter_left aini)))
@@ -358,18 +361,18 @@ theorem mem_of_mem_inter_left : ∀ {l₁ l₂ : list α} {a : α}, a ∈ inter 
       begin rw [inter_cons_of_not_mem _ nbinl₂] at i, exact (mem_of_mem_inter_left i) end,
     mem_cons_of_mem _ ainl₁)
 
-theorem mem_of_mem_inter_right : ∀ {l₁ l₂ : list α} {a : α}, a ∈ inter l₁ l₂ → a ∈ l₂
+theorem mem_of_mem_inter_right : ∀ {l₁ l₂ : list α} {a : α}, a ∈ l₁ ∩ l₂ → a ∈ l₂
 | []      l₂ a i := absurd i (not_mem_nil _)
 | (b::l₁) l₂ a i := by_cases
   (λ binl₂  : b ∈ l₂,
-    have aux : a ∈ b :: inter l₁ l₂, begin rw [inter_cons_of_mem _ binl₂] at i, exact i end,
+    have aux : a ∈ b :: l₁ ∩ l₂, begin rw [inter_cons_of_mem _ binl₂] at i, exact i end,
     or.elim (eq_or_mem_of_mem_cons aux)
       (λ aeqb : a = b, begin rw [aeqb], exact binl₂ end)
-      (λ aini : a ∈ inter l₁ l₂, mem_of_mem_inter_right aini))
+      (λ aini : a ∈ l₁ ∩ l₂, mem_of_mem_inter_right aini))
   (λ nbinl₂ : b ∉ l₂,
     begin rw [inter_cons_of_not_mem _ nbinl₂] at i, exact (mem_of_mem_inter_right i) end)
 
-theorem mem_inter_of_mem_of_mem : ∀ {l₁ l₂ : list α} {a : α}, a ∈ l₁ → a ∈ l₂ → a ∈ inter l₁ l₂
+theorem mem_inter_of_mem_of_mem : ∀ {l₁ l₂ : list α} {a : α}, a ∈ l₁ → a ∈ l₂ → a ∈ l₁ ∩ l₂
 | []      l₂ a i₁ i₂ := absurd i₁ (not_mem_nil _)
 | (b::l₁) l₂ a i₁ i₂ := by_cases
   (λ binl₂  : b ∈ l₂,
@@ -395,11 +398,11 @@ iff.intro
   (λ h, and.intro (mem_of_mem_inter_left h) (mem_of_mem_inter_right h))
   (λ h, mem_inter_of_mem_of_mem h^.left h^.right)
 
-theorem inter_eq_nil_of_disjoint : ∀ {l₁ l₂ : list α}, disjoint l₁ l₂ → inter l₁ l₂ = []
+theorem inter_eq_nil_of_disjoint : ∀ {l₁ l₂ : list α}, disjoint l₁ l₂ → l₁ ∩ l₂ = []
 | []      l₂ d := rfl
 | (a::l₁) l₂ d :=
-  have aux_eq : inter l₁ l₂ = [], from inter_eq_nil_of_disjoint (disjoint_of_disjoint_cons_left d),
-  have nainl₂ : a ∉ l₂,           from disjoint_left d (mem_cons_self _ _),
+  have aux_eq : l₁ ∩ l₂ = [], from inter_eq_nil_of_disjoint (disjoint_of_disjoint_cons_left d),
+  have nainl₂ : a ∉ l₂,       from disjoint_left d (mem_cons_self _ _),
   by rw [inter_cons_of_not_mem _ nainl₂, aux_eq]
 
 theorem forall_mem_inter_of_forall_left {p : α → Prop} {l₁ : list α} (h : ∀ x ∈ l₁, p x)
@@ -738,10 +741,10 @@ end
 theorem nodup_inter_of_nodup [decidable_eq α] : ∀ {l₁ : list α} (l₂), nodup l₁ → nodup (l₁ ∩ l₂)
 | []      l₂ d := nodup_nil
 | (a::l₁) l₂ d :=
-  have d₁     : nodup l₁,            from nodup_of_nodup_cons d,
-  have d₂     : nodup (inter l₁ l₂), from nodup_inter_of_nodup _ d₁,
-  have nainl₁ : a ∉ l₁,              from not_mem_of_nodup_cons d,
-  have naini  : a ∉ inter l₁ l₂,     from λ i, absurd (mem_of_mem_inter_left i) nainl₁,
+  have d₁     : nodup l₁,        from nodup_of_nodup_cons d,
+  have d₂     : nodup (l₁ ∩ l₂), from nodup_inter_of_nodup _ d₁,
+  have nainl₁ : a ∉ l₁,          from not_mem_of_nodup_cons d,
+  have naini  : a ∉ l₁ ∩ l₂,     from λ i, absurd (mem_of_mem_inter_left i) nainl₁,
   by_cases
     (λ ainl₂  : a ∈ l₂, begin rw [inter_cons_of_mem _ ainl₂], exact (nodup_cons naini d₂) end)
     (λ nainl₂ : a ∉ l₂, begin rw [inter_cons_of_not_mem _ nainl₂], exact d₂ end)

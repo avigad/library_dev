@@ -483,7 +483,7 @@ theorem mem_cons_of_qeq {a : α} : ∀ {l₁ l₂ : list α}, l₁≈a|l₂ → 
 theorem length_eq_of_qeq {a : α} {l₁ l₂ : list α} :
   l₁ ≈ a | l₂ → length l₁ = nat.succ (length l₂) :=
 begin
-  intro q, induction q with l b l l' q ih, simp, simp, rw ih
+  intro q, induction q with l b l l' q ih, simp [one_add_eq_succ], simp, rw ih
 end
 
 theorem qeq_of_mem {a : α} {l : list α} : a ∈ l → (∃ l', l ≈ a | l') :=
@@ -801,7 +801,7 @@ assume p, perm_induction_on p
 section perm_union
 variable [decidable_eq α]
 
-theorem perm_union_left {l₁ l₂ : list α} (t₁ : list α) : l₁ ~ l₂ → (union l₁ t₁) ~ (union l₂ t₁) :=
+theorem perm_union_left {l₁ l₂ : list α} (t₁ : list α) : l₁ ~ l₂ → (l₁ ∪ t₁) ~ (l₂ ∪ t₁) :=
 begin
   generalize l₂ l₂, clear l₂,
   generalize l₁ l₁, clear l₁,
@@ -833,7 +833,7 @@ else
                                     contradiction end,
       begin simp [xl, yl, h₁, h₂], apply perm_app_right, apply perm.swap end
 
-theorem perm_union_right (l : list α) {t₁ t₂ : list α} : t₁ ~ t₂ → (union l t₁) ~ (union l t₂) :=
+theorem perm_union_right (l : list α) {t₁ t₂ : list α} : t₁ ~ t₂ → (l ∪ t₁) ~ (l ∪ t₂) :=
 begin
   intro h, generalize l l, clear l,
   exact
@@ -850,7 +850,7 @@ begin
 end
 
 -- attribute [congr]
-theorem perm_union {l₁ l₂ t₁ t₂ : list α} : l₁ ~ l₂ → t₁ ~ t₂ → (union l₁ t₁) ~ (union l₂ t₂) :=
+theorem perm_union {l₁ l₂ t₁ t₂ : list α} : l₁ ~ l₂ → t₁ ~ t₂ → (l₁ ∪ t₁) ~ (l₂ ∪ t₂) :=
 assume p₁ p₂, trans (perm_union_left t₁ p₁) (perm_union_right l₂ p₂)
 end perm_union
 
@@ -873,7 +873,7 @@ end perm_insert
 section perm_inter
 variable [decidable_eq α]
 
-theorem perm_inter_left {l₁ l₂ : list α} (t₁ : list α) : l₁ ~ l₂ → (inter l₁ t₁) ~ (inter l₂ t₁) :=
+theorem perm_inter_left {l₁ l₂ : list α} (t₁ : list α) : l₁ ~ l₂ → (l₁ ∩ t₁) ~ (l₂ ∩ t₁) :=
 assume p, perm.rec_on p
   (perm.refl _)
   (λ x l₁ l₂ p₁ r₁, by_cases
@@ -899,7 +899,7 @@ assume p, perm.rec_on p
                      inter_cons_of_not_mem _ nyint, inter_cons_of_not_mem _ nxint])))
   (λ l₁ l₂ l₃ p₁ p₂ r₁ r₂, trans r₁ r₂)
 
-theorem perm_inter_right (l : list α) {t₁ t₂ : list α} : t₁ ~ t₂ → (inter l t₁) ~ (inter l t₂) :=
+theorem perm_inter_right (l : list α) {t₁ t₂ : list α} : t₁ ~ t₂ → (l ∩ t₁) ~ (l ∩ t₂) :=
 list.rec_on l
   (λ p, by simp [inter_nil])
   (λ x xs r p, by_cases
@@ -911,7 +911,7 @@ list.rec_on l
       begin rw [inter_cons_of_not_mem _ nxint₁, inter_cons_of_not_mem _ nxint₂], exact (r p) end))
 
 -- attribute [congr]
-theorem perm_inter {l₁ l₂ t₁ t₂ : list α} : l₁ ~ l₂ → t₁ ~ t₂ → (inter l₁ t₁) ~ (inter l₂ t₂) :=
+theorem perm_inter {l₁ l₂ t₁ t₂ : list α} : l₁ ~ l₂ → t₁ ~ t₂ → (l₁ ∩ t₁) ~ (l₂ ∩ t₂) :=
 assume p₁ p₂, trans (perm_inter_left t₁ p₁) (perm_inter_right l₂ p₂)
 end perm_inter
 

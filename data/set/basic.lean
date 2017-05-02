@@ -34,12 +34,12 @@ theorem subset_inter {s t r : set α} (rs : r ⊆ s) (rt : r ⊆ t) : r ⊆ s �
 
 instance lattice_set : complete_lattice (set α) :=
 { lattice.complete_lattice .
-  le           := subset,
+  le           := has_subset.subset,
   le_refl      := subset.refl,
   le_trans     := take a b c, subset.trans,
   le_antisymm  := take a b, subset.antisymm,
 
-  sup          := union,
+  sup          := has_union.union,
   le_sup_left  := subset_union_left,
   le_sup_right := subset_union_right,
   sup_le       := take a b c, union_subset,
@@ -306,7 +306,7 @@ ext (take y, iff.intro
 
 @[simp]
 theorem pair_eq_singleton (a : α) : ({a, a} : set α) = {a} :=
-begin rw insert_eq_of_mem, apply mem_singleton end
+insert_eq_of_mem $ mem_singleton _
 
 theorem singleton_ne_empty (a : α) : ({a} : set α) ≠ ∅ := insert_ne_empty _ _
 
@@ -434,60 +434,48 @@ section image
 
 -- TODO(Jeremy): is this a bad idea?
 
-infix ` ' `:80 := image
-
 -- TODO(Jeremy): use bounded exists in image
 
-theorem mem_image_eq (f : α → β) (s : set α) (y: β) : y ∈ f ' s = ∃ x, x ∈ s ∧ f x = y :=
+theorem mem_image_eq (f : α → β) (s : set α) (y: β) : y ∈ image f s = ∃ x, x ∈ s ∧ f x = y :=
 rfl
 
 -- the introduction rule
 theorem mem_image {f : α → β} {s : set α} {x : α} {y : β} (h₁ : x ∈ s) (h₂ : f x = y) :
-  y ∈ f ' s :=
+  y ∈ image f s :=
 ⟨x, h₁, h₂⟩
 
 theorem mem_image_of_mem (f : α → β) {x : α} {a : set α} (h : x ∈ a) : f x ∈ image f a :=
 mem_image h rfl
 
--- facilitate cases on being in the image
--- REMOVE: should be not necessary with the new equations compiler
-/-
-inductive is_mem_image (f : α → β) (s : set α) (y : β) : Prop
-| mk : Π x : α, x ∈ s → f x = y → is_mem_image
-
-theorem mem_image_dest {f : α → β} {s : set α} {y : β} (h : y ∈ f ' s) : is_mem_image f s y :=
-exists.elim h (take x hx, and.elim hx (take xs fxeq, is_mem_image.mk x xs fxeq))
--/
-
 def mem_image_elim {f : α → β} {s : set α} {C : β → Prop} (h : ∀ (x : α), x ∈ s → C (f x)) :
- ∀{y : β}, y ∈ f ' s → C y
+ ∀{y : β}, y ∈ image f s → C y
 | ._ ⟨a, a_in, rfl⟩ := h a a_in
 
-def mem_image_elim_on {f : α → β} {s : set α} {C : β → Prop} {y : β} (h_y : y ∈ f ' s)
+def mem_image_elim_on {f : α → β} {s : set α} {C : β → Prop} {y : β} (h_y : y ∈ image f s)
   (h : ∀ (x : α), x ∈ s → C (f x)) : C y :=
 mem_image_elim h h_y
 
 theorem image_eq_image_of_eq_on {f₁ f₂ : α → β} {s : set α} (heq : eq_on f₁ f₂ s) :
-  f₁ ' s = f₂ ' s :=
+  image f₁ s = image f₂ s :=
 ext (take y, iff.intro
   (assume ⟨x, xs, f₁xeq⟩, mem_image xs ((heq x xs)^.symm^.trans f₁xeq))
   (assume ⟨x, xs, f₂xeq⟩, mem_image xs ((heq x xs)^.trans f₂xeq)))
 
-lemma image_comp (f : β → γ) (g : α → β) (a : set α) : (f ∘ g) ' a = f ' (g ' a) :=
+lemma image_comp (f : β → γ) (g : α → β) (a : set α) : image (f ∘ g) a = image f (image g a) :=
 ext (take z,
   iff.intro
     (assume ⟨x, (hx₁ : x ∈ a), (hx₂ : f (g x) = z)⟩,
-      have g x ∈ g ' a,
+      have g x ∈ image g a,
         from mem_image hx₁ rfl,
-      show z ∈ f ' (g ' a),
+      show z ∈ image f (image g a),
         from mem_image this hx₂)
     (assume ⟨y, ⟨x, (hz₁ : x ∈ a), (hz₂ : g x = y)⟩, (hy₂ : f y = z)⟩,
       have f (g x) = z,
         from eq.subst (eq.symm hz₂) hy₂,
-      show z ∈ (f ∘ g) ' a,
+      show z ∈ image (f ∘ g) a,
         from mem_image hz₁ this))
 
-lemma image_subset {a b : set α} (f : α → β) (h : a ⊆ b) : f ' a ⊆ f ' b :=
+lemma image_subset {a b : set α} (f : α → β) (h : a ⊆ b) : image f a ⊆ image f b :=
 take y,
 assume ⟨x, hx₁, hx₂⟩,
 mem_image (h hx₁) hx₂
@@ -510,34 +498,34 @@ theorem image_empty (f : α → β) : image f ∅ = ∅ :=
 eq_empty_of_forall_not_mem (take y, assume ⟨x, (h : x ∈ ∅), h'⟩, h)
 
 theorem mem_image_compl (t : set α) (S : set (set α)) :
-  t ∈ compl ' S ↔ -t ∈ S :=
+  t ∈ image compl S ↔ -t ∈ S :=
 iff.intro
   (assume ⟨t', (Ht' : t' ∈ S), (Ht : -t' = t)⟩,
     show -t ∈ S, begin rw [-Ht, compl_compl], exact Ht' end)
   (suppose -t ∈ S,
-    have -(-t) ∈ compl ' S, from mem_image_of_mem compl this,
-    show t ∈ compl ' S, from compl_compl t ▸ this)
+    have -(-t) ∈ image compl S, from mem_image_of_mem compl this,
+    show t ∈ image compl S, from compl_compl t ▸ this)
 
-theorem image_id (s : set α) : id ' s = s :=
+theorem image_id (s : set α) : image id s = s :=
 ext (take x, iff.intro
   (assume ⟨x', (hx' : x' ∈ s), (x'eq : x' = x)⟩,
     show x ∈ s, begin rw [-x'eq], apply hx' end)
   (suppose x ∈ s, mem_image_of_mem id this))
 
 theorem compl_compl_image (S : set (set α)) :
-  compl ' (compl ' S) = S :=
+  image compl (image compl S) = S :=
 by rw [-image_comp, compl_comp_compl, image_id]
 
 lemma bounded_forall_image_of_bounded_forall {f : α → β} {s : set α} {p : β → Prop}
-  (h : ∀ x ∈ s, p (f x)) : ∀ y ∈ f ' s, p y
+  (h : ∀ x ∈ s, p (f x)) : ∀ y ∈ image f s, p y
 | ._ ⟨x, s_in, rfl⟩ := h x s_in
 
 lemma bounded_forall_image_iff {f : α → β} {s : set α} {p : β → Prop} :
-  (∀ y ∈ f ' s, p y) ↔ (∀ x ∈ s, p (f x)) :=
+  (∀ y ∈ image f s, p y) ↔ (∀ x ∈ s, p (f x)) :=
 iff.intro (take h x xs, h _ (mem_image_of_mem _ xs)) bounded_forall_image_of_bounded_forall
 
 lemma image_insert_eq {f : α → β} {a : α} {s : set α} :
-  f ' insert a s = insert (f a) (f ' s) :=
+  image f (insert a s) = insert (f a) (image f s) :=
 set.ext $ take x, ⟨
   take h, match x, h with
   | ._, ⟨._, ⟨or.inl rfl, rfl⟩⟩ := mem_insert _ _
@@ -752,34 +740,34 @@ theorem sUnion_insert (s : set α) (T : set (set α)) : ⋃₀ (insert s T) = s 
 theorem sInter_insert (s : set α) (T : set (set α)) : ⋂₀ (insert s T) = s ∩ ⋂₀ T := Inf_insert
 
 @[simp]
-theorem sUnion_image (f : α → set β) (s : set α) : ⋃₀ (f ' s) = ⋃ x ∈ s, f x := Sup_image
+theorem sUnion_image (f : α → set β) (s : set α) : ⋃₀ (image f s) = ⋃ x ∈ s, f x := Sup_image
 
 @[simp]
-theorem sInter_image (f : α → set β) (s : set α) : ⋂₀ (f ' s) = ⋂ x ∈ s, f x := Inf_image
+theorem sInter_image (f : α → set β) (s : set α) : ⋂₀ (image f s) = ⋂ x ∈ s, f x := Inf_image
 
 theorem compl_sUnion (S : set (set α)) :
-  - ⋃₀ S = ⋂₀ (compl ' S) :=
+  - ⋃₀ S = ⋂₀ (image compl S) :=
 set.ext $ take x,
   ⟨suppose ¬ (∃s∈S, x ∈ s), take s h,
     match s, h with
     ._, ⟨t, hs, rfl⟩ := take h, this ⟨t, hs, h⟩
     end,
-    suppose ∀s, s ∈ compl ' S → x ∈ s,
+    suppose ∀s, s ∈ image compl S → x ∈ s,
     take ⟨t, tS, xt⟩, this (compl t) (mem_image_of_mem _ tS) xt⟩
 
 -- classical
 theorem sUnion_eq_compl_sInter_compl (S : set (set α)) :
-  ⋃₀ S = - ⋂₀ (compl ' S) :=
+  ⋃₀ S = - ⋂₀ (image compl S) :=
 by rw [-compl_compl (⋃₀ S), compl_sUnion]
 
 -- classical
 theorem compl_sInter (S : set (set α)) :
-  - ⋂₀ S = ⋃₀ (compl ' S) :=
+  - ⋂₀ S = ⋃₀ (image compl S) :=
 by rw [sUnion_eq_compl_sInter_compl, compl_compl_image]
 
 -- classical
 theorem sInter_eq_comp_sUnion_compl (S : set (set α)) :
-   ⋂₀ S = -(⋃₀ (compl ' S)) :=
+   ⋂₀ S = -(⋃₀ (image compl S)) :=
 by rw [-compl_compl (⋂₀ S), compl_sInter]
 
 theorem inter_empty_of_inter_sUnion_empty {s t : set α} {S : set (set α)} (hs : t ∈ S)
@@ -788,10 +776,10 @@ theorem inter_empty_of_inter_sUnion_empty {s t : set α} {S : set (set α)} (hs 
 eq_empty_of_subset_empty
   begin rw -h, apply inter_subset_inter_left, apply subset_sUnion_of_mem hs end
 
-theorem Union_eq_sUnion_image (s : α → set β) : (⋃ i, s i) = ⋃₀ (s ' univ) :=
+theorem Union_eq_sUnion_image (s : α → set β) : (⋃ i, s i) = ⋃₀ (image s univ) :=
 by simp
 
-theorem Inter_eq_sInter_image {α I : Type} (s : I → set α) : (⋂ i, s i) = ⋂₀ (s ' univ) :=
+theorem Inter_eq_sInter_image {α I : Type} (s : I → set α) : (⋂ i, s i) = ⋂₀ (image s univ) :=
 by simp
 
 section disjoint
