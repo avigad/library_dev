@@ -28,7 +28,7 @@ is_solved ← first (do
   return $ do
     apply e^.hyp,
     intuit,
-    now, return tt) <|> return ff,
+    done, return tt) <|> return ff,
 set_goals goals,
 if is_solved then do
   proof ← instantiate_mvars subgoal,
