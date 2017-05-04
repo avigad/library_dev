@@ -209,7 +209,7 @@ theorem length_split_snd_le : ∀ l : list α, length ((split l).2) ≤ length l
                      simp without add_comm,
                      transitivity,
                      { apply add_le_add_right (length_split_snd_le l) },
-                     simp [one_add_eq_succ, nat.le_succ]
+                     simp [nat.one_add, nat.le_succ]
                    end
 
 theorem length_split_cons_cons_fst_lt (a b : α) (l : list α) :
@@ -292,11 +292,10 @@ section correctness
 parameter [deceqα : decidable_eq α]
 include deceqα
 
--- TODO(Jeremy): note that simp has to be called twice in the beginning, to reduce projections
 theorem count_split (a : α) : ∀ l : list α, count a (split l).1 + count a (split l).2 = count a l
 | []            := rfl
 | [a]           := rfl
-| (a :: b :: l) := begin simp, simp [count_cons'], rw [-count_split l], simp end
+| (a :: b :: l) := begin simp [count_cons'], rw [-count_split l], simp end
 
 private def count_merge.F (c : α) :
   Π p : list α × list α,

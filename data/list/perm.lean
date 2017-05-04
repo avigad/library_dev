@@ -391,7 +391,7 @@ theorem mem_cons_of_qeq {a : α} : ∀ {l₁ l₂ : list α}, l₁≈a|l₂ → 
 theorem length_eq_of_qeq {a : α} {l₁ l₂ : list α} :
   l₁ ≈ a | l₂ → length l₁ = nat.succ (length l₂) :=
 begin
-  intro q, induction q with l b l l' q ih, simp [one_add_eq_succ], simp, rw ih
+  intro q, induction q with l b l l' q ih, simp [nat.one_add], simp, rw ih
 end
 
 theorem qeq_of_mem {a : α} {l : list α} : a ∈ l → (∃ l', l ≈ a | l') :=

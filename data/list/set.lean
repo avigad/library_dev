@@ -12,9 +12,6 @@ open nat function decidable
 universe variables uu vv
 variables {α : Type uu} {β : Type vv}
 
-lemma one_add_eq_succ (n : ℕ) : 1 + n = succ n :=
-by rw [add_comm]
-
 namespace list
 
 /- sublists -/
@@ -24,7 +21,7 @@ inductive sublist' : list α → list α → Prop
 | cons (l₁ l₂ a) : sublist' l₁ l₂ → sublist' l₁ (a::l₂)
 | cons2 (l₁ l₂ a) : sublist' l₁ l₂ → sublist' (a::l₁) (a::l₂)
 
-infix `<+`:50 := sublist'
+infix ` <+ `:50 := sublist'
 
 @[simp] lemma nil_sublist : Π (l : list α), [] <+ l
 | []       := sublist'.slnil
