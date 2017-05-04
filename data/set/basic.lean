@@ -560,12 +560,12 @@ end image
 /- union and intersection over a family of sets indexed by a type -/
 
 @[reducible]
-def Union' (s : ι → set β) : set β := supr s
+def Union (s : ι → set β) : set β := supr s
 
 @[reducible]
 def Inter (s : ι → set β) : set β := infi s
 
-notation `⋃` binders `, ` r:(scoped f, Union' f) := r
+notation `⋃` binders `, ` r:(scoped f, Union f) := r
 notation `⋂` binders `, ` r:(scoped f, Inter f) := r
 
 @[simp]
@@ -717,7 +717,6 @@ by rw insert_of_has_insert; simp
 @[reducible]
 definition sInter (S : set (set α)) : set α := Inf S
 
-prefix `⋃₀`:110 := sUnion
 prefix `⋂₀`:110 := sInter
 
 theorem mem_sUnion {x : α} {t : set α} {S : set (set α)} (hx : x ∈ t) (ht : t ∈ S) :

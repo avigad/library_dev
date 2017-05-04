@@ -14,8 +14,6 @@ variables {α : Type uu} {β : Type vv}
 
 namespace list
 
-/- sublists -/
-
 section insert
 variable [decidable_eq α]
 
