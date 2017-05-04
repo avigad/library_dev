@@ -198,17 +198,15 @@ theorem length_split_fst_le : ∀ l : list α, length ((split l).1) ≤ length l
 | []            := nat.le_refl 0
 | [a]           := nat.le_refl 1
 | (a :: b :: l) := begin
-                     simp [split_cons_cons], rw [add_comm],
-                     transitivity,
-                     { apply add_le_add_right (length_split_fst_le l) },
-                     simp [one_add_eq_succ, nat.le_succ]
+                     simp [split_cons_cons] without add_comm,
+                     exact nat.succ_le_succ (nat.le_succ_of_le (length_split_fst_le l))
                    end
 
 theorem length_split_snd_le : ∀ l : list α, length ((split l).2) ≤ length l
 | []            := nat.le_refl 0
 | [a]           := nat.zero_le 1
 | (a :: b :: l) := begin
-                     simp, rw [add_comm],
+                     simp without add_comm,
                      transitivity,
                      { apply add_le_add_right (length_split_snd_le l) },
                      simp [one_add_eq_succ, nat.le_succ]
@@ -217,19 +215,15 @@ theorem length_split_snd_le : ∀ l : list α, length ((split l).2) ≤ length l
 theorem length_split_cons_cons_fst_lt (a b : α) (l : list α) :
   length (split (a :: b :: l)).1 < length (a :: b :: l) :=
 begin
-  simp [one_add_eq_succ],
-  apply nat.lt_succ_of_le,
-  apply nat.succ_le_succ,
-  apply length_split_fst_le l
+  simp without add_comm,
+  exact add_lt_add_of_le_of_lt (length_split_fst_le l) (nat.le_refl _)
 end
 
 theorem length_split_cons_cons_snd_lt (a b : α) (l : list α) :
   length (split (a :: b :: l)).2 < length (a :: b :: l) :=
 begin
-  simp [one_add_eq_succ],
-  apply nat.lt_succ_of_le,
-  apply nat.succ_le_succ,
-  apply length_split_snd_le l
+  simp without add_comm,
+  exact add_lt_add_of_le_of_lt (length_split_snd_le l) (nat.le_refl _)
 end
 
 -- Do the well-founded recursion by hand, until the function definition system supports it.
@@ -241,9 +235,9 @@ private def merge.F :
 | ([], l)           f := l
 | (a :: l, [])      f := a :: l
 | (a :: l, b :: l') f := if a ≼ b then
-                           a :: f (l, b :: l') begin simp, simp [one_add_eq_succ, nat.lt_succ_iff_le] end
+                           a :: f (l, b :: l') begin simp without add_comm, apply nat.le_refl end
                          else
-                           b :: f (a :: l, l') begin simp, simp [one_add_eq_succ, nat.lt_succ_iff_le] end
+                           b :: f (a :: l, l') begin apply nat.le_refl end
 
 def merge := well_founded.fix (inv_image.wf _ nat.lt_wf) merge.F
 
@@ -313,12 +307,12 @@ private def count_merge.F (c : α) :
 | (a :: l, [])       f := by simp
 | (a :: l, b :: l')  f := if h : a ≼ b then
                             begin
-                              note hrec := f (l, b :: l') begin simp, simp [one_add_eq_succ, nat.lt_succ_iff_le] end,
+                              note hrec := f (l, b :: l') begin simp without add_comm, apply nat.le_refl end,
                               simp [if_pos, h, count_cons', hrec]
                             end
                           else
                             begin
-                              note hrec := f (a :: l, l') begin simp, simp [one_add_eq_succ, nat.lt_succ_iff_le] end,
+                              note hrec := f (a :: l, l') begin apply nat.le_refl end,
                               simp [if_neg, h, count_cons', hrec]
                             end
 
@@ -366,7 +360,7 @@ private def sorted_merge.F :
   have h₂₀ : ∀ c ∈ l', b ≼ c, from forall_mem_rel_of_sorted_cons r h₂,
   if h : a ≼ b then
     begin
-      note hrec := f (l, b :: l') begin simp, simp [one_add_eq_succ, nat.lt_succ_iff_le] end,
+      note hrec := f (l, b :: l') begin simp without add_comm, apply nat.le_refl end,
       simp [if_pos, h],
       have h₃ : sorted r (merge r (l, b :: l')), from hrec ‹sorted r l› h₂,
       have h₄ : ∀ c ∈ merge r (l, b :: l'), a ≼ c,
@@ -385,7 +379,7 @@ private def sorted_merge.F :
   else
     have h' : b ≼ a, from or.resolve_left (totr a b) h,
     begin
-      note hrec := f (a :: l, l') begin simp, simp [one_add_eq_succ, nat.lt_succ_iff_le] end,
+      note hrec := f (a :: l, l') begin apply nat.le_refl end,
       simp [if_neg, h],
       have h₃ : sorted r (merge r (a :: l, l')), from hrec h₁ ‹sorted r l'›,
       have h₄ : ∀ c ∈ merge r (a :: l, l'), b ≼ c,

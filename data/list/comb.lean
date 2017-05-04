@@ -172,6 +172,13 @@ theorem foldr_append (f : α → β → β) :
 | b []      l₂ := rfl
 | b (a::l₁) l₂ := by simp [foldr_append]
 
+theorem foldl_reverse (f : α → β → α) (a : α) (l : list β) : foldl f a (reverse l) = foldr (λx y, f y x) a l :=
+by induction l; simph [foldl, foldr]
+
+theorem foldr_reverse (f : α → β → β) (a : β) (l : list α) : foldr f a (reverse l) = foldl (λx y, f y x) a l :=
+let t := foldl_reverse (λx y, f y x) a (reverse l) in
+by rw reverse_reverse l at t; rwa t
+
 /- all & any -/
 
 @[simp]

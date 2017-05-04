@@ -17,6 +17,67 @@ by rw [add_comm]
 
 namespace list
 
+/- sublists -/
+
+inductive sublist' : list α → list α → Prop
+| slnil : sublist' [] []
+| cons (l₁ l₂ a) : sublist' l₁ l₂ → sublist' l₁ (a::l₂)
+| cons2 (l₁ l₂ a) : sublist' l₁ l₂ → sublist' (a::l₁) (a::l₂)
+
+infix `<+`:50 := sublist'
+
+@[simp] lemma nil_sublist : Π (l : list α), [] <+ l
+| []       := sublist'.slnil
+| (a :: l) := sublist'.cons _ _ a (nil_sublist l)
+
+@[simp] lemma sublist.refl : Π (l : list α), l <+ l
+| []       := sublist'.slnil
+| (a :: l) := sublist'.cons2 _ _ a (sublist.refl l)
+
+lemma sublist.trans {l₁ l₂ l₃ : list α} (h₁ : l₁ <+ l₂) (h₂ : l₂ <+ l₃) : l₁ <+ l₃ :=
+sublist'.rec_on h₂ (λ_ s, s)
+  (λl₂ l₃ a h₂ IH l₁ h₁, sublist'.cons _ _ _ (IH l₁ h₁))
+  (λl₂ l₃ a h₂ IH l₁ h₁, @sublist'.cases_on _ (λl₁ l₂', l₂' = a :: l₂ → l₁ <+ a :: l₃) _ _ h₁
+    (λ_, nil_sublist _)
+    (λl₁ l₂' a' h₁' e, match a', l₂', e, h₁' with ._, ._, rfl, h₁ := sublist'.cons _ _ _ (IH _ h₁) end)
+    (λl₁ l₂' a' h₁' e, match a', l₂', e, h₁' with ._, ._, rfl, h₁ := sublist'.cons2 _ _ _ (IH _ h₁) end) rfl)
+  l₁ h₁
+
+@[simp] lemma sublist_cons (a : α) (l : list α) : l <+ a::l :=
+sublist'.cons _ _ _ (sublist.refl l)
+
+lemma sublist_of_cons_sublist {a : α} {l₁ l₂ : list α} : a::l₁ <+ l₂ → l₁ <+ l₂ :=
+sublist.trans (sublist_cons a l₁)
+
+lemma cons_sublist_cons  {l₁ l₂ : list α} (a : α) (s : l₁ <+ l₂) : (a::l₁) <+ (a::l₂) :=
+sublist'.cons2 _ _ _ s
+
+@[simp] lemma sublist_append_left : Π (l₁ l₂ : list α), l₁ <+ l₁++l₂
+| []      l₂ := nil_sublist _
+| (a::l₁) l₂ := cons_sublist_cons _ (sublist_append_left l₁ l₂)
+
+@[simp] lemma sublist_append_right : Π (l₁ l₂ : list α), l₂ <+ l₁++l₂
+| []      l₂ := sublist.refl _
+| (a::l₁) l₂ := sublist'.cons _ _ _ (sublist_append_right l₁ l₂)
+
+lemma sublist_cons_of_sublist (a : α) {l₁ l₂ : list α} : l₁ <+ l₂ → l₁ <+ (a::l₂) :=
+sublist'.cons _ _ _
+
+lemma sublist_app_of_sublist_left (l l₁ l₂ : list α) (s : l <+ l₁) : l <+ l₁++l₂ :=
+sublist.trans s (sublist_append_left _ _)
+
+lemma sublist_app_of_sublist_right (l l₁ l₂ : list α) (s : l <+ l₂) : l <+ l₁++l₂ :=
+sublist.trans s (sublist_append_right _ _)
+
+lemma subset_of_sublist : Π {l₁ l₂ : list α} (s : l₁ <+ l₂) ⦃b⦄ (h : b ∈ l₁), b ∈ l₂
+| ._ ._ sublist'.slnil b h := h
+| ._ ._ (sublist'.cons l₁ l₂ a s) b h := mem_cons_of_mem _ (subset_of_sublist s h)
+| ._ ._ (sublist'.cons2 l₁ l₂ a s) b h :=
+  match eq_or_mem_of_mem_cons h with
+  | or.inl h := by rw h; exact mem_cons_self _ _
+  | or.inr h := mem_cons_of_mem _ (subset_of_sublist s h)
+  end
+
 section insert
 variable [decidable_eq α]
 
@@ -97,18 +158,18 @@ lemma length_erase_of_mem {a : α} : ∀ {l}, a ∈ l → length (erase a l) = p
 | []         h := rfl
 | [x]        h := begin simp at h, simp [h] end
 | (x::y::xs) h := if h' : a = x then
-                    by simp [h', one_add_eq_succ]
+                    by simp [h', one_add]
                   else
                     have ainyxs : a ∈ y::xs, from or_resolve_right h h',
-                    by simp [h', length_erase_of_mem ainyxs, one_add_eq_succ]
+                    by simp [h', length_erase_of_mem ainyxs, one_add]
 
 @[simp]
-lemma length_erase_of_not_mem {a : α} : ∀ {l}, a ∉ l → length (erase a l) = length l
+lemma erase_of_not_mem {a : α} : ∀ {l}, a ∉ l → erase a l = l
 | []      h  := rfl
 | (x::xs) h  :=
   have anex   : a ≠ x,  from λ aeqx  : a = x,  absurd (or.inl aeqx) h,
   have aninxs : a ∉ xs, from λ ainxs : a ∈ xs, absurd (or.inr ainxs) h,
-  by simp [anex, length_erase_of_not_mem aninxs]
+  by simp [anex, erase_of_not_mem aninxs]
 
 lemma erase_append_left {a : α} : ∀ {l₁} (l₂), a ∈ l₁ → erase a (l₁++l₂) = erase a l₁ ++ l₂
 | []      l₂  h := absurd h (not_mem_nil a)
@@ -124,12 +185,15 @@ lemma erase_append_right {a : α} : ∀ {l₁} (l₂), a ∉ l₁ → erase a (l
                     have a ∉ xs, from not_mem_of_not_mem_cons h,
                     by simp [erase_append_right l₂ this, h']
 
-lemma erase_subset (a : α) : ∀ l, erase a l ⊆ l
-| []        := subset.refl nil
+lemma erase_sublist (a : α) : ∀ l, erase a l <+ l
+| []        := sublist.refl nil
 | (x :: xs) := if h : a = x then
-                 begin simp [h] end
+                 by simp [h]
                else
-                 begin simp [h], apply cons_subset_cons, apply erase_subset xs end
+                 begin simp [h], apply cons_sublist_cons, apply erase_sublist xs end
+
+lemma erase_subset (a : α) (l) : erase a l ⊆ l :=
+subset_of_sublist (erase_sublist a l)
 
 theorem mem_erase_of_ne_of_mem {a b : α} : ∀ {l : list α}, a ≠ b → a ∈ l → a ∈ erase b l
 | []       aneb anil := begin simp at anil, contradiction end
@@ -168,11 +232,17 @@ lemma disjoint_right {l₁ l₂ : list α} : disjoint l₁ l₂ → ∀ {a}, a �
 lemma disjoint.comm {l₁ l₂ : list α} : disjoint l₁ l₂ → disjoint l₂ l₁ :=
 λ d a i₂ i₁, d i₁ i₂
 
+lemma disjoint_of_subset_left {l₁ l₂ l : list α} : l₁ ⊆ l → disjoint l l₂ → disjoint l₁ l₂ :=
+λ ss d x xinl₁, d (ss xinl₁)
+
+lemma disjoint_of_subset_right {l₁ l₂ l : list α} : l₂ ⊆ l → disjoint l₁ l → disjoint l₁ l₂ :=
+λ ss d x xinl xinl₁, d xinl (ss xinl₁)
+
 lemma disjoint_of_disjoint_cons_left {a : α} {l₁ l₂} : disjoint (a::l₁) l₂ → disjoint l₁ l₂ :=
-λ d x xinl₁, disjoint_left d (or.inr xinl₁)
+disjoint_of_subset_left (list.subset_cons _ _)
 
 lemma disjoint_of_disjoint_cons_right {a : α} {l₁ l₂} : disjoint l₁ (a::l₂) → disjoint l₁ l₂ :=
-λ d, disjoint.comm (disjoint_of_disjoint_cons_left (disjoint.comm d))
+disjoint_of_subset_right (list.subset_cons _ _)
 
 lemma disjoint_nil_left (l : list α) : disjoint [] l :=
 λ a ab, absurd ab (not_mem_nil a)
@@ -187,29 +257,21 @@ lemma disjoint_cons_of_not_mem_of_disjoint {a : α} {l₁ l₂ : list α} :
     (λ xeqa  : x = a, eq.symm xeqa ▸ nainl₂)
     (λ xinl₁ : x ∈ l₁, disjoint_left d xinl₁)
 
-lemma disjoint_of_disjoint_append_left_left :
-  ∀ {l₁ l₂ l : list α}, disjoint (l₁++l₂) l → disjoint l₁ l
-| []      l₂ l d := disjoint_nil_left l
-| (x::xs) l₂ l d :=
-  have nxinl : x ∉ l, from disjoint_left d (mem_cons_self x _),
-  have d₁    : disjoint (xs++l₂) l, from disjoint_of_disjoint_cons_left d,
-  have d₂    : disjoint xs l, from disjoint_of_disjoint_append_left_left d₁,
-  disjoint_cons_of_not_mem_of_disjoint nxinl d₂
+lemma disjoint_append_of_disjoint_left {l₁ l₂ l : list α} :
+  disjoint l₁ l → disjoint l₂ l → disjoint (l₁++l₂) l :=
+λ d₁ d₂ x h, or.elim (mem_or_mem_of_mem_append h) (@d₁ x) (@d₂ x)
 
-lemma disjoint_of_disjoint_append_left_right :
-  ∀ {l₁ l₂ l : list α}, disjoint (l₁++l₂) l → disjoint l₂ l
-| []      l₂ l d := d
-| (x::xs) l₂ l d :=
-  have d₁  : disjoint (xs++l₂) l, from disjoint_of_disjoint_cons_left d,
-  disjoint_of_disjoint_append_left_right d₁
+lemma disjoint_of_disjoint_append_left_left {l₁ l₂ l : list α} : disjoint (l₁++l₂) l → disjoint l₁ l :=
+disjoint_of_subset_left (list.subset_append_left _ _)
 
-lemma disjoint_of_disjoint_append_right_left :
-  ∀ {l₁ l₂ l : list α}, disjoint l (l₁++l₂) → disjoint l l₁ :=
-λ l₁ l₂ l d, disjoint.comm (disjoint_of_disjoint_append_left_left (disjoint.comm d))
+lemma disjoint_of_disjoint_append_left_right {l₁ l₂ l : list α} : disjoint (l₁++l₂) l → disjoint l₂ l :=
+disjoint_of_subset_left (list.subset_append_right _ _)
 
-lemma disjoint_of_disjoint_append_right_right :
-  ∀ {l₁ l₂ l : list α}, disjoint l (l₁++l₂) → disjoint l l₂ :=
-λ l₁ l₂ l d, disjoint.comm (disjoint_of_disjoint_append_left_right (disjoint.comm d))
+lemma disjoint_of_disjoint_append_right_left {l₁ l₂ l : list α} : disjoint l (l₁++l₂) → disjoint l l₁ :=
+disjoint_of_subset_right (list.subset_append_left _ _)
+
+lemma disjoint_of_disjoint_append_right_right {l₁ l₂ l : list α} : disjoint l (l₁++l₂) → disjoint l l₂ :=
+disjoint_of_subset_right (list.subset_append_right _ _)
 
 end disjoint
 
@@ -444,16 +506,17 @@ theorem not_mem_of_nodup_cons : ∀ {a : α} {l : list α}, nodup (a::l) → a �
 theorem not_nodup_cons_of_mem {a : α} {l : list α} : a ∈ l → ¬ nodup (a :: l) :=
 λ ainl d, absurd ainl (not_mem_of_nodup_cons d)
 
-theorem not_nodup_cons_of_not_nodup {a : α} {l : list α} : ¬ nodup l → ¬ nodup (a :: l) :=
-λ nd d, absurd (nodup_of_nodup_cons d) nd
+theorem nodup_of_sublist : Π {l₁ l₂ : list α}, l₁ <+ l₂ → nodup l₂ → nodup l₁
+| ._ ._ sublist'.slnil h := h
+| ._ ._ (sublist'.cons l₁ l₂ a s) (ndcons i n) := nodup_of_sublist s n
+| ._ ._ (sublist'.cons2 l₁ l₂ a s) (ndcons i n) :=
+  ndcons (λh, i (subset_of_sublist s h)) (nodup_of_sublist s n)
 
-theorem nodup_of_nodup_append_left : ∀ {l₁ l₂ : list α}, nodup (l₁++l₂) → nodup l₁
-| []      l₂ n := nodup_nil
-| (x::xs) l₂ n :=
-  have ndxs     : nodup xs,   from nodup_of_nodup_append_left (nodup_of_nodup_cons n),
-  have nxinxsl₂ : x ∉ xs++l₂, from not_mem_of_nodup_cons n,
-  have nxinxs   : x ∉ xs,     from not_mem_of_not_mem_append_left nxinxsl₂,
-  nodup_cons nxinxs ndxs
+theorem not_nodup_cons_of_not_nodup {a : α} {l : list α} : ¬ nodup l → ¬ nodup (a :: l) :=
+contrapos nodup_of_nodup_cons
+
+theorem nodup_of_nodup_append_left {l₁ l₂ : list α} : nodup (l₁++l₂) → nodup l₁ :=
+nodup_of_sublist (sublist_append_left l₁ l₂)
 
 theorem nodup_of_nodup_append_right : ∀ {l₁ l₂ : list α}, nodup (l₁++l₂) → nodup l₂
 | []      l₂ n := n
@@ -587,6 +650,13 @@ theorem mem_erase_dup [decidable_eq α] {a : α} : ∀ {l : list α}, a ∈ l �
       begin rw [erase_dup_cons_of_not_mem nbinl, aeqb], apply mem_cons_self end)
     (λ ainl : a ∈ l,
       begin rw [erase_dup_cons_of_not_mem nbinl], exact (or.inr (mem_erase_dup ainl)) end))
+
+theorem erase_dup_sublist [decidable_eq α] : ∀ (l : list α), erase_dup l <+ l
+| []     := sublist'.slnil
+| (b::l) := if h : b ∈ l then
+    by simp[erase_dup, h]; exact sublist_cons_of_sublist _ (erase_dup_sublist l)
+  else
+    by simp[erase_dup, h]; exact cons_sublist_cons _ (erase_dup_sublist l)
 
 theorem mem_of_mem_erase_dup [decidable_eq α] {a : α} : ∀ {l : list α}, a ∈ erase_dup l → a ∈ l
 | []     h := begin rw [erase_dup_nil] at h, exact h end

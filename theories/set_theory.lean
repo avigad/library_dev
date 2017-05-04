@@ -2,6 +2,17 @@ import ..data.set.basic
 
 universes u v
 
+-- TODO(Mario): Remove this when lean #1567 lands
+namespace set
+variables {α : Type u} {β : Type v}
+
+@[reducible]
+def sUnion (s : set (set α)) : set α := {t | ∃ a ∈ s, t ∈ a}
+
+prefix `⋃₀`:110 := sUnion
+
+end set
+
 @[simp]
 lemma subtype.eta {α : Type u} {p : α → Prop} {a : subtype p} {h : p (a.val)} :
   {subtype . val := a.val, property := h} = a :=
@@ -116,7 +127,7 @@ namespace pSet
   def powerset : pSet → pSet
   | ⟨α, A⟩ := ⟨set α, λp, ⟨{a // p a}, λx, A x.1⟩⟩
 
-  theorem mem_powerset : Π {x y : pSet}, y ∈ powerset x ↔ @has_subset.subset _ pSet.has_subset.{u} y x
+  theorem mem_powerset : Π {x y : pSet}, y ∈ powerset x ↔ y ⊆ x
   | ⟨α, A⟩ ⟨β, B⟩ := ⟨λ⟨p, e⟩, (subset.congr_left e).2 $ λ⟨a, pa⟩, ⟨a, equiv.refl (A a)⟩,
     λβα, ⟨{a | ∃b, equiv (B b) (A a)}, λb, let ⟨a, ba⟩ := βα b in ⟨⟨a, b, ba⟩, ba⟩,
      λ⟨a, b, ba⟩, ⟨b, ba⟩⟩⟩
@@ -219,7 +230,7 @@ namespace classical
       exact funext (λq, quotient.induction_on q $ λx,
         by simp[resp.f]; exact @definable.eq _ (F ⟦x⟧) (I ⟦x⟧))
     end
-  local attribute [instance] prop_decidable
+    local attribute [instance] prop_decidable
 end classical
 
 namespace Set
@@ -236,10 +247,12 @@ namespace Set
   protected def subset (x y : Set.{u}) :=
   ∀ ⦃z:Set.{u}⦄, z ∈ x → z ∈ y
 
-  instance : has_subset Set :=
+  instance has_subset : has_subset Set :=
   ⟨Set.subset⟩
 
-  theorem subset_iff : Π (x y : pSet), @has_subset.subset _ Set.has_subset ⟦x⟧ ⟦y⟧ ↔ x ⊆ y
+  instance has_subset' : has_subset (quotient pSet.setoid) := Set.has_subset
+
+  theorem subset_iff : Π (x y : pSet), ⟦x⟧ ⊆ ⟦y⟧ ↔ x ⊆ y
   | ⟨α, A⟩ ⟨β, B⟩ := ⟨λh a, @h ⟦A a⟧ (mem.mk A a),
     λh z, quotient.induction_on z (λz ⟨a, za⟩, let ⟨b, ab⟩ := h a in ⟨b, equiv.trans za ab⟩)⟩
 
@@ -323,9 +336,9 @@ namespace Set
       λ⟨a, b, qb, ab⟩, ⟨⟨b, qb⟩, ab⟩,
       λ⟨b, qb⟩, let ⟨a, ab⟩ := βα b in ⟨⟨a, b, qb, ab⟩, ab⟩⟩⟩⟩
 
-  @[simp] theorem mem_powerset {x y : Set} : y ∈ powerset x ↔ @has_subset.subset _ Set.has_subset y x :=
+  @[simp] theorem mem_powerset {x y : Set} : y ∈ powerset x ↔ y ⊆ x :=
   quotient.induction_on₂ x y (λ⟨α, A⟩ ⟨β, B⟩,
-    show @has_mem.mem _ _ pSet.has_mem ⟨β, B⟩ (pSet.powerset ⟨α, A⟩) ↔ _,
+    show (⟨β, B⟩ : pSet) ∈ (pSet.powerset ⟨α, A⟩) ↔ _,
       by rw [mem_powerset, subset_iff])
 
   theorem Union_lem {α β : Type u} (A : α → pSet) (B : β → pSet)
@@ -415,7 +428,7 @@ namespace Set
   @insert Set.{u} _ _ (@insert Set.{u} _ _ y {x}) {insert x (∅ : Set.{u})}
 
   def pair_sep (p : Set.{u} → Set.{u} → Prop) (x y : Set.{u}) : Set.{u} :=
-  @has_sep.sep _ _ _ (λz, ∃a ∈ x, ∃b ∈ y, z = pair a b ∧ p a b) (powerset (powerset (x ∪ y)))
+  {z ∈ powerset (powerset (x ∪ y)) | ∃a ∈ x, ∃b ∈ y, z = pair a b ∧ p a b}
 
   @[simp] theorem mem_pair_sep {p} {x y z : Set.{u}} : z ∈ pair_sep p x y ↔ ∃a ∈ x, ∃b ∈ y, z = pair a b ∧ p a b := by
   refine iff.trans mem_sep ⟨and.right, λe, ⟨_, e⟩⟩; exact
@@ -472,7 +485,7 @@ namespace Set
   f ⊆ prod x y ∧ ∀z:Set.{u}, z ∈ x → ∃! w, pair z w ∈ f
 
   def funs (x y : Set.{u}) : Set.{u} :=
-  @has_sep.sep _ _ _ (λf, is_func x y f) (powerset (prod x y))
+  {f ∈ powerset (prod x y) | is_func x y f}
 
   @[simp] def mem_funs {x y f : Set.{u}} : f ∈ funs x y ↔ is_func x y f :=
   by simp[funs]; exact ⟨and.left, λh, ⟨h, h.left⟩⟩
@@ -545,8 +558,7 @@ namespace Class
 
   @[simp] theorem subset_hom (x y : Set.{u}) : (x : Class.{u}) ⊆ y ↔ x ⊆ y := iff.refl _
 
-  @[simp] theorem sep_hom (p : Set.{u} → Prop) (x : Set.{u}) :
-    ↑{y ∈ x | p y} = @has_sep.sep Set.{u} Class.{u} _ (λy, p y) x :=
+  @[simp] theorem sep_hom (p : Set.{u} → Prop) (x : Set.{u}) : (↑{y ∈ x | p y} : Class.{u}) = {y ∈ x | p y} :=
   set.ext $ λy, Set.mem_sep
 
   @[simp] theorem empty_hom : ↑(∅ : Set.{u}) = (∅ : Class.{u}) :=

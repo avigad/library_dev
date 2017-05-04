@@ -66,7 +66,7 @@ begin assert general : ∀m, P n m,
 
 /-
 Remark: we use 'local attributes' because in the end of the file
-we show not is a comm_semiring, and we will automatically inherit
+we show nat is a comm_semiring, and we will automatically inherit
 the associated [simp] lemmas from algebra
 -/
 

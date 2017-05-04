@@ -353,8 +353,8 @@ quotient.induction_on a $ take ⟨n, ⟨d, h⟩⟩, suppose 0 ≤ n * 1 + (- 0) 
 
 instance : discrete_linear_ordered_field ℚ :=
 { rat.field_rat with
-  le              := has_le.le,
-  lt              := has_lt.lt,
+  le              := (≤),
+  lt              := (<),
   le_refl         := le_refl,
   le_trans        := take a b c, le_trans,
   le_antisymm     := take a b, le_antisymm,

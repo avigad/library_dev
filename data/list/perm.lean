@@ -23,37 +23,14 @@ inductive perm : list α → list α → Prop
 namespace perm
 infix ~ := perm
 
-theorem eq_nil_of_perm_nil {l₁ : list α} (p : ([] : list α) ~ l₁) : l₁ = ([] : list α) :=
-have gen : ∀ (l₂ : list α) (p : l₂ ~ l₁), l₂ = ([] : list α) → l₁ = ([] : list α), from
-  take l₂ p, perm.rec_on p
-    (λ h, h)
-    (begin intros, contradiction end)
-    (begin intros, contradiction end)
-    (λ l₁ l₂ l₃ p₁ p₂ r₁ r₂ e, r₂ (r₁ e)),
-gen [] p rfl
-
-theorem not_perm_nil_cons (x : α) (l : list α) : ¬ [] ~ (x::l) :=
-have gen : ∀ (l₁ l₂ : list α) (p : l₁ ~ l₂), l₁ = [] → l₂ = (x::l) → false, from
-  take l₁ l₂ p, perm.rec_on p
-    (begin intros, contradiction end)
-    (begin intros, contradiction end)
-    (begin intros, contradiction end)
-    (λ l₁ l₂ l₃ p₁ p₂ r₁ r₂ e₁ e₂,
-      begin
-        rw e₂ at r₂, rw e₂ at p₂, rw e₁ at r₁, rw e₁ at p₁,
-        have e₃ : l₂ = [], from eq_nil_of_perm_nil p₁,
-        r₂ e₃ rfl
-      end),
-assume p, gen [] (x::l) p rfl rfl
-
 @[refl]
 protected theorem refl : ∀ (l : list α), l ~ l
 | []      := nil
 | (x::xs) := skip x (refl xs)
 
 @[symm]
-protected theorem symm : ∀ {l₁ l₂ : list α}, l₁ ~ l₂ → l₂ ~ l₁ :=
-take l₁ l₂ p, perm.rec_on p
+protected theorem symm {l₁ l₂ : list α} (p : l₁ ~ l₂) : l₂ ~ l₁ :=
+perm.rec_on p
   nil
   (λ x l₁ l₂ p₁ r₁, skip x r₁)
   (λ x y l, swap y x l)
@@ -68,160 +45,111 @@ attribute [instance]
 protected definition is_setoid (α : Type) : setoid (list α) :=
 setoid.mk (@perm α) (perm.eqv α)
 
-theorem mem_of_perm {a : α} {l₁ l₂ : list α} : l₁ ~ l₂ → a ∈ l₁ → a ∈ l₂ :=
-assume p, perm.rec_on p
+theorem mem_of_perm {a : α} {l₁ l₂ : list α} (p : l₁ ~ l₂) : a ∈ l₁ → a ∈ l₂ :=
+perm.rec_on p
   (λ h, h)
-  (λ x l₁ l₂ p₁ r₁ i, or.elim (eq_or_mem_of_mem_cons i)
-    (suppose a = x,  begin rw this, apply mem_cons_self end)
-    (suppose a ∈ l₁, or.inr (r₁ this)))
-  (λ x y l ainyxl, or.elim (eq_or_mem_of_mem_cons ainyxl)
-    (suppose a = y, begin rw this, exact (or.inr (mem_cons_self _ _)) end)
-    (suppose a ∈ x::l, or.elim (eq_or_mem_of_mem_cons this)
-      (suppose a = x, or.inl this)
-      (suppose a ∈ l, or.inr (or.inr this))))
+  (λ x l₁ l₂ p₁ r₁ i, or.elim i
+    (λ ax, by simp [ax])
+    (λ al₁, or.inr (r₁ al₁)))
+  (λ x y l ayxl, or.elim ayxl
+    (λ ay, by simp [ay])
+    (λ axl, or.elim axl
+      (λ ax, by simp [ax])
+      (λ al, or.inr (or.inr al))))
   (λ l₁ l₂ l₃ p₁ p₂ r₁ r₂ ainl₁, r₂ (r₁ ainl₁))
 
 theorem not_mem_of_perm {a : α} {l₁ l₂ : list α} : l₁ ~ l₂ → a ∉ l₁ → a ∉ l₂ :=
-assume p nainl₁ ainl₂, absurd (mem_of_perm (perm.symm p) ainl₂) nainl₁
+assume p nainl₁ ainl₂, nainl₁ (mem_of_perm p.symm ainl₂)
 
 theorem mem_iff_mem_of_perm {a : α} {l₁ l₂ : list α} (h : l₁ ~ l₂) : a ∈ l₁ ↔ a ∈ l₂ :=
-iff.intro (mem_of_perm h) (mem_of_perm h^.symm)
+iff.intro (mem_of_perm h) (mem_of_perm h.symm)
 
-theorem perm_app_left {l₁ l₂ : list α} (t₁ : list α) : l₁ ~ l₂ → (l₁++t₁) ~ (l₂++t₁) :=
-assume p, perm.rec_on p
-  (perm.refl (list.nil ++ t₁))
+theorem perm_app_left {l₁ l₂ : list α} (t₁ : list α) (p : l₁ ~ l₂) : (l₁++t₁) ~ (l₂++t₁) :=
+perm.rec_on p
+  (perm.refl ([] ++ t₁))
   (λ x l₁ l₂ p₁ r₁, skip x r₁)
   (λ x y l, swap x y _)
   (λ l₁ l₂ l₃ p₁ p₂ r₁ r₂, trans r₁ r₂)
 
-theorem perm_app_right (l : list α) {t₁ t₂ : list α} : t₁ ~ t₂ → (l++t₁) ~ (l++t₂) :=
-list.rec_on l
-  (λ p, p)
-  (λ x xs r p, skip x (r p))
+theorem perm_app_right {t₁ t₂ : list α} : ∀ (l : list α), t₁ ~ t₂ → (l++t₁) ~ (l++t₂)
+| []      p := p
+| (x::xs) p := skip x (perm_app_right xs p)
 
 theorem perm_app {l₁ l₂ t₁ t₂ : list α} : l₁ ~ l₂ → t₁ ~ t₂ → (l₁++t₁) ~ (l₂++t₂) :=
 assume p₁ p₂, trans (perm_app_left t₁ p₁) (perm_app_right l₂ p₂)
 
-theorem perm_app_cons (a : α) {h₁ h₂ t₁ t₂ : list α} :
-  h₁ ~ h₂ → t₁ ~ t₂ → (h₁ ++ (a::t₁)) ~ (h₂ ++ (a::t₂)) :=
-assume p₁ p₂, perm_app p₁ (skip a p₂)
+--theorem perm_app_cons (a : α) {h₁ h₂ t₁ t₂ : list α} :
+--  h₁ ~ h₂ → t₁ ~ t₂ → (h₁ ++ (a::t₁)) ~ (h₂ ++ (a::t₂)) :=
+--assume p₁ p₂, perm_app p₁ (skip a p₂)
 
 theorem perm_cons_app (a : α) : ∀ (l : list α), (a::l) ~ (l ++ [a])
 | []      := perm.refl _
-| (x::xs) := calc
-  a::x::xs ~ x::a::xs     : swap x a xs
-       ... ~ x::(xs++[a]) : skip x (perm_cons_app xs)
+| (x::xs) := trans (swap x a xs) $ skip x (perm_cons_app xs)
 
 @[simp]
-theorem perm_cons_app_simp (a : α) : ∀ (l : list α), (l ++ [a]) ~ (a::l) :=
-take l, perm.symm (perm_cons_app a l)
+theorem perm_cons_app_simp (a : α) (l : list α) : (l ++ [a]) ~ (a::l) :=
+perm.symm (perm_cons_app a l)
 
 @[simp]
-theorem perm_app_comm {l₁ l₂ : list α} : (l₁++l₂) ~ (l₂++l₁) :=
-list.rec_on l₁
-  (by simp)
-  (λ a t r, calc
-    a::(t++l₂) ~ a::(l₂++t)   : skip a r
+theorem perm_app_comm : ∀ {l₁ l₂ : list α}, (l₁++l₂) ~ (l₂++l₁)
+| []     l₂ := by simp
+| (a::t) l₂ := calc
+    a::(t++l₂) ~ a::(l₂++t)   : skip a perm_app_comm
           ...  ~ l₂++t++[a]   : perm_cons_app _ _
           ...  = l₂++(t++[a]) : by rw append.assoc
-          ...  ~ l₂++(a::t)   : perm_app_right l₂ (perm.symm (perm_cons_app a t)))
+          ...  ~ l₂++(a::t)   : perm_app_right l₂ (perm.symm (perm_cons_app a t))
 
-theorem length_eq_length_of_perm {l₁ l₂ : list α} : l₁ ~ l₂ → length l₁ = length l₂ :=
-assume p, perm.rec_on p
+theorem length_eq_length_of_perm {l₁ l₂ : list α} (p : l₁ ~ l₂) : length l₁ = length l₂ :=
+perm.rec_on p
   rfl
-  (λ x l₁ l₂ p r, by rw [length_cons, length_cons, r])
-  (λ x y l, by repeat { rw length_cons })
+  (λ x l₁ l₂ p r, by simp[r])
+  (λ x y l, by simp)
   (λ l₁ l₂ l₃ p₁ p₂ r₁ r₂, eq.trans r₁ r₂)
 
-theorem eq_singleton_of_perm_inv (a : α) {l : list α} : [a] ~ l → l = [a] :=
-have gen : ∀ l₂, perm l₂ l → l₂ = [a] → l = [a], from
-  take l₂, assume p, perm.rec_on p
-    (λ e, e)
-    (λ x l₁ l₂ p r e,
-      begin
-        injection e with e₁ e₂,
-        rw e₁, rw e₂ at p,
-        assert h₁ : l₂ = [], exact eq_nil_of_perm_nil p,
-        subst h₁
-      end)
-    (λ x y l e, begin injection e, contradiction end)
-    (λ l₁ l₂ l₃ p₁ p₂ r₁ r₂ e, r₂ (r₁ e)),
-assume p, gen [a] p rfl
+theorem eq_nil_of_perm_nil {l₁ : list α} (p : ([] : list α) ~ l₁) : l₁ = ([] : list α) :=
+eq_nil_of_length_eq_zero (length_eq_length_of_perm p).symm
 
-theorem eq_singleton_of_perm (a b : α) : [a] ~ [b] → a = b :=
-assume p,
-begin
-  injection eq_singleton_of_perm_inv a p with e₁,
-  rw e₁
+theorem not_perm_nil_cons (x : α) (l : list α) : ¬ [] ~ (x::l) :=
+assume p, by note h := eq_nil_of_perm_nil p; contradiction
+
+theorem eq_singleton_of_perm {a b : α} (p : [a] ~ [b]) : a = b :=
+have a ∈ [b], from mem_of_perm p (by simp),
+by simp at this; simph
+
+theorem eq_singleton_of_perm_inv {a : α} {l : list α} (p : [a] ~ l) : l = [a] :=
+match l, length_eq_length_of_perm p, p with
+| [a'], rfl, p := by simp [eq_singleton_of_perm p]
 end
 
 theorem perm_rev : ∀ (l : list α), l ~ (reverse l)
 | []      := nil
 | (x::xs) := calc
-  x::xs ~ xs++[x]           : perm_cons_app x xs
-    ... ~ reverse xs ++ [x] : perm_app_left [x] (perm_rev xs)
+  x::xs ~ x::reverse xs     : skip x (perm_rev xs)
+    ... ~ reverse xs ++ [x] : perm_cons_app _ _
     ... = reverse (x::xs)   : by rw [reverse_cons, concat_eq_append]
 
 @[simp]
-theorem perm_rev_simp : ∀ (l : list α), (reverse l) ~ l :=
-take l, perm.symm (perm_rev l)
+theorem perm_rev_simp (l : list α) : (reverse l) ~ l :=
+perm.symm (perm_rev l)
 
 theorem perm_middle (a : α) (l₁ l₂ : list α) : (a::l₁)++l₂ ~ l₁++(a::l₂) :=
-calc
-  (a::l₁) ++ l₂ = a::(l₁++l₂)   : rfl
-           ...  ~ l₁++l₂++[a]   : perm_cons_app a (l₁ ++ l₂)
-           ...  = l₁++(l₂++[a]) : append.assoc l₁ l₂ [a]
-           ...  ~ l₁++(a::l₂)   : perm_app_right l₁ (perm.symm (perm_cons_app a l₂))
+have a::l₁++l₂ ~ l₁++[a]++l₂, from perm_app_left l₂ (perm_cons_app a l₁),
+by simp at this; exact this
 
 attribute [simp]
 theorem perm_middle_simp (a : α) (l₁ l₂ : list α) : l₁++(a::l₂) ~ (a::l₁)++l₂ :=
 perm.symm $ perm_middle a l₁ l₂
 
-theorem perm_cons_app_cons {l l₁ l₂ : list α} (a : α) : l ~ l₁++l₂ → a::l ~ l₁++(a::l₂) :=
-assume p, calc
-  a::l ~ l++[a]        : perm_cons_app a l
-   ... ~ l₁++l₂++[a]   : perm_app_left [a] p
-   ... = l₁++(l₂++[a]) : append.assoc l₁ l₂ [a]
-   ... ~ l₁++(a::l₂)   : perm_app_right l₁ (perm.symm (perm_cons_app a l₂))
+theorem perm_cons_app_cons {l l₁ l₂ : list α} (a : α) (p : l ~ l₁++l₂) : a::l ~ l₁++(a::l₂) :=
+trans (skip a p) $ perm_middle a l₁ l₂
 
 open decidable
 theorem perm_erase [decidable_eq α] {a : α} : ∀ {l : list α}, a ∈ l → l ~ a::(erase a l)
-| []     h := absurd h (not_mem_nil _)
-| (x::t) h :=
-  by_cases
-    (assume aeqx  : a = x, by rw [aeqx, erase_cons_head])
-    (assume naeqx : a ≠ x,
-      have aint : a ∈ t,             from mem_of_ne_of_mem naeqx h,
-      have aux : t ~ a :: erase a t, from perm_erase aint,
-      calc x::t ~ x::a::(erase a t)   : skip x aux
-            ... ~ a::x::(erase a t)   : (swap _ _ _)
-            ... = a::(erase a (x::t)) : by rw [erase_cons_tail _ naeqx])
-
--- attribute [congr]
-theorem erase_perm_erase_of_perm [decidable_eq α] (a : α) {l₁ l₂ : list α} :
-  l₁ ~ l₂ → erase a l₁ ~ erase a l₂ :=
-assume p, perm.rec_on p
-  nil
-  (λ x t₁ t₂ p r,
-    by_cases
-      (assume aeqx  : a = x, begin simp [aeqx, erase_cons_head], exact p end)
-      (assume naeqx : a ≠ x, begin rw [erase_cons_tail _ naeqx, erase_cons_tail _ naeqx],
-                                   exact (skip x r) end))
-  (λ x y l,
-    by_cases
-      (assume aeqx : a = x,
-        by_cases
-          (assume aeqy  : a = y, by rw [-aeqx, -aeqy])
-          (assume naeqy : a ≠ y, by rw [-aeqx, erase_cons_tail _ naeqy, erase_cons_head,
-                                        erase_cons_head]))
-      (assume naeqx : a ≠ x,
-        by_cases
-          (assume aeqy  : a = y, by rw [-aeqy, erase_cons_tail _ naeqx, erase_cons_head,
-                                        erase_cons_head])
-          (assume naeqy : a ≠ y, begin rw [erase_cons_tail _ naeqx, erase_cons_tail _ naeqy,
-                                           erase_cons_tail _ naeqx, erase_cons_tail _ naeqy],
-                                       apply swap end)))
-  (λ l₁ l₂ l₃ p₁ p₂ r₁ r₂, trans r₁ r₂)
+| []     h := false.elim h
+| (x::t) h := if ax : a = x then by rw [ax, erase_cons_head] else
+  by rw[erase_cons_tail _ ax]; exact
+  have aint : a ∈ t, from mem_of_ne_of_mem ax h,
+  trans (skip _ $ perm_erase aint) (swap _ _ _)
 
 @[elab_as_eliminator]
 theorem perm_induction_on {P : list α → list α → Prop} {l₁ l₂ : list α} (p : l₁ ~ l₂)
@@ -323,7 +251,7 @@ theorem perm_of_forall_count_eq : ∀ {l₁ l₂ : list α}, (∀ a, count a l�
 | [] :=
     take l₂,
     assume h : ∀ a, count a [] = count a l₂,
-    have ∀ a, a ∉ l₂, from take a, not_mem_of_count_eq_zero (by simp [(h a)^.symm]),
+    have ∀ a, a ∉ l₂, from take a, not_mem_of_count_eq_zero (by simp [(h a).symm]),
     have l₂ = [], from eq_nil_of_forall_not_mem this,
     show [] ~ l₂, by rw this
 | (b :: l) :=
@@ -376,11 +304,11 @@ iff.intro
 instance : ∀ (l₁ l₂ : list α), decidable (l₁ ~ l₂) :=
 take l₁ l₂,
 decidable_of_decidable_of_iff (decidable_forall_mem _)
-                              (perm_iff_forall_mem_count_eq_count l₁ l₂)^.symm
+                              (perm_iff_forall_mem_count_eq_count l₁ l₂).symm
 
 end count
 
--- αuxiliary theorem for performing cases-analysis on l₂.
+-- Auxiliary theorem for performing cases-analysis on l₂.
 -- We use it to prove perm_inv_core.
 private theorem discr {P : Prop} {a b : α} {l₁ l₂ l₃ : list α} :
     a::l₁ = l₂++(b::l₃)                    →
@@ -397,36 +325,16 @@ match l₂ with
   end
 end
 
--- αuxiliary theorem for performing cases-analysis on l₂.
+-- Auxiliary theorem for performing cases-analysis on l₂.
 -- We use it to prove perm_inv_core.
-private theorem discr₂ {P : Prop} {a b c : α} {l₁ l₂ l₃ : list α} :
-    a::b::l₁ = l₂++(c::l₃)                     →
-    (l₂ = [] → l₃ = b::l₁ → a = c → P)         →
-    (l₂ = [a] → b = c → l₁ = l₃ → P)           →
-    (∀ t, l₂ = a::b::t → l₁ = t++(c::l₃) → P)  → P :=
-match l₂ with
-| []   := λ e H₁ H₂ H₃,
-  begin
-    simp at e, injection e with a_eq_c b_l₁_eq_l₃,
-    exact H₁ rfl (eq.symm b_l₁_eq_l₃) a_eq_c
-  end
-| [h₁] := λ e H₁ H₂ H₃,
-  begin
-    rw cons_append at e, rw nil_append at e,
-    injection e with a_eq_h₁ aux,
-    injection aux with b_eq_c l₁_eq_l₃,
-    rw a_eq_h₁ at H₂, rw b_eq_c at H₂, rw l₁_eq_l₃ at H₂,
-    exact H₂ rfl rfl rfl
-  end
-| h₁::h₂::t₂ := λ e H₁ H₂ H₃,
-  begin
-    simp at e,
-    injection e with a_eq_h₁ aux,
-    injection aux with b_eq_h₂ l₁_eq,
-    rw a_eq_h₁ at H₃, rw b_eq_h₂ at H₃,
-    exact H₃ t₂ rfl l₁_eq
-  end
-end
+private theorem discr₂ {P : Prop} {a b c : α} {l₁ l₂ l₃ : list α}
+    (e : a::b::l₁ = l₂++(c::l₃))
+    (H₁ : l₂ = [] → l₃ = b::l₁ → a = c → P)
+    (H₂ : l₂ = [a] → b = c → l₁ = l₃ → P)
+    (H₃ : ∀ t, l₂ = a::b::t → l₁ = t++(c::l₃) → P) : P :=
+discr e (λh₁ h₂ h₃, H₁ h₁ h₃.symm h₂) $ λt h₁ h₂, discr h₂
+  (λh₃ h₄, match t, h₃, h₁ with ._, rfl, h₁ := H₂ h₁ h₄ end)
+  (λt' h₃ h₄, match t, h₃, h₁ with ._, rfl, h₁ := H₃ t' h₁ h₄ end)
 
 /- quasiequal a l l' means that l' is exactly l, with a added
    once somewhere -/
@@ -507,209 +415,109 @@ theorem qeq_split {a : α} : ∀ {l l' : list α}, l'≈a|l → ∃ l₁ l₂, l
   | ⟨l₁, l₂, h₁, h₂⟩ := ⟨c :: l₁, l₂, by simp [h₁, h₂]⟩
   end
 
-theorem subset_of_mem_of_subset_of_qeq {a : α} {l : list α} {u v : list α} :
-  a ∉ l → a::l ⊆ v → v≈a|u → l ⊆ u :=
-λ (nainl : a ∉ l) (s : a::l ⊆ v) (q : v≈a|u) (b : α) (binl : b ∈ l),
-  have b ∈ v,    from s (or.inr binl),
-  have b ∈ a::u, from mem_cons_of_qeq q this,
-  or.elim (eq_or_mem_of_mem_cons this)
-    (suppose b = a, begin subst b, contradiction end)
-    (suppose b ∈ u, this)
-end qeq
+--theorem subset_of_mem_of_subset_of_qeq {a : α} {l : list α} {u v : list α} :
+--  a ∉ l → a::l ⊆ v → v≈a|u → l ⊆ u :=
+--λ (nainl : a ∉ l) (s : a::l ⊆ v) (q : v≈a|u) (b : α) (binl : b ∈ l),
+--  have b ∈ v,    from s (or.inr binl),
+--  have b ∈ a::u, from mem_cons_of_qeq q this,
+--  or.elim (eq_or_mem_of_mem_cons this)
+--    (suppose b = a, begin subst b, contradiction end)
+--    (suppose b ∈ u, this)
+--end qeq
 
-/- permutation inversion -/
 theorem perm_inv_core {l₁ l₂ : list α} (p' : l₁ ~ l₂) : ∀ {a s₁ s₂}, l₁≈a|s₁ → l₂≈a|s₂ → s₁ ~ s₂ :=
 perm_induction_on p'
-  (λ a s₁ s₂ e₁ e₂,
-    have innil : a ∈ [], from mem_head_of_qeq e₁,
-    absurd innil (not_mem_nil _))
+  (λ a s₁ s₂ e₁ e₂, match e₁ with end)
   (λ x t₁ t₂ p (r : ∀{a s₁ s₂}, t₁≈a|s₁ → t₂≈a|s₂ → s₁ ~ s₂) a s₁ s₂ e₁ e₂,
-    match qeq_split e₁, qeq_split e₂ with
-    | ⟨(s₁₁ : list α), (s₁₂ : list α), (C₁₁ : s₁ = s₁₁ ++ s₁₂), (C₁₂ : x::t₁ = s₁₁++(a::s₁₂))⟩,
-      ⟨(s₂₁ : list α), (s₂₂ : list α), (C₂₁ : s₂ = s₂₁ ++ s₂₂), (C₂₂ : x::t₂ = s₂₁++(a::s₂₂))⟩ :=
-    discr C₁₂
-      (λ (s₁₁_eq : s₁₁ = []) (x_eq_a : x = a) (t₁_eq : t₁ = s₁₂),
-        have s₁_p : s₁ ~ t₂, from calc
-            s₁  = s₁₁ ++ s₁₂ : C₁₁
-            ... = t₁         : by rw [-t₁_eq, s₁₁_eq, nil_append]
-            ... ~ t₂         : p,
-        discr C₂₂
-          (λ (s₂₁_eq : s₂₁ = []) (x_eq_a : x = a) (t₂_eq: t₂ = s₂₂),
-            calc
-              s₁  ~ t₂         : s₁_p
-              ... = s₂₁ ++ s₂₂ : by rw [-t₂_eq, s₂₁_eq, nil_append]
-              ... = s₂         : by rw C₂₁)
-          (λ (ts₂₁ : list α) (s₂₁_eq : s₂₁ = x::ts₂₁) (t₂_eq : t₂ = ts₂₁++(a::s₂₂)),
-            calc
-              s₁  ~ t₂             : s₁_p
-              ... = ts₂₁++(a::s₂₂) : t₂_eq
-              ... ~ (a::ts₂₁)++s₂₂ : perm.symm (perm_middle _ _ _)
-              ... = s₂₁ ++ s₂₂     : by rw [-x_eq_a, -s₂₁_eq]
-              ... = s₂             : by rw C₂₁))
-      (λ (ts₁₁ : list α) (s₁₁_eq : s₁₁ = x::ts₁₁) (t₁_eq : t₁ = ts₁₁++(a::s₁₂)),
-        have t₁_qeq : t₁ ≈ a|(ts₁₁++s₁₂), begin rw t₁_eq, apply qeq_app end,
-        have s₁_eq : s₁ = x::(ts₁₁++s₁₂), from calc
-          s₁  = s₁₁ ++ s₁₂       : C₁₁
-          ... = x::(ts₁₁++ s₁₂)  : begin rw s₁₁_eq, reflexivity end,
-        discr C₂₂
-          (λ (s₂₁_eq : s₂₁ = []) (x_eq_a : x = a) (t₂_eq: t₂ = s₂₂),
-            calc
-              s₁  = a::(ts₁₁++s₁₂) : by rw [s₁_eq, x_eq_a]
-              ... ~ ts₁₁++(a::s₁₂) : (perm_middle _ _ _)
-              ... = t₁             : eq.symm t₁_eq
-              ... ~ t₂             : p
-              ... = s₂             : by rw [t₂_eq, C₂₁, s₂₁_eq, nil_append])
-          (λ (ts₂₁ : list α) (s₂₁_eq : s₂₁ = x::ts₂₁) (t₂_eq : t₂ = ts₂₁++(a::s₂₂)),
-            have t₂_qeq : t₂ ≈ a|(ts₂₁++s₂₂), begin rw t₂_eq, apply qeq_app end,
-            calc
-              s₁  = x::(ts₁₁++s₁₂) : s₁_eq
-              ... ~ x::(ts₂₁++s₂₂) : skip x (r t₁_qeq t₂_qeq)
-              ... = s₂             : by rw [-cons_append, -s₂₁_eq, C₂₁])) end)
+    match s₁, s₂, qeq_split e₁, qeq_split e₂ with ._, ._, ⟨s₁₁, s₁₂, rfl, C₁⟩, ⟨s₂₁, s₂₂, rfl, C₂⟩ :=
+    discr C₁
+      (λe₁ xa, match s₁₁, x, e₁, xa, C₂ with ._, ._, rfl, rfl, C₂ := discr C₂
+        (λe₁ _ e₂ e₃, match s₁₂, s₂₁, s₂₂, e₁, e₂, e₃ with
+        | ._, ._, ._, rfl, rfl, rfl := p end)
+        (λt₃ e₁ e₂ e₃, match s₂₁, s₁₂, t₂, e₁, e₂, e₃, p with
+        | ._, ._, ._, rfl, rfl, rfl, p := trans p (perm_middle _ _ _).symm end) 
+        end)
+      (λt₃ e₁ e₂, match s₁₁, t₁, e₁, e₂, C₂, p, @r with ._, ._, rfl, rfl, C₂, p, r := discr C₂
+        (λe₁ xa e₂, match x, s₂₁, s₂₂, xa, e₁, e₂ with
+        | ._, ._, ._, rfl, rfl, rfl := trans (perm_middle _ _ _) p end)
+        (λt₃ e₁ e₂, match s₂₁, t₂, e₁, e₂, @r with
+        | ._, ._, rfl, rfl, r := skip x (r (qeq_app _ _ _) (qeq_app _ _ _)) end) 
+        end)
+    end)
   (λ x y t₁ t₂ p (r : ∀{a s₁ s₂}, t₁≈a|s₁ → t₂≈a|s₂ → s₁ ~ s₂) a s₁ s₂ e₁ e₂,
-    match qeq_split e₁, qeq_split e₂ with
-    | ⟨(s₁₁ : list α), (s₁₂ : list α), (C₁₁ : s₁ = s₁₁ ++ s₁₂), (C₁₂ : y::x::t₁ = s₁₁++(a::s₁₂))⟩,
-      ⟨(s₂₁ : list α), (s₂₂ : list α), (C₂₁ : s₂ = s₂₁ ++ s₂₂), (C₂₂ : x::y::t₂ = s₂₁++(a::s₂₂))⟩ :=
-    discr₂ C₁₂
-      (λ (s₁₁_eq : s₁₁ = [])  (s₁₂_eq : s₁₂ = x::t₁) (y_eq_a : y = a),
-        have s₁_p : s₁ ~ x::t₂, from calc
-            s₁  = s₁₁ ++ s₁₂ : C₁₁
-            ... = x::t₁      : by rw [s₁₂_eq, s₁₁_eq, nil_append]
-            ... ~ x::t₂      : skip x p,
-        discr₂ C₂₂
-          (λ (s₂₁_eq : s₂₁ = [])  (s₂₂_eq : s₂₂ = y::t₂) (x_eq_a : x = a),
-            calc
-              s₁  ~ x::t₂      : s₁_p
-              ... = s₂₁ ++ s₂₂ : by rw [x_eq_a, -y_eq_a, -s₂₂_eq, s₂₁_eq, nil_append]
-              ... = s₂         : by rw C₂₁)
-          (λ (s₂₁_eq : s₂₁ = [x]) (y_eq_a : y = a) (t₂_eq : t₂ = s₂₂),
-            calc
-              s₁  ~ x::t₂      : s₁_p
-              ... = s₂₁ ++ s₂₂ : begin rw [t₂_eq, s₂₁_eq, cons_append], reflexivity end
-              ... = s₂         : by rw C₂₁)
-          (λ (ts₂₁ : list α) (s₂₁_eq : s₂₁ = x::y::ts₂₁) (t₂_eq : t₂ = ts₂₁++(a::s₂₂)),
-            calc
-              s₁  ~ x::t₂               : s₁_p
-              ... = x::(ts₂₁++(y::s₂₂)) : by rw [t₂_eq, -y_eq_a]
-              ... ~ x::y::(ts₂₁++s₂₂)   : perm.symm (skip x (perm_middle _ _ _))
-              ... = s₂₁ ++ s₂₂          : begin rw [s₂₁_eq, cons_append], reflexivity end
-              ... = s₂                  : by rw C₂₁))
-      (λ (s₁₁_eq : s₁₁ = [y]) (x_eq_a : x = a) (t₁_eq : t₁ = s₁₂),
-        have s₁_p : s₁ ~ y::t₂, from calc
-             s₁  = y::t₁ : begin rw [C₁₁, s₁₁_eq, t₁_eq], reflexivity end
-             ... ~ y::t₂ : skip y p,
-        discr₂ C₂₂
-          (λ (s₂₁_eq : s₂₁ = [])  (s₂₂_eq : s₂₂ = y::t₂) (x_eq_a : x = a),
-            calc
-              s₁  ~ y::t₂      : s₁_p
-              ... = s₂₁ ++ s₂₂ : begin rw [s₂₁_eq, s₂₂_eq], reflexivity end
-              ... = s₂         : by rw C₂₁)
-          (λ (s₂₁_eq : s₂₁ = [x]) (y_eq_a : y = a) (t₂_eq : t₂ = s₂₂),
-            calc
-              s₁  ~ y::t₂      : s₁_p
-              ... = s₂₁ ++ s₂₂ : begin rw [s₂₁_eq, t₂_eq, y_eq_a, -x_eq_a], reflexivity end
-              ... = s₂         : by rw C₂₁)
-          (λ (ts₂₁ : list α) (s₂₁_eq : s₂₁ = x::y::ts₂₁) (t₂_eq : t₂ = ts₂₁++(a::s₂₂)),
-            calc
-              s₁  ~ y::t₂               : s₁_p
-              ... = y::(ts₂₁++(x::s₂₂)) : by rw [t₂_eq, -x_eq_a]
-              ... ~ y::x::(ts₂₁++s₂₂)   : perm.symm (skip y (perm_middle _ _ _))
-              ... ~ x::y::(ts₂₁++s₂₂)   : swap _ _ _
-              ... = s₂₁ ++ s₂₂          : begin rw [s₂₁_eq], reflexivity end
-              ... = s₂                  : by rw C₂₁))
-      (λ (ts₁₁ : list α) (s₁₁_eq : s₁₁ = y::x::ts₁₁) (t₁_eq : t₁ = ts₁₁++(a::s₁₂)),
-        have s₁_eq  : s₁ = y::x::(ts₁₁++s₁₂), begin rw [C₁₁, s₁₁_eq], reflexivity end,
-        discr₂ C₂₂
-          (λ (s₂₁_eq : s₂₁ = [])  (s₂₂_eq : s₂₂ = y::t₂) (x_eq_a : x = a),
-            calc
-              s₁  = y::a::(ts₁₁++s₁₂)   : by rw [s₁_eq, x_eq_a]
-              ... ~ y::(ts₁₁++(a::s₁₂)) : skip y (perm_middle _ _ _)
-              ... = y::t₁               : by rw t₁_eq
-              ... ~ y::t₂               : skip y p
-              ... = s₂₁ ++ s₂₂          : begin rw [s₂₁_eq, s₂₂_eq], reflexivity end
-              ... = s₂                  : by rw C₂₁)
-          (λ (s₂₁_eq : s₂₁ = [x]) (y_eq_a : y = a) (t₂_eq : t₂ = s₂₂),
-            calc
-              s₁  = y::x::(ts₁₁++s₁₂)   : by rw s₁_eq
-              ... ~ x::y::(ts₁₁++s₁₂)   : (swap _ _ _)
-              ... = x::a::(ts₁₁++s₁₂)   : by rw y_eq_a
-              ... ~ x::(ts₁₁++(a::s₁₂)) : skip x (perm_middle _ _ _)
-              ... = x::t₁               : by rw t₁_eq
-              ... ~ x::t₂               : skip x p
-              ... = s₂₁ ++ s₂₂          : begin rw [t₂_eq, s₂₁_eq], reflexivity end
-              ... = s₂                  : by rw C₂₁)
-          (λ (ts₂₁ : list α) (s₂₁_eq : s₂₁ = x::y::ts₂₁) (t₂_eq : t₂ = ts₂₁++(a::s₂₂)),
-            have t₁_qeq : t₁ ≈ a|(ts₁₁++s₁₂),    begin rw t₁_eq, apply qeq_app end,
-            have t₂_qeq : t₂ ≈ a|(ts₂₁++s₂₂),    begin rw t₂_eq, apply qeq_app end,
-            have p_aux  : ts₁₁++s₁₂ ~ ts₂₁++s₂₂, from r t₁_qeq t₂_qeq,
-            calc
-              s₁  = y::x::(ts₁₁++s₁₂)   : by rw s₁_eq
-              ... ~ y::x::(ts₂₁++s₂₂)   : skip y (skip x p_aux)
-              ... ~ x::y::(ts₂₁++s₂₂)   : swap _ _ _
-              ... = s₂₁ ++ s₂₂          : begin rw s₂₁_eq, reflexivity end
-              ... = s₂                  : by rw C₂₁)) end)
+    match s₁, s₂, qeq_split e₁, qeq_split e₂ with ._, ._, ⟨s₁₁, s₁₂, rfl, C₁⟩, ⟨s₂₁, s₂₂, rfl, C₂⟩ :=
+    discr₂ C₁
+      (λe₁ e₂ ya, match s₁₁, s₁₂, y, e₁, e₂, ya, C₂ with ._, ._, ._, rfl, rfl, rfl, C₂ := discr₂ C₂
+        (λe₁ e₂ xa, match s₂₁, s₂₂, x, e₁, e₂, xa with
+        | ._, ._, ._, rfl, rfl, rfl := skip a p end)
+        (λe₁ _ e₂, match s₂₁, s₂₂, e₁, e₂ with
+        | ._, ._, rfl, rfl := skip x p end)
+        (λt₃ e₁ e₂, match s₂₁, t₂, e₁, e₂, p with
+        | ._, ._, rfl, rfl, p := skip x (trans p (perm_middle _ _ _).symm) end)
+        end)
+      (λe₁ xa e₂, match s₁₁, s₁₂, x, e₁, e₂, xa, C₂ with ._, ._, ._, rfl, rfl, rfl, C₂ := discr₂ C₂
+        (λe₁ e₂ _, match s₂₁, s₂₂, e₁, e₂ with
+        | ._, ._, rfl, rfl := skip y p end)
+        (λe₁ ya e₂, match s₂₁, s₂₂, y, e₁, e₂, ya with
+        | ._, ._, ._, rfl, rfl, rfl := skip a p end)
+        (λt₃ e₁ e₂, match s₂₁, t₂, e₁, e₂, p with
+        | ._, ._, rfl, rfl, p := trans (skip y $ trans p (perm_middle _ _ _).symm) (swap _ _ _) end)
+        end)
+      (λt₃ e₁ e₂, match s₁₁, t₁, e₁, e₂, C₂, p, @r with ._, ._, rfl, rfl, C₂, p, r := discr₂ C₂
+        (λe₁ e₂ xa, match s₂₁, s₂₂, x, e₁, e₂, xa with
+        | ._, ._, ._, rfl, rfl, rfl := skip y (trans (perm_middle _ _ _) p) end)
+        (λe₁ ya e₂, match s₂₁, s₂₂, y, e₁, e₂, ya with
+        | ._, ._, ._, rfl, rfl, rfl := trans (swap _ _ _) (skip x $ trans (perm_middle _ _ _) p) end)
+        (λt₄ e₁ e₂, match s₂₁, t₂, e₁, e₂, @r with
+        | ._, ._, rfl, rfl, r := trans (swap _ _ _) (skip x $ skip y $ r (qeq_app _ _ _) (qeq_app _ _ _)) end)
+        end)
+    end)
   (λ t₁ t₂ t₃ p₁ p₂
      (r₁ : ∀{a s₁ s₂}, t₁ ≈ a|s₁ → t₂≈a|s₂ → s₁ ~ s₂)
      (r₂ : ∀{a s₁ s₂}, t₂ ≈ a|s₁ → t₃≈a|s₂ → s₁ ~ s₂)
      a s₁ s₂ e₁ e₂,
-    have a ∈ t₁, from mem_head_of_qeq e₁,
-    have a ∈ t₂, from mem_of_perm p₁ this,
-    match qeq_of_mem this with
-    | ⟨(t₂' : list α), (e₂' : t₂≈a|t₂')⟩ :=
-    calc s₁  ~ t₂' : r₁ e₁ e₂'
-        ...  ~ s₂  : r₂ e₂' e₂
-    end)
+    let ⟨t₂', e₂'⟩ := qeq_of_mem $ mem_of_perm p₁ $ mem_head_of_qeq e₁ in
+    trans (r₁ e₁ e₂') (r₂ e₂' e₂))
+end qeq
 
-theorem perm_cons_inv {a : α} {l₁ l₂ : list α} : a::l₁ ~ a::l₂ → l₁ ~ l₂ :=
-assume p, perm_inv_core p (qeq.qhead a l₁) (qeq.qhead a l₂)
+theorem perm_cons_inv {a : α} {l₁ l₂ : list α} (p : a::l₁ ~ a::l₂) : l₁ ~ l₂ :=
+perm_inv_core p (qeq.qhead a l₁) (qeq.qhead a l₂)
 
-theorem perm_app_inv {a : α} {l₁ l₂ l₃ l₄ : list α} : l₁++(a::l₂) ~ l₃++(a::l₄) → l₁++l₂ ~ l₃++l₄ :=
-assume p : l₁++(a::l₂) ~ l₃++(a::l₄),
-  have p' : a::(l₁++l₂) ~ a::(l₃++l₄), from calc
-    a::(l₁++l₂) ~ l₁++(a::l₂) : perm_middle a l₁ l₂
-          ...   ~ l₃++(a::l₄) : p
-          ...   ~ a::(l₃++l₄) : perm.symm (perm_middle a l₃ l₄),
-  perm_cons_inv p'
+theorem perm_app_inv_left {l₁ l₂ : list α} : ∀ {l}, l++l₁ ~ l++l₂ → l₁ ~ l₂
+| []     p := p
+| (a::l) p := perm_app_inv_left (perm_cons_inv p)
 
-section foldl
-  variables {f : β → α → β} {l₁ l₂ : list α}
-  variable rcomm : right_commutative f
-  include  rcomm
+theorem perm_app_inv_right {l₁ l₂ l : list α} (p : l₁++l ~ l₂++l) : l₁ ~ l₂ :=
+perm_app_inv_left $ trans perm_app_comm $ trans p perm_app_comm
 
-  theorem foldl_eq_of_perm : l₁ ~ l₂ → ∀ b, foldl f b l₁ = foldl f b l₂ :=
-  assume p, perm_induction_on p
-    (λ b, by simp [foldl_nil])
-    (λ x t₁ t₂ p r b, calc
-       foldl f b (x::t₁) = foldl f (f b x) t₁ : by rw foldl_cons
-               ...       = foldl f (f b x) t₂ : by rw (r (f b x))
-               ...       = foldl f b (x::t₂)  : by rw foldl_cons)
-    (λ x y t₁ t₂ p r b, calc
-       foldl f b (y :: x :: t₁) = foldl f (f (f b y) x) t₁ : begin rw foldl_cons, reflexivity end
-                     ...        = foldl f (f (f b x) y) t₁ : by rw rcomm
-                     ...        = foldl f (f (f b x) y) t₂ : r (f (f b x) y)
-                     ...        = foldl f b (x :: y :: t₂) : begin rw foldl_cons, reflexivity end)
-    (λ t₁ t₂ t₃ p₁ p₂ r₁ r₂ b, eq.trans (r₁ b) (r₂ b))
+theorem perm_app_inv {a : α} {l₁ l₂ l₃ l₄ : list α} (p : l₁++(a::l₂) ~ l₃++(a::l₄)) : l₁++l₂ ~ l₃++l₄ :=
+perm_cons_inv $ trans (perm_middle _ _ _) $ trans p $ (perm_middle _ _ _).symm
 
-end foldl
+theorem foldl_eq_of_perm {f : β → α → β} {l₁ l₂ : list α} (rcomm : right_commutative f) (p : l₁ ~ l₂) :
+  ∀ b, foldl f b l₁ = foldl f b l₂ :=
+perm_induction_on p
+  (λ b, rfl)
+  (λ x t₁ t₂ p r b, r (f b x))
+  (λ x y t₁ t₂ p r b, by simp; rw rcomm; exact r (f (f b x) y))
+  (λ t₁ t₂ t₃ p₁ p₂ r₁ r₂ b, eq.trans (r₁ b) (r₂ b))
 
-section foldr
-  variables {f : α → β → β} {l₁ l₂ : list α}
-  variable lcomm : left_commutative f
-  include  lcomm
+theorem foldr_eq_of_perm {f : α → β → β} {l₁ l₂ : list α} (lcomm : left_commutative f) (p : l₁ ~ l₂) :
+  ∀ b, foldr f b l₁ = foldr f b l₂ :=
+perm_induction_on p
+  (λ b, rfl)
+  (λ x t₁ t₂ p r b, by simp; rw [r b])
+  (λ x y t₁ t₂ p r b, by simp; rw [lcomm, r b])
+  (λ t₁ t₂ t₃ p₁ p₂ r₁ r₂ a, eq.trans (r₁ a) (r₂ a))
 
-  theorem foldr_eq_of_perm : l₁ ~ l₂ → ∀ b, foldr f b l₁ = foldr f b l₂ :=
-  assume p, perm_induction_on p
-    (λ b, by simp [foldl_nil])
-    (λ x t₁ t₂ p r b, calc
-       foldr f b (x::t₁) = f x (foldr f b t₁) : foldr_cons _ _ _ _
-               ...       = f x (foldr f b t₂) : by rw [r b]
-               ...       = foldr f b (x::t₂)  : eq.symm (foldr_cons _ _ _ _))
-    (λ x y t₁ t₂ p r b, calc
-       foldr f b (y :: x :: t₁) = f y (f x (foldr f b t₁)) : begin rw foldr_cons, reflexivity end
-                  ...           = f x (f y (foldr f b t₁)) : by rw lcomm
-                  ...           = f x (f y (foldr f b t₂)) : by rw [r b]
-                  ...           = foldr f b (x :: y :: t₂) : begin rw foldr_cons, reflexivity end)
-    (λ t₁ t₂ t₃ p₁ p₂ r₁ r₂ a, eq.trans (r₁ a) (r₂ a))
-end foldr
+-- attribute [congr]
+theorem erase_perm_erase_of_perm [decidable_eq α] (a : α) {l₁ l₂ : list α} (p : l₁ ~ l₂) :
+  erase a l₁ ~ erase a l₂ :=
+if h₁ : a ∈ l₁ then
+have h₂ : a ∈ l₂, from mem_of_perm p h₁,
+perm_cons_inv $ trans (perm_erase h₁).symm $ trans p (perm_erase h₂)
+else
+have h₂ : a ∉ l₂, from not_mem_of_perm p h₁,
+by rw [erase_of_not_mem h₁, erase_of_not_mem h₂]; exact p
 
 -- attribute [congr]
 theorem perm_erase_dup_of_perm [H : decidable_eq α] {l₁ l₂ : list α} :
@@ -790,7 +598,7 @@ assume p, perm_induction_on p
           have nyinxt₂ : y ∉ x::t₂, from
             assume yinxt₂ : y ∈ x::t₂, or.elim (eq_or_mem_of_mem_cons yinxt₂)
               (λ h, absurd h (ne.symm xney))
-              (λ h, absurd (mem_of_mem_erase_dup (mem_of_perm (r^.symm) (mem_erase_dup h))) nyint₁),
+              (λ h, absurd (mem_of_mem_erase_dup (mem_of_perm (r.symm) (mem_erase_dup h))) nyint₁),
           begin
             rw [erase_dup_cons_of_not_mem nxinyt₁, erase_dup_cons_of_not_mem nyinxt₂,
                      erase_dup_cons_of_not_mem nyint₁, erase_dup_cons_of_not_mem nxint₂],
@@ -814,7 +622,7 @@ begin
       have ha₂ : a ∈ l₂, from mem_of_perm h ha₁,
       begin simp [ha₁, ha₂], apply ih l₁ l₂ h end
     else
-      have ha₂ : a ∉ l₂, from assume otherwise, ha₁ (mem_of_perm h^.symm otherwise),
+      have ha₂ : a ∉ l₂, from assume otherwise, ha₁ (mem_of_perm h.symm otherwise),
       begin simp [ha₁, ha₂], apply ih, apply perm_app_left, exact h end
 end
 
@@ -829,7 +637,7 @@ else
     if xy : x = y then by simp [xy, xl, yl]
     else
       have h₁ : x ∉ l ++ [y], begin intro h, simp at h, cases h, repeat { contradiction } end,
-      have h₂ : y ∉ l ++ [x], begin intro h, simp at h, cases h with h₃, exact xy h₃^.symm,
+      have h₂ : y ∉ l ++ [x], begin intro h, simp at h, cases h with h₃, exact xy h₃.symm,
                                     contradiction end,
       begin simp [xl, yl, h₁, h₂], apply perm_app_right, apply perm.swap end
 
@@ -865,7 +673,7 @@ if al₁ : a ∈ l₁ then
   have al₂ : a ∈ l₂, from mem_of_perm p al₁,
   begin simp [al₁, al₂], exact p end
 else
-  have al₂ : a ∉ l₂, from assume otherwise, al₁ (mem_of_perm p^.symm otherwise),
+  have al₂ : a ∉ l₂, from assume otherwise, al₁ (mem_of_perm p.symm otherwise),
   begin simp [al₁, al₂], exact perm_app_left _ p end
 
 end perm_insert
