@@ -473,7 +473,8 @@ ext (take y, iff.intro
       (suppose y ∈ s, or.inr this)))
 -/
 
---TODO(Jeremy): This proof does not work since has_insert.insert is now used instead of insert
+@[simp] theorem insert_of_has_insert (x : α) (a : set α) : has_insert.insert x a = insert x a := rfl
+
 @[simp]
 theorem pair_eq_singleton (a : α) : ({a, a} : set α) = {a} :=
 by finish
