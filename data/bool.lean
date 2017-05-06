@@ -12,38 +12,38 @@ namespace bool
   -- TODO(Jeremy): is this right?
   @[simp] theorem coe_tt : (↑tt : Prop) := dec_trivial
 
-  theorem band_tt (a : bool) : a && tt = a  := begin cases a, repeat { reflexivity } end
+  theorem band_tt (a : bool) : a && tt = a  := by cases a; refl
 
-  theorem tt_band (a : bool) : tt && a = a  := begin cases a, repeat { reflexivity } end
+  theorem tt_band (a : bool) : tt && a = a  := by cases a; refl
 
-  theorem band_ff (a : bool) : a && ff = ff := begin cases a, repeat { reflexivity } end
+  theorem band_ff (a : bool) : a && ff = ff := by cases a; refl
 
-  theorem ff_band (a : bool) : ff && a = ff := begin cases a, repeat { reflexivity } end
+  theorem ff_band (a : bool) : ff && a = ff := by cases a; refl
 
-  theorem bor_tt (a : bool) : a || tt = tt  := begin cases a, repeat { reflexivity } end
+  theorem bor_tt (a : bool) : a || tt = tt  := by cases a; refl
 
-  theorem tt_bor (a : bool) : tt || a = tt  := begin cases a, repeat { reflexivity } end
+  theorem tt_bor (a : bool) : tt || a = tt  := by cases a; refl
 
-  theorem bor_ff (a : bool) : a || ff = a   := begin cases a, repeat { reflexivity } end
+  theorem bor_ff (a : bool) : a || ff = a   := by cases a; refl
 
-  theorem ff_bor (a : bool) : ff || a = a   := begin cases a, repeat { reflexivity } end
+  theorem ff_bor (a : bool) : ff || a = a   := by cases a; refl
 
   attribute [simp] band_tt tt_band band_ff ff_band bor_tt tt_bor bor_ff ff_bor
 
   theorem band_eq_tt (a b : bool) : (a && b = tt) = (a = tt ∧ b = tt) :=
-  begin cases a, repeat { cases b, repeat { simp } } end
+  by cases a; cases b; simp
 
   theorem band_eq_ff (a b : bool) : (a && b = ff) = (a = ff ∨ b = ff) :=
-  begin cases a, repeat { cases b, repeat { simp } } end
+  by cases a; cases b; simp
 
   theorem bor_eq_tt (a b : bool) : (a || b = tt) = (a = tt ∨ b = tt) :=
-  begin cases a, repeat { cases b, repeat { simp } } end
+  by cases a; cases b; simp
 
   theorem bor_eq_ff (a b : bool) : (a || b = ff) = (a = ff ∧ b = ff) :=
-  begin cases a, repeat { cases b, repeat { simp } } end
+  by cases a; cases b; simp
 
   theorem dichotomy (b : bool) : b = ff ∨ b = tt :=
-  begin cases b, simp, simp end
+  by cases b; simp
 
   @[simp]
   theorem cond_ff {A : Type} (t e : A) : cond ff t e = e :=
@@ -53,26 +53,26 @@ namespace bool
   theorem cond_tt {A : Type} (t e : A) : cond tt t e = t :=
   rfl
 
-  theorem eq_tt_of_ne_ff : ∀ {a : bool}, a ≠ ff → a = tt :=
-  begin intro a, cases a, simp, simp end
+  theorem eq_tt_of_ne_ff {a : bool} : a ≠ ff → a = tt :=
+  by cases a; simp
 
-  theorem eq_ff_of_ne_tt : ∀ {a : bool}, a ≠ tt → a = ff :=
-  begin intro a, cases a, simp, simp end
+  theorem eq_ff_of_ne_tt {a : bool} : a ≠ tt → a = ff :=
+  by cases a; simp
 
   theorem absurd_of_eq_ff_of_eq_tt {B : Prop} {a : bool} (H₁ : a = ff) (H₂ : a = tt) : B :=
-  begin cases a, repeat { contradiction } end
+  by cases a; contradiction
 
   @[simp]
   theorem bor_comm (a b : bool) : a || b = b || a :=
-  begin cases a, repeat { cases b, repeat { simp } } end
+  by cases a; cases b; simp
 
   @[simp]
   theorem bor_assoc (a b c : bool) : (a || b) || c = a || (b || c) :=
-  begin cases a, repeat { cases b, repeat { simp } } end
+  by cases a; cases b; simp
 
   @[simp]
   theorem bor_left_comm (a b c : bool) : a || (b || c) = b || (a || c) :=
-  begin cases a, repeat { cases b, repeat { simp } } end
+  by cases a; cases b; simp
 
   theorem or_of_bor_eq {a b : bool} : a || b = tt → a = tt ∨ b = tt :=
   begin cases a, simp, intro h, simp [h], simp end
@@ -85,25 +85,25 @@ namespace bool
 
   @[simp]
   theorem band_self (a : bool) : a && a = a :=
-  begin cases a, repeat { simp } end
+  by cases a; simp
 
   @[simp]
   theorem band_comm (a b : bool) : a && b = b && a :=
-  begin cases a, repeat { simp } end
+  by cases a; simp
 
   @[simp]
   theorem band_assoc (a b c : bool) : (a && b) && c = a && (b && c) :=
-  begin cases a, repeat { simp } end
+  by cases a; simp
 
   @[simp]
   theorem band_left_comm (a b c : bool) : a && (b && c) = b && (a && c) :=
-  begin cases a, repeat { simp } end
+  by cases a; simp
 
   theorem band_elim_left {a b : bool} (H : a && b = tt) : a = tt :=
   begin cases a, simp at H, simp [H] end
 
   theorem band_intro {a b : bool} (H₁ : a = tt) (H₂ : b = tt) : a && b = tt :=
-  begin cases a, repeat { simp [H₁, H₂] }, simp [H₂] end
+  begin cases a, simp [H₁, H₂], simp [H₂] end
 
   theorem band_elim_right {a b : bool} (H : a && b = tt) : b = tt :=
   begin cases a, contradiction, simp at H, exact H end
@@ -118,13 +118,13 @@ namespace bool
 
   @[simp]
   theorem bnot_bnot (a : bool) : bnot (bnot a) = a :=
-  by cases a; simp; simp
+  by cases a; simp
 
   theorem eq_tt_of_bnot_eq_ff {a : bool} : bnot a = ff → a = tt :=
-  by cases a; simp; simp
+  by cases a; simp
 
   theorem eq_ff_of_bnot_eq_tt {a : bool} : bnot a = tt → a = ff :=
-  by cases a; simp; simp
+  by cases a; simp
 
   definition bxor : bool → bool → bool
   | ff ff := ff
@@ -143,33 +143,33 @@ namespace bool
 
   @[simp]
   lemma bxor_self (a : bool) : bxor a a = ff :=
-  begin cases a, repeat { simp } end
+  by cases a; simp
 
   @[simp]
   lemma bxor_ff (a : bool) : bxor a ff = a :=
-  begin cases a, repeat { simp } end
+  by cases a; simp
 
   @[simp]
   lemma bxor_tt (a : bool) : bxor a tt = bnot a :=
-  begin cases a, repeat { simp } end
+  by cases a; simp
 
   @[simp]
   lemma ff_bxor (a : bool) : bxor ff a = a :=
-  begin cases a, repeat { simp } end
+  by cases a; simp
 
   @[simp]
   lemma tt_bxor (a : bool) : bxor tt a = bnot a :=
-  begin cases a, repeat { simp } end
+  by cases a; simp
 
   @[simp]
   lemma bxor_comm (a b : bool) : bxor a b = bxor b a :=
-  begin cases a, repeat { simp } end
+  by cases a; simp
 
   @[simp]
   lemma bxor_assoc (a b c : bool) : bxor (bxor a b) c = bxor a (bxor b c) :=
-  begin cases a, repeat { cases b, repeat { simp } } end
+  by cases a; cases b; simp
 
   @[simp]
   lemma bxor_left_comm (a b c : bool) : bxor a (bxor b c) = bxor b (bxor a c) :=
-  begin cases a, repeat { cases b, repeat { simp } } end
+  by cases a; cases b; simp
 end bool
