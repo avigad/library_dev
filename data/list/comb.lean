@@ -111,8 +111,15 @@ theorem mem_filter_of_mem {p : α → Prop} [h : decidable_pred p] {a : α} :
       (suppose a ∈ l, by simp [pa, pb, mem_filter_of_mem this])
 
 @[simp]
-theorem filter_sub {p : α → Prop} [h : decidable_pred p] (l : list α) : filter p l ⊆ l :=
-λ a ain, mem_of_mem_filter ain
+theorem filter_sublist {p : α → Prop} [h : decidable_pred p] : Π (l : list α), filter p l <+ l
+| []     := sublist.slnil
+| (a::l) := if pa : p a
+  then by simp[pa]; apply sublist.cons2; apply filter_sublist l
+  else by simp[pa]; apply sublist.cons; apply filter_sublist l
+
+@[simp]
+theorem filter_subset {p : α → Prop} [h : decidable_pred p] (l : list α) : filter p l ⊆ l :=
+subset_of_sublist $ filter_sublist l
 
 @[simp]
 theorem filter_append {p : α → Prop} [h : decidable_pred p] :
@@ -302,57 +309,57 @@ theorem zip_unzip : ∀ (l : list (α × β)), zip (unzip l).1 (unzip l).2 = l
 
 -- TODO(Jeremy): this is as far as I got
 
-section mapαccumR
+section mapAccumR
 variable {S : Type}
 
 -- This runs a function over a list returning the intermediate results and a
 -- a final result.
-def mapαccumR : (α → S → S × β) → list α → S → (S × list β)
+def mapAccumR : (α → S → S × β) → list α → S → (S × list β)
 | f [] c := (c, [])
 | f (y::yr) c :=
-  let r := mapαccumR f yr c in
+  let r := mapAccumR f yr c in
   let z := f y r.1 in
   (z.1, z.2 :: r.2)
 
-theorem length_mapαccumR :
+theorem length_mapAccumR :
   ∀ (f : α → S → S × β) (x : list α) (s : S),
-    length (mapαccumR f x s).2 = length x
+    length (mapAccumR f x s).2 = length x
 | f (a::x) s := calc
-  length (snd (mapαccumR f (a::x) s))
-                = length x + 1              : begin rw -(length_mapαccumR f x s), reflexivity end
+  length (snd (mapAccumR f (a::x) s))
+                = length x + 1              : begin rw -(length_mapAccumR f x s), reflexivity end
             ... = length (a::x)             : rfl
-| f [] s := calc  length (snd (mapαccumR f [] s)) = 0 : by reflexivity
+| f [] s := calc  length (snd (mapAccumR f [] s)) = 0 : by reflexivity
 
-end mapαccumR
+end mapAccumR
 
-section mapαccumR₂
+section mapAccumR₂
 variable {S : Type uu}
 -- This runs a function over two lists returning the intermediate results and a
 -- a final result.
-def mapαccumR₂
+def mapAccumR₂
 : (α → β → S → S × γ) → list α → list β → S → S × list γ
 | f [] _ c := (c,[])
 | f _ [] c := (c,[])
 | f (x::xr) (y::yr) c :=
-  let r := mapαccumR₂ f xr yr c in
+  let r := mapAccumR₂ f xr yr c in
   let q := f x y r.1 in
   (q.1, q.2 :: r.2)
 
 -- TODO(Jeremy) : again the "min" overload
 
-theorem length_mapαccumR₂ : ∀ (f : α → β → S → S × γ) (x : list α) (y : list β) (c : S),
-  length (mapαccumR₂ f x y c).2 = _root_.min (length x) (length y)
+theorem length_mapAccumR₂ : ∀ (f : α → β → S → S × γ) (x : list α) (y : list β) (c : S),
+  length (mapAccumR₂ f x y c).2 = _root_.min (length x) (length y)
 | f (a::x) (b::y) c := calc
-    length (snd (mapαccumR₂ f (a::x) (b::y) c))
-              = length (snd (mapαccumR₂ f x y c)) + 1  : rfl
-          ... = _root_.min (length x) (length y) + 1             : by rw (length_mapαccumR₂ f x y c)
+    length (snd (mapAccumR₂ f (a::x) (b::y) c))
+              = length (snd (mapAccumR₂ f x y c)) + 1  : rfl
+          ... = _root_.min (length x) (length y) + 1             : by rw (length_mapAccumR₂ f x y c)
           ... = _root_.min (succ (length x)) (succ (length y))   : begin rw min_succ_succ end
           ... = _root_.min (length (a::x)) (length (b::y))       : rfl
 | f (a::x) [] c := rfl
 | f [] (b::y) c := rfl
 | f [] []     c := rfl
 
-end mapαccumR₂
+end mapAccumR₂
 
 /- flat -/
 def flat (l : list (list α)) : list α :=
