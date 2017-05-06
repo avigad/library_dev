@@ -102,7 +102,7 @@ rfl
 attribute [simp] mem_nil_iff mem_cons_self mem_cons_iff
 
 
-/- find -/
+/- index_of -/
 
 section index_of
 variable [decidable_eq α]
