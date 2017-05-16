@@ -456,7 +456,7 @@ namespace Set
       cases yx,
       note xy'x := (ae (@insert Set.{u} _ _ y' {x})).2 (by simp),
       cases xy'x with xy'x xy'xx,
-      { assertv y'x : y' ∈ @insert Set.{u} Set.{u} _ x ∅ := by rw -xy'x; simp,
+      { note y'x : y' ∈ @insert Set.{u} Set.{u} _ x ∅ := by rw -xy'x; simp,
         simp at y'x, simph },
       { note yxx := (ext_iff.2 xy'xx y').1 (by simp),
         simp at yxx, cases yxx; simp } },

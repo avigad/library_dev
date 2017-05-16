@@ -173,8 +173,8 @@ do ctx ← local_context,
    first $ ctx.for $ λ h,
      do t ← infer_type h >>= whnf_reducible,
         match t with
-        | ```(%%a = %%b) := subst h
-        | _              := failed
+        | `(%%a = %%b) := subst h
+        | _            := failed
         end
 
 meta def do_substs : tactic unit := do_subst >> repeat do_subst
@@ -190,13 +190,13 @@ meta def add_conjuncts : expr → expr → tactic bool :=
 let assert_consequences := λ e t, mcond (add_conjuncts e t) skip (assertv_fresh t e >> skip) in
 do t' ← whnf_reducible t,
    match t' with
-   | ```(%%a ∧ %%b) :=
+   | `(%%a ∧ %%b) :=
      do e₁ ← mk_app ``and.left [pr],
         assert_consequences e₁ a,
         e₂ ← mk_app ``and.right [pr],
         assert_consequences e₂ b,
         return tt
-  | ```(true) :=
+  | `(true) :=
      do return tt
   | _ := return ff
 end
@@ -262,7 +262,7 @@ meta def mk_hinst_lemmas : list expr → smt_tactic hinst_lemmas
                   match t with
                   | (pi _ _ _ _) :=
                     do t' ← infer_type t,
-                       if t' = ```(Prop) then
+                       if t' = `(Prop) then
                           (do new_lemma ← hinst_lemma.mk h,
                              return (hinst_lemmas.add his new_lemma)) <|> return his
                        else return his
@@ -307,8 +307,8 @@ do match s with
 meta def case_hyp (h : expr) (s : case_option) (cont : case_option → tactic unit) : tactic bool :=
 do t ← infer_type h,
    match t with
-   | ```(%%a ∨ %%b) := cases h >> case_cont s cont >> return tt
-   | _              := return ff
+   | `(%%a ∨ %%b) := cases h >> case_cont s cont >> return tt
+   | _            := return ff
    end
 
 meta def case_some_hyp_aux (s : case_option) (cont : case_option → tactic unit) :

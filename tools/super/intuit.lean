@@ -55,7 +55,7 @@ clauses ← return $ imp_axs ++ clauses,
 result ← cdcl.solve (check_model (solve ())) local_false clauses,
 match result with
 | (cdcl.result.sat interp) :=
-  let interp' := do e ← interp^.to_list, [if e^.2 = tt then e^.1 else (```(not)) e^.1] in
+  let interp' := do e ← interp^.to_list, [if e^.2 = tt then e^.1 else (`(not)) e^.1] in
   do pp_interp ← pp interp',
      fail (to_fmt "satisfying assignment: " ++ pp_interp)
 | (cdcl.result.unsat proof) := exact proof
