@@ -66,6 +66,9 @@ le_antisymm h bot_le
 lemma eq_bot_iff : a = ⊥ ↔ a ≤ ⊥ :=
 ⟨take eq, eq^.symm ▸ le_refl ⊥, bot_unique⟩
 
+lemma neq_bot_of_le_neq_bot {a b : α} (hb : b ≠ ⊥) (hab : b ≤ a) : a ≠ ⊥ :=
+take ha, hb $ bot_unique $ ha ▸ hab
+
 end order_bot
 
 class semilattice_sup (α : Type u) extends has_sup α, weak_order α :=

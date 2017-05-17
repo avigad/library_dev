@@ -15,13 +15,16 @@ variables {α : Type u} {x y z : α}
 namespace lattice
 
 class distrib_lattice α extends lattice α :=
-(sup_inf : ∀x y z : α, x ⊔ (y ⊓ z) = (x ⊔ y) ⊓ (x ⊔ z))
+(le_sup_inf : ∀x y z : α, (x ⊔ y) ⊓ (x ⊔ z) ≤ x ⊔ (y ⊓ z))
 
 section distrib_lattice
 variables [distrib_lattice α]
 
-lemma sup_inf_left : ∀{x y z : α}, x ⊔ (y ⊓ z) = (x ⊔ y) ⊓ (x ⊔ z) :=
-distrib_lattice.sup_inf
+lemma le_sup_inf : ∀{x y z : α}, (x ⊔ y) ⊓ (x ⊔ z) ≤ x ⊔ (y ⊓ z) :=
+distrib_lattice.le_sup_inf
+
+lemma sup_inf_left {x y z : α} : x ⊔ (y ⊓ z) = (x ⊔ y) ⊓ (x ⊔ z) :=
+le_antisymm sup_inf_le le_sup_inf
 
 lemma sup_inf_right : (y ⊓ z) ⊔ x = (y ⊔ x) ⊓ (z ⊔ x) :=
 by simp [sup_inf_left, λy:α, @sup_comm α _ y x]
@@ -38,7 +41,9 @@ by simp [inf_sup_left, λy:α, @inf_comm α _ y x]
 
 end distrib_lattice
 
-class boolean_algebra α extends distrib_lattice α, bounded_lattice α, has_neg α, has_sub α :=
+class bounded_distrib_lattice α extends distrib_lattice α, bounded_lattice α
+
+class boolean_algebra α extends bounded_distrib_lattice α, has_neg α, has_sub α :=
 (inf_neg_eq_bot : ∀x:α, x ⊓ - x = ⊥)
 (sup_neg_eq_top : ∀x:α, x ⊔ - x = ⊤)
 (sub_eq : ∀x y:α, x - y = x ⊓ - y)
@@ -109,6 +114,30 @@ lemma neg_le_neg (h : y ≤ x) : - x ≤ - y :=
 le_of_inf_eq $ 
   calc -x ⊓ -y = - (x ⊔ y) : neg_sup^.symm
            ... = -x        : congr_arg has_neg.neg $ sup_of_le_left h
+
+lemma neg_le_neg_iff_le : - y ≤ - x ↔ x ≤ y :=
+⟨take h, by note h := neg_le_neg h; simp at h; assumption, 
+  neg_le_neg⟩
+
+lemma le_neg_of_le_neg (h : y ≤ - x) : x ≤ - y :=
+have - (- x) ≤ - y, from neg_le_neg h,
+by simp at this; assumption
+
+lemma neg_le_of_neg_le (h : - y ≤ x) : - x ≤ y :=
+have - x ≤ - (- y), from neg_le_neg h,
+by simp at this; assumption
+
+lemma neg_le_iff_neg_le : y ≤ - x ↔ x ≤ - y :=
+⟨le_neg_of_le_neg, le_neg_of_le_neg⟩
+
+lemma sup_sub_same : x ⊔ (y - x) = x ⊔ y :=
+by simp [sub_eq, sup_inf_left]
+
+lemma sub_eq_left (h : x ⊓ y = ⊥) : x - y = x :=
+calc x - y = (x ⊓ -y) ⊔ (x ⊓ y) : by simp [h, sub_eq]
+  ... = (-y ⊓ x) ⊔ (y ⊓ x) : by simp [inf_comm]
+  ... = (-y ⊔ y) ⊓ x : inf_sup_right^.symm
+  ... = x : by simp
 
 end boolean_algebra
 
