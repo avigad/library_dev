@@ -74,10 +74,8 @@ theorem succ_add_eq_succ_add (n m : ℕ) : succ n + m = n + succ m := by simp
 
 local attribute [simp] nat.add_comm nat.add_assoc nat.add_left_comm
 
-protected theorem add_right_comm (n m k : ℕ) : n + m + k = n + k + m := by simp
-
 theorem eq_zero_and_eq_zero_of_add_eq_zero {n m : ℕ} (H : n + m = 0) : n = 0 ∧ m = 0 :=
-by super with nat.eq_zero_of_add_eq_zero_right nat.eq_zero_of_add_eq_zero_left
+⟨nat.eq_zero_of_add_eq_zero_right H, nat.eq_zero_of_add_eq_zero_left H⟩
 
 theorem add_one (n : ℕ) : n + 1 = succ n := rfl
 

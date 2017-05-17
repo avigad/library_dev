@@ -691,9 +691,6 @@ theorem bUnion_pair (a b : α) (s : α → set β) :
 by rw insert_of_has_insert; simp
 
 @[reducible]
-definition sUnion (S : set (set α)) : set α := Sup S
-
-@[reducible]
 definition sInter (S : set (set α)) : set α := Inf S
 
 prefix `⋃₀`:110 := sUnion

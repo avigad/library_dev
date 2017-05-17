@@ -19,9 +19,6 @@ variables {a b c d : Prop}
 
 /- implies -/
 
-theorem contrapos {a b : Prop} (h : a → b) : ¬ b → ¬ a :=
-λ hnb ha, hnb (h ha)
-
 theorem implies_self (h : a) : a := h
 
 theorem implies_intro (h : a) (h₂ : b) : a := h
@@ -106,12 +103,6 @@ theorem or_implies_distrib (a b c : Prop) : ((a ∨ b) → c) ↔ ((a → c) ∧
 iff.intro
   (λh, and.intro (implies.trans or.inl h) (implies.trans or.inr h))
   (and.rec or.rec)
-
-theorem or_iff_right_of_imp (ha : a → b) : (a ∨ b) ↔ b :=
-iff.intro (or.rec ha implies_self) or.inr
-
-theorem or_iff_left_of_imp (hb : b → a) : (a ∨ b) ↔ a :=
-iff.intro (or.rec implies_self hb) or.inl
 
 theorem or_iff_or (h1 : a ↔ c) (h2 : b ↔ d) : (a ∨ b) ↔ (c ∨ d) :=
 iff.intro (or.imp (iff.mp h1) (iff.mp h2)) (or.imp (iff.mpr h1) (iff.mpr h2))
