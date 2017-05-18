@@ -1,5 +1,5 @@
 /-
-Copyright (c) 2015 Leonardo de Moura. αll rights reserved.
+Copyright (c) 2015 Leonardo de Moura. all rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 αuthors: Leonardo de Moura, Haitao Zhang, Floris van Doorn, Jeremy Avigad
 
@@ -120,20 +120,6 @@ theorem filter_append {p : α → Prop} [h : decidable_pred p] :
 | []      l₂ := rfl
 | (a::l₁) l₂ := if pa : p a then by simp [pa, filter_append] else by simp [pa, filter_append]
 
-@[simp]
-theorem foldl_nil (f : α → β → α) (a : α) : foldl f a [] = a := rfl
-
-@[simp]
-theorem foldl_cons (f : α → β → α) (a : α) (b : β) (l : list β) :
-  foldl f a (b::l) = foldl f (f a b) l := rfl
-
-@[simp]
-theorem foldr_nil (f : α → β → β) (b : β) : foldr f b [] = b := rfl
-
-@[simp]
-theorem foldr_cons (f : α → β → β) (b : β) (a : α) (l : list α) :
-  foldr f b (a::l) = f a (foldr f b l) := rfl
-
 section foldl_eq_foldr
   -- foldl and foldr coincide when f is commutative and associative
   variables {f : α → α → α} (hcomm  : ∀ a b, f a b = f b a) (hassoc : ∀ a b c, f (f a b) c = f a (f b c))
@@ -159,25 +145,6 @@ section foldl_eq_foldr
       rw (foldl_eq_foldr a l)
     end
 end foldl_eq_foldr
-
-@[simp]
-theorem foldl_append (f : β → α → β) :
-  ∀ (b : β) (l₁ l₂ : list α), foldl f b (l₁++l₂) = foldl f (foldl f b l₁) l₂
-| b []      l₂ := rfl
-| b (a::l₁) l₂ := by simp [foldl_append]
-
-@[simp]
-theorem foldr_append (f : α → β → β) :
-  ∀ (b : β) (l₁ l₂ : list α), foldr f b (l₁++l₂) = foldr f (foldr f b l₂) l₁
-| b []      l₂ := rfl
-| b (a::l₁) l₂ := by simp [foldr_append]
-
-theorem foldl_reverse (f : α → β → α) (a : α) (l : list β) : foldl f a (reverse l) = foldr (λx y, f y x) a l :=
-by induction l; simph [foldl, foldr]
-
-theorem foldr_reverse (f : α → β → β) (a : β) (l : list α) : foldr f a (reverse l) = foldl (λx y, f y x) a l :=
-let t := foldl_reverse (λx y, f y x) a (reverse l) in
-by rw reverse_reverse l at t; rwa t
 
 /- all & any -/
 

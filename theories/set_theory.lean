@@ -2,17 +2,6 @@ import data.set.basic
 
 universes u v
 
--- TODO(Mario): Remove this when lean #1567 lands
-namespace set
-variables {α : Type u} {β : Type v}
-
-@[reducible]
-def sUnion (s : set (set α)) : set α := {t | ∃ a ∈ s, t ∈ a}
-
-prefix `⋃₀`:110 := sUnion
-
-end set
-
 @[simp]
 lemma subtype.eta {α : Type u} {p : α → Prop} {a : subtype p} {h : p (a.val)} :
   {subtype . val := a.val, property := h} = a :=

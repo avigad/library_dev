@@ -55,7 +55,7 @@ meta def propext {α : Type} (c : conv α) : conv α := λr lhs, (do
   guard (r = `eq),
   ⟨res, rhs, pr⟩ ← c `iff lhs,
   match pr with
-  | some pr := return ⟨res, rhs, expr.const `propext [] lhs rhs pr⟩
+  | some pr := return ⟨res, rhs, (expr.const `propext [] : expr) lhs rhs pr⟩
   | none := return ⟨res, rhs, none⟩
   end)
 

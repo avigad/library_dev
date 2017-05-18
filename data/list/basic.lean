@@ -104,65 +104,65 @@ attribute [simp] mem_nil_iff mem_cons_self mem_cons_iff
 
 /- find -/
 
-section find
+section index_of
 variable [decidable_eq α]
 
 @[simp]
-theorem find_nil (a : α) : find a [] = 0 :=
+theorem index_of_nil (a : α) : index_of a [] = 0 :=
 rfl
 
-theorem find_cons (a b : α) (l : list α) : find a (b::l) = if a = b then 0 else succ (find a l) :=
+theorem index_of_cons (a b : α) (l : list α) : index_of a (b::l) = if a = b then 0 else succ (index_of a l) :=
 rfl
 
 @[simp]
-theorem find_cons_of_eq {a b : α} (l : list α) : a = b → find a (b::l) = 0 :=
+theorem index_of_cons_of_eq {a b : α} (l : list α) : a = b → index_of a (b::l) = 0 :=
 assume e, if_pos e
 
 @[simp]
-theorem find_cons_of_ne {a b : α} (l : list α) : a ≠ b → find a (b::l) = succ (find a l) :=
+theorem index_of_cons_of_ne {a b : α} (l : list α) : a ≠ b → index_of a (b::l) = succ (index_of a l) :=
 assume n, if_neg n
 
 @[simp]
-theorem find_of_not_mem {l : list α} {a : α} : ¬a ∈ l → find a l = length l :=
+theorem index_of_of_not_mem {l : list α} {a : α} : ¬a ∈ l → index_of a l = length l :=
 list.rec_on l
    (suppose ¬a ∈ [], rfl)
    (take b l,
-      assume ih : ¬a ∈ l → find a l = length l,
+      assume ih : ¬a ∈ l → index_of a l = length l,
       suppose ¬a ∈ b::l,
       have ¬a = b ∧ ¬a ∈ l, begin rw [mem_cons_iff, not_or_iff] at this, exact this end,
-      show find a (b::l) = length (b::l),
-        begin rw [find_cons, if_neg this^.left, ih this^.right], reflexivity end)
+      show index_of a (b::l) = length (b::l),
+        begin rw [index_of_cons, if_neg this^.left, ih this^.right], reflexivity end)
 
-lemma find_le_length {a : α} {l : list α} : find a l ≤ length l :=
+lemma index_of_le_length {a : α} {l : list α} : index_of a l ≤ length l :=
 list.rec_on l
   (by simp)
-  (take b l, assume ih : find a l ≤ length l,
-   show find a (b::l) ≤ length (b::l), from
+  (take b l, assume ih : index_of a l ≤ length l,
+   show index_of a (b::l) ≤ length (b::l), from
      decidable.by_cases
-       (suppose a = b, begin simp [this, find_cons_of_eq l (eq.refl b)], apply zero_le end)
-       (suppose a ≠ b, begin rw [find_cons_of_ne l this], apply succ_le_succ ih end))
+       (suppose a = b, begin simp [this, index_of_cons_of_eq l (eq.refl b)], apply zero_le end)
+       (suppose a ≠ b, begin rw [index_of_cons_of_ne l this], apply succ_le_succ ih end))
 
-lemma not_mem_of_find_eq_length : ∀ {a : α} {l : list α}, find a l = length l → a ∉ l
+lemma not_mem_of_index_of_eq_length : ∀ {a : α} {l : list α}, index_of a l = length l → a ∉ l
 | a []        := by simp
 | a (b::l)    :=
   begin
     note h := decidable.em (a = b),
     cases h with aeqb aneb,
-    { rw [find_cons_of_eq l aeqb, length_cons], intros, contradiction },
-    rw [find_cons_of_ne l aneb, length_cons, mem_cons_iff, not_or_iff],
+    { rw [index_of_cons_of_eq l aeqb, length_cons], intros, contradiction },
+    rw [index_of_cons_of_ne l aneb, length_cons, mem_cons_iff, not_or_iff],
     intro h, split, assumption,
-    exact not_mem_of_find_eq_length (nat.succ_inj h)
+    exact not_mem_of_index_of_eq_length (nat.succ_inj h)
   end
 
-lemma find_lt_length {a} {l : list α} (al : a ∈ l) : find a l < length l :=
+lemma index_of_lt_length {a} {l : list α} (al : a ∈ l) : index_of a l < length l :=
 begin
   apply lt_of_le_of_ne,
-  apply find_le_length,
+  apply index_of_le_length,
   apply not.intro, intro Peq,
-  exact absurd al (not_mem_of_find_eq_length Peq)
+  exact absurd al (not_mem_of_index_of_eq_length Peq)
 end
 
-end find
+end index_of
 
 /- nth element -/
 
@@ -180,13 +180,13 @@ theorem nth_eq_some : ∀ {l : list α} {n : nat}, n < length l → { a : α // 
       show { b : α // nth (a::l) (succ n) = some b },
          from ⟨b, by rw [nth_succ, hb]⟩)
 
-theorem find_nth [decidable_eq α] {a : α} : ∀ {l : list α}, a ∈ l → nth l (find a l) = some a
+theorem index_of_nth [decidable_eq α] {a : α} : ∀ {l : list α}, a ∈ l → nth l (index_of a l) = some a
 | []     ain   := absurd ain (not_mem_nil _)
 | (b::l) ainbl := decidable.by_cases
-  (λ aeqb : a = b, by rw [find_cons_of_eq _ aeqb]; simp [nth, aeqb])
+  (λ aeqb : a = b, by rw [index_of_cons_of_eq _ aeqb]; simp [nth, aeqb])
   (λ aneb : a ≠ b, or.elim (eq_or_mem_of_mem_cons ainbl)
     (λ aeqb : a = b, absurd aeqb aneb)
-    (λ ainl : a ∈ l, by rewrite [find_cons_of_ne _ aneb, nth_succ, find_nth ainl]))
+    (λ ainl : a ∈ l, by rewrite [index_of_cons_of_ne _ aneb, nth_succ, index_of_nth ainl]))
 
 definition inth [h : inhabited α] (l : list α) (n : nat) : α :=
 match (nth l n) with

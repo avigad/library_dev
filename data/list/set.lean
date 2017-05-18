@@ -16,65 +16,6 @@ namespace list
 
 /- sublists -/
 
-inductive sublist' : list α → list α → Prop
-| slnil : sublist' [] []
-| cons (l₁ l₂ a) : sublist' l₁ l₂ → sublist' l₁ (a::l₂)
-| cons2 (l₁ l₂ a) : sublist' l₁ l₂ → sublist' (a::l₁) (a::l₂)
-
-infix ` <+ `:50 := sublist'
-
-@[simp] lemma nil_sublist : Π (l : list α), [] <+ l
-| []       := sublist'.slnil
-| (a :: l) := sublist'.cons _ _ a (nil_sublist l)
-
-@[simp] lemma sublist.refl : Π (l : list α), l <+ l
-| []       := sublist'.slnil
-| (a :: l) := sublist'.cons2 _ _ a (sublist.refl l)
-
-lemma sublist.trans {l₁ l₂ l₃ : list α} (h₁ : l₁ <+ l₂) (h₂ : l₂ <+ l₃) : l₁ <+ l₃ :=
-sublist'.rec_on h₂ (λ_ s, s)
-  (λl₂ l₃ a h₂ IH l₁ h₁, sublist'.cons _ _ _ (IH l₁ h₁))
-  (λl₂ l₃ a h₂ IH l₁ h₁, @sublist'.cases_on _ (λl₁ l₂', l₂' = a :: l₂ → l₁ <+ a :: l₃) _ _ h₁
-    (λ_, nil_sublist _)
-    (λl₁ l₂' a' h₁' e, match a', l₂', e, h₁' with ._, ._, rfl, h₁ := sublist'.cons _ _ _ (IH _ h₁) end)
-    (λl₁ l₂' a' h₁' e, match a', l₂', e, h₁' with ._, ._, rfl, h₁ := sublist'.cons2 _ _ _ (IH _ h₁) end) rfl)
-  l₁ h₁
-
-@[simp] lemma sublist_cons (a : α) (l : list α) : l <+ a::l :=
-sublist'.cons _ _ _ (sublist.refl l)
-
-lemma sublist_of_cons_sublist {a : α} {l₁ l₂ : list α} : a::l₁ <+ l₂ → l₁ <+ l₂ :=
-sublist.trans (sublist_cons a l₁)
-
-lemma cons_sublist_cons  {l₁ l₂ : list α} (a : α) (s : l₁ <+ l₂) : (a::l₁) <+ (a::l₂) :=
-sublist'.cons2 _ _ _ s
-
-@[simp] lemma sublist_append_left : Π (l₁ l₂ : list α), l₁ <+ l₁++l₂
-| []      l₂ := nil_sublist _
-| (a::l₁) l₂ := cons_sublist_cons _ (sublist_append_left l₁ l₂)
-
-@[simp] lemma sublist_append_right : Π (l₁ l₂ : list α), l₂ <+ l₁++l₂
-| []      l₂ := sublist.refl _
-| (a::l₁) l₂ := sublist'.cons _ _ _ (sublist_append_right l₁ l₂)
-
-lemma sublist_cons_of_sublist (a : α) {l₁ l₂ : list α} : l₁ <+ l₂ → l₁ <+ (a::l₂) :=
-sublist'.cons _ _ _
-
-lemma sublist_app_of_sublist_left (l l₁ l₂ : list α) (s : l <+ l₁) : l <+ l₁++l₂ :=
-sublist.trans s (sublist_append_left _ _)
-
-lemma sublist_app_of_sublist_right (l l₁ l₂ : list α) (s : l <+ l₂) : l <+ l₁++l₂ :=
-sublist.trans s (sublist_append_right _ _)
-
-lemma subset_of_sublist : Π {l₁ l₂ : list α} (s : l₁ <+ l₂) ⦃b⦄ (h : b ∈ l₁), b ∈ l₂
-| ._ ._ sublist'.slnil b h := h
-| ._ ._ (sublist'.cons l₁ l₂ a s) b h := mem_cons_of_mem _ (subset_of_sublist s h)
-| ._ ._ (sublist'.cons2 l₁ l₂ a s) b h :=
-  match eq_or_mem_of_mem_cons h with
-  | or.inl h := by rw h; exact mem_cons_self _ _
-  | or.inr h := mem_cons_of_mem _ (subset_of_sublist s h)
-  end
-
 section insert
 variable [decidable_eq α]
 
@@ -504,9 +445,9 @@ theorem not_nodup_cons_of_mem {a : α} {l : list α} : a ∈ l → ¬ nodup (a :
 λ ainl d, absurd ainl (not_mem_of_nodup_cons d)
 
 theorem nodup_of_sublist : Π {l₁ l₂ : list α}, l₁ <+ l₂ → nodup l₂ → nodup l₁
-| ._ ._ sublist'.slnil h := h
-| ._ ._ (sublist'.cons l₁ l₂ a s) (ndcons i n) := nodup_of_sublist s n
-| ._ ._ (sublist'.cons2 l₁ l₂ a s) (ndcons i n) :=
+| ._ ._ sublist.slnil h := h
+| ._ ._ (sublist.cons l₁ l₂ a s) (ndcons i n) := nodup_of_sublist s n
+| ._ ._ (sublist.cons2 l₁ l₂ a s) (ndcons i n) :=
   ndcons (λh, i (subset_of_sublist s h)) (nodup_of_sublist s n)
 
 theorem not_nodup_cons_of_not_nodup {a : α} {l : list α} : ¬ nodup l → ¬ nodup (a :: l) :=
@@ -649,7 +590,7 @@ theorem mem_erase_dup [decidable_eq α] {a : α} : ∀ {l : list α}, a ∈ l �
       begin rw [erase_dup_cons_of_not_mem nbinl], exact (or.inr (mem_erase_dup ainl)) end))
 
 theorem erase_dup_sublist [decidable_eq α] : ∀ (l : list α), erase_dup l <+ l
-| []     := sublist'.slnil
+| []     := sublist.slnil
 | (b::l) := if h : b ∈ l then
     by simp[erase_dup, h]; exact sublist_cons_of_sublist _ (erase_dup_sublist l)
   else
