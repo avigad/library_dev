@@ -230,6 +230,7 @@ def upwards (s : set α) := ∀{x y}, x ∈ s → x ≼ y → y ∈ s
 
 end order
 
+
 structure filter (α : Type u) :=
 (sets           : set (set α))
 (inhabited      : ∃x, x ∈ sets)
@@ -944,6 +945,9 @@ lift_mono hf $ take s, principal_mono.mpr $ hh s
 
 lemma lift'_mono' (hh : ∀s∈f^.sets, h₁ s ⊆ h₂ s) : f^.lift' h₁ ≤ f^.lift' h₂ :=
 infi_le_infi $ take s, infi_le_infi $ take hs, principal_mono.mpr $ hh s hs
+
+lemma lift'_cong (hh : ∀s∈f^.sets, h₁ s = h₂ s) : f^.lift' h₁ = f^.lift' h₂ :=
+le_antisymm (lift'_mono' $ take s hs, le_of_eq $ hh s hs) (lift'_mono' $ take s hs, le_of_eq $ (hh s hs).symm)
 
 lemma map_lift'_eq {m : β → γ} (hh : monotone h) : map m (f^.lift' h) = f^.lift' (image m ∘ h) :=
 calc map m (f^.lift' h) = f^.lift (map m ∘ principal ∘ h) :

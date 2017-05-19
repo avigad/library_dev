@@ -78,10 +78,9 @@ section topological_space
 
 variables {α : Type u} {β : Type v} {ι : Sort w} {a a₁ a₂ : α} {s s₁ s₂ : set α}
 
-lemma topological_space_eq : 
-  ∀{f g : topological_space α}, f^.open' = g^.open' → f = g :=
+lemma topological_space_eq {f g : topological_space α} (h' : f^.open' = g^.open') : f = g :=
 begin
-  intros f g h', cases f with a, cases g with b,
+  cases f with a, cases g with b,
   assert h : a = b, assumption,
   clear h',
   subst h
@@ -582,6 +581,20 @@ le_antisymm
     have h₁ : g₁ ≤ sup g₁ g₂, from le_sup_left,
     have h₂ : g₂ ≤ sup g₁ g₂, from le_sup_right,
     or.rec_on hs (h₁ s) (h₂ s))
+
+lemma nhds_mono {t₁ t₂ : topological_space α} {a : α} (h : t₁ ≤ t₂) : @nhds α t₂ a ≤ @nhds α t₁ a :=
+infi_le_infi $ take s, infi_le_infi2 $ take ⟨ha, hs⟩, ⟨⟨ha, h _ hs⟩, le_refl _⟩
+
+lemma nhds_supr {ι : Sort w} {t : ι → topological_space α} {a : α} :
+  @nhds α (supr t) a = (⨅i, @nhds α (t i) a) :=
+le_antisymm
+  (le_infi $ take i, nhds_mono $ le_supr _ _)
+  begin
+    rw [supr_eq_generate_from, nhds_generate_from],
+    simp,
+    exact (le_infi $ take s, le_infi $ take ⟨⟨i, hi⟩, hs⟩,
+      infi_le_of_le i $ le_principal_iff.mpr $ @mem_nhds_sets α (t i) _ _ hi hs)
+  end
 
 end
 
