@@ -5,7 +5,7 @@ Authors: Johannes Hölzl
 
 Theory of filters on sets.
 -/
-import .complete_lattice ...data.set
+import .complete_lattice ...data.set .zorn
 open lattice set
 
 universes u v w x
@@ -230,6 +230,16 @@ def upwards (s : set α) := ∀{x y}, x ∈ s → x ≼ y → y ∈ s
 
 end order
 
+lemma directed_of_chain {α : Type u} {β : Type v} [weak_order β] {f : α → β} {c : set α}
+  (h : @zorn.chain α (λa b, f b ≤ f a) c) :
+  directed (≤) (λx:{a:α // a ∈ c}, f (x.val)) :=
+take ⟨a, ha⟩ ⟨b, hb⟩, classical.by_cases
+  (suppose a = b, begin simp [this]; exact ⟨⟨b, hb⟩, le_refl _⟩ end)
+  (suppose a ≠ b,
+    have f b ≤ f a ∨ f a ≤ f b, from h a ha b hb this,
+    or.elim this
+      (suppose f b ≤ f a, ⟨⟨b, hb⟩, this, le_refl _⟩)
+      (suppose f a ≤ f b, ⟨⟨a, ha⟩, le_refl _, this⟩))
 
 structure filter (α : Type u) :=
 (sets           : set (set α))
@@ -1221,7 +1231,46 @@ end prod
 
 /- towards -/
 
-def towards (f : α → β) (l₁ : filter α) (l₂ : filter β) :=
-filter.map f l₁ ≤ l₂
+def towards (f : α → β) (l₁ : filter α) (l₂ : filter β) := filter.map f l₁ ≤ l₂
+
+/- ultrafilter -/
+
+def ultrafilter (f : filter α) := f ≠ ⊥ ∧ ∀g, g ≠ ⊥ → g ≤ f → f ≤ g
+
+lemma ultrafilter_pure {a : α} : ultrafilter (pure a) :=
+⟨show ¬ principal {a} = ⊥,
+  begin rw [principal_eq_bot_iff], exact (ne_empty_of_mem $ mem_insert a {}) end,
+
+  take g hg ha,
+  have {a} ∈ g.sets, by simp at ha; assumption,
+  show ∀s∈g.sets, {a} ⊆ s, from classical.by_contradiction $
+  begin
+    simp [classical.not_forall_iff_exists_not, classical.not_implies_iff_and_not],
+    exact take ⟨s, hna, hs⟩,
+      have {a} ∩ s ∈ g.sets, from inter_mem_sets ‹{a} ∈ g.sets› hs,
+      have ∅ ∈ g.sets, from g.upwards_sets this $
+        take x ⟨hxa, hxs⟩, begin simp at hxa; simp [hxa] at hxs, exact hna hxs end,
+      have g = ⊥, from empty_in_sets_eq_bot.mp this,
+      hg this
+  end⟩
+
+lemma exists_ultrafilter {f : filter α} (h : f ≠ ⊥) :
+  ∃u, u ≤ f ∧ ultrafilter u :=
+let ⟨a, ha⟩ := inhabited_of_mem_sets h univ_mem_sets in
+let t := {f' // f' ≠ ⊥ ∧ f' ≤ f} in
+let r : t → t → Prop := λt₁ t₂, t₂.val ≤ t₁.val in
+let ff : t := ⟨f, h, le_refl f⟩ in
+have (∃ (u : t), ∀ (a : t), r u a → r a u), from
+  @zorn.zorn t r
+    (take c hc, ⟨⟨⨅a:{a:t // a ∈ insert ff c}, a.val.val,
+        infi_neq_bot_of_directed ⟨a⟩
+          (directed_of_chain $ zorn.chain_insert hc $ take ⟨b, _, hb⟩ _ _, or.inl hb)
+          (take ⟨⟨a, ha, _⟩, _⟩, ha),
+        infi_le_of_le ⟨ff, mem_insert _ _⟩ (le_refl _)⟩,
+        take a ha, infi_le_of_le ⟨a, mem_insert_of_mem _ ha⟩ (le_refl _)⟩)
+    (take f₁ f₂ f₃ h₁ h₂, le_trans h₂ h₁),
+let ⟨uu, hmin⟩ := this in
+⟨uu.val, uu.property.right, uu.property.left, take g hg₁ hg₂,
+  hmin ⟨g, hg₁, le_trans hg₂ uu.property.right⟩ hg₂⟩
 
 end filter

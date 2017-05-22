@@ -24,44 +24,46 @@ show (⨅i, f i) ≤ f i, from infi_le _ _
 lemma mem_top_sets_iff {s : set α} : s ∈ (⊤ : filter α).sets ↔ s = univ :=
 ⟨take h, top_unique $ h, take h, h.symm ▸ univ_mem_sets⟩
 
+@[elab_as_eliminator]
+lemma infi_sets_induct {f : ι → filter α} {s : set α} (hs : s ∈ (infi f).sets) {p : set α → Prop}
+  (uni : p univ)
+  (ins : ∀{i s₁ s₂}, s₁ ∈ (f i).sets → p s₂ → p (s₁ ∩ s₂))
+  (upw : ∀{s₁ s₂}, s₁ ⊆ s₂ → p s₁ → p s₂) : p s :=
+begin
+  note hs' : s ∈ (complete_lattice.Inf {a : filter α | ∃ (i : ι), a = f i}).sets := hs,
+  rw [Inf_sets_eq_finite] at hs',
+  simp at hs',
+  cases hs' with is hs, cases hs with fin_is hs, cases hs with hs his,
+  induction fin_is generalizing s,
+  case finite.empty hs' s hs' hs {
+    simp at hs, subst hs, assumption },
+  case finite.insert fi is fi_ne_is fin_is ih fi_sub s hs' hs {
+    simp at hs,
+    cases hs with s₁ hs, cases hs with hs₁ hs, cases hs with s₂ hs, cases hs with hs hs₂,
+    note hi : ∃i, fi = f i := fi_sub (mem_insert _ _),
+    cases hi with i hi,
+    have hs₁ : s₁ ∈ (f i).sets, from hi ▸ hs₁,
+    have hs₂ : p s₂, from
+      have his : is ⊆ {x | ∃i, x = f i}, from take i hi, fi_sub $  mem_insert_of_mem _ hi,
+      have infi f ≤ Inf is, from Inf_le_Inf his,
+      ih his (this hs₂) hs₂,
+    show p s, from upw hs $ ins hs₁ hs₂ }
+end
+
 lemma lift_infi {f : ι → filter α} {g : set α → filter β}
   (hι : nonempty ι) (hg : ∀{s t}, g s ⊓ g t = g (s ∩ t)) : (infi f)^.lift g = (⨅i, (f i).lift g) :=
 le_antisymm
   (le_infi $ take i, lift_mono (infi_le _ _) (le_refl _))
   (take s,
-  have g_mono : monotone g,
-    from take s t h, le_of_inf_eq $ eq.trans hg $ congr_arg g $ inter_eq_self_of_subset_left h,
-  begin
-    rw [lift_sets_eq g_mono],
-    simp,
-    intro h, cases h with t ht, cases ht with hs ht',
-    revert s hs,
-    note ht : t ∈ (complete_lattice.Inf {a : filter α | ∃ (i : ι), a = f i}).sets := ht',
-    clear ht',
-    rw [Inf_sets_eq_finite] at ht,
-    simp at ht,
-    cases ht with i ht, cases ht with fin_i ht, cases ht with ht hi,
-    change (⨅ (i : ι), filter.lift (f i) g) ≤ g t,
-    induction fin_i generalizing t,
-    case finite.empty {
-      simp at ht, subst ht,
-      cases hι with i,
-      exact (infi_le_of_le i $ infi_le_of_le univ $ infi_le _ univ_mem_sets)},
-    case finite.insert fi i f_ne_i fin_i ih fi_sub t ht {
-      simp at ht,
-      cases ht with t₁ ht, cases ht with ht₁ ht, cases ht with t₂ ht, cases ht with ht ht₂,
-      have ht₁ : (⨅ (i : ι), filter.lift (f i) g) ≤ g t₁, from
-        let ⟨i, hi⟩ := fi_sub $ mem_insert _ _ in
-        have fi = f i, from hi,
-        infi_le_of_le i $ infi_le_of_le t₁ $ infi_le _ (this ▸ ht₁),
-      have ht₂ : (⨅ (i : ι), filter.lift (f i) g) ≤ g t₂,
-        from ih (take x hx, fi_sub $ mem_insert_of_mem _ hx) _ ht₂,
-      show (⨅ (i : ι), filter.lift (f i) g) ≤ g t,
-        from calc (⨅ (i : ι), filter.lift (f i) g) ≤ g t₁ ⊓ g t₂ : le_inf ht₁ ht₂
-        ... = g (t₁ ∩ t₂) : hg
-        ... ≤ g t : g_mono ht
-      }
-  end)
+    have g_mono : monotone g,
+      from take s t h, le_of_inf_eq $ eq.trans hg $ congr_arg g $ inter_eq_self_of_subset_left h,
+    have ∀t∈(infi f).sets, (⨅ (i : ι), filter.lift (f i) g) ≤ g t,
+      from take t ht, infi_sets_induct ht
+        (let ⟨i⟩ := hι in infi_le_of_le i $ infi_le_of_le univ $ infi_le _ univ_mem_sets)
+        (take i s₁ s₂ hs₁ hs₂,
+          @hg s₁ s₂ ▸ le_inf (infi_le_of_le i $ infi_le_of_le s₁ $ infi_le _ hs₁) hs₂)
+        (take s₁ s₂ hs₁ hs₂, le_trans hs₂ $ g_mono hs₁),
+    by rw [lift_sets_eq g_mono]; simp; exact take ⟨t, hs, ht⟩, this t ht hs)
 
 lemma lift_infi' {f : ι → filter α} {g : set α → filter β}
   (hι : nonempty ι) (hf : directed (≤) f) (hg : monotone g) : (infi f)^.lift g = (⨅i, (f i).lift g) :=
@@ -532,7 +534,7 @@ definition separated (α : Type u) [uniform_space α] :=
 separation_rel α = id_rel
 
 instance separated_t2 [s : separated α] : t2_space α :=
-take x y, assume h : x ≠ y,
+⟨take x y, assume h : x ≠ y,
 have separation_rel α = id_rel,
   from s,
 have (x, y) ∉ separation_rel α,
@@ -550,17 +552,14 @@ have u ∩ v = ∅, from
   take z ⟨(h₁ : z ∈ u), (h₂ : z ∈ v)⟩,
   have (x, y) ∈ comp_rel d' d', from ⟨z, hu₁ h₁, hv₁ h₂⟩,
   hxy $ hd'd' this,
-⟨u, v, hu₂, hv₂, hu₃, hv₃, this⟩
+⟨u, v, hu₂, hv₂, hu₃, hv₃, this⟩⟩
 
 /- totally bounded -/
-
-@[class]
-definition totally_bounded (α : Type u) [uniform_space α] :=
-∀d ∈ (@uniformity α _).sets, ∃s : set α, finite s ∧ (∀x, ∃y∈s, (x,y) ∈ d)
+@[class] class totally_bounded_uniformity (α : Type u) [uniform_space α] : Prop :=
+(totally_bounded : ∀d ∈ (@uniformity α _).sets, ∃s : set α, finite s ∧ (∀x, ∃y∈s, (x,y) ∈ d))
 
 /- complete space -/
-
-class complete_space (α : Type u) [uniform_space α] :=
+class complete_space (α : Type u) [uniform_space α] : Prop :=
 (complete : ∀{f:filter α}, cauchy f → ∃x, f ≤ nhds x)
 
 lemma complete_space_extension [uniform_space β] {m : β → α}
@@ -1078,6 +1077,15 @@ instance : uniform_space bool := ⊤
 instance : uniform_space ℕ := ⊤
 instance : uniform_space ℤ := ⊤
 
+instance {p : α → Prop} [t : uniform_space α] : uniform_space (subtype p) :=
+uniform_space.vmap subtype.val t
+
+instance [t₁ : uniform_space α] [t₂ : uniform_space β] : uniform_space (α × β) :=
+uniform_space.vmap prod.fst t₁ ⊔ uniform_space.vmap prod.snd t₂
+
+/- a similar product space is possible on the function space (uniformity of pointwise convergence),
+  but we want to have the uniformity of uniform convergence on function spaces -/
+
 lemma to_topological_space_mono {u₁ u₂ : uniform_space α} (h : u₁ ≤ u₂) :
   u₁.to_topological_space ≤ u₂.to_topological_space :=
 le_of_nhds_le_nhds $ take a,
@@ -1112,7 +1120,7 @@ classical.by_cases
     eq_of_nhds_eq_nhds $ take a,
     begin
       rw [nhds_supr, nhds_eq_uniformity],
-      show _ = (supr u).uniformity.lift' (λ (s : set (α × α)), {y : α | (a, y) ∈ s}),
+      show _ = (supr u).uniformity.lift' (vimage $ prod.mk a),
       begin
         rw [supr_uniformity, lift'_infi],
         exact (congr_arg _ $ funext $ take i, @nhds_eq_uniformity α (u i) a),
@@ -1127,5 +1135,7 @@ classical.by_cases
           from this.symm ▸ to_topological_space_bot,
         this.symm ▸ bot_le)
       (supr_le $ take i, to_topological_space_mono $ le_supr _ _))
+
+
 
 end constructions

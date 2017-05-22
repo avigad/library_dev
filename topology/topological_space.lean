@@ -16,7 +16,7 @@ classical.not_not_iff _
 
 @[simp]
 lemma singleton_neq_emptyset {α : Type u} {a : α} : {a} ≠ (∅ : set α) :=
-take h, 
+take h,
 have a ∉ ({a} : set α),
   by simp [h],
 this $ mem_singleton a
@@ -27,7 +27,7 @@ by simp [return]
 
 lemma not_imp_iff_not_imp {a b : Prop} :
   (¬ a → ¬ b) ↔ (b → a) :=
-⟨take h hb, classical.by_contradiction $ take na, h na hb, 
+⟨take h hb, classical.by_contradiction $ take na, h na hb,
   contrapos⟩
 
 lemma eq_of_sup_eq_inf_eq {α : Type u} [distrib_lattice α] {a b c : α}
@@ -44,7 +44,7 @@ le_antisymm
 
 lemma inf_eq_bot_iff_le_compl {α : Type u} [bounded_distrib_lattice α] {a b c : α}
   (h₁ : b ⊔ c = ⊤) (h₂ : b ⊓ c = ⊥) : a ⊓ b = ⊥ ↔ a ≤ c :=
-⟨suppose a ⊓ b = ⊥, 
+⟨suppose a ⊓ b = ⊥,
   calc a ≤ a ⊓ (b ⊔ c) : by simp [h₁]
     ... = (a ⊓ b) ⊔ (a ⊓ c) : by simp [inf_sup_left]
     ... ≤ c : by simp [this, inf_le_right],
@@ -187,8 +187,8 @@ subset.antisymm
 
 lemma interior_union_closed_of_interior_empty {s t : set α} (h₁ : closed s) (h₂ : interior t = ∅) :
   interior (s ∪ t) = interior s :=
-have interior (s ∪ t) ⊆ s, from 
-  take x ⟨u, ⟨(hu₁ : open' u), (hu₂ : u ⊆ s ∪ t)⟩, (hx₁ : x ∈ u)⟩, 
+have interior (s ∪ t) ⊆ s, from
+  take x ⟨u, ⟨(hu₁ : open' u), (hu₂ : u ⊆ s ∪ t)⟩, (hx₁ : x ∈ u)⟩,
   classical.by_contradiction $ assume hx₂ : x ∉ s,
     have u - s ⊆ t,
       from take x ⟨h₁, h₂⟩, or.resolve_left (hu₂ h₁) h₂,
@@ -266,7 +266,7 @@ by simp [closure_eq_compl_interior_compl]
 /- neighbourhood filter -/
 def nhds (a : α) : filter α := (⨅ s ∈ {s : set α | a ∈ s ∧ open' s}, principal s)
 
-lemma nhds_sets {a : α} : (nhds a)^.sets = {s | ∃t⊆s, open' t ∧ a ∈ t} := 
+lemma nhds_sets {a : α} : (nhds a)^.sets = {s | ∃t⊆s, open' t ∧ a ∈ t} :=
 calc (nhds a)^.sets = (⋃s∈{s : set α| a ∈ s ∧ open' s}, (principal s)^.sets) : infi_sets_eq'
   begin
     simp,
@@ -292,11 +292,11 @@ calc map f (nhds a) = (⨅ s ∈ {s : set α | a ∈ s ∧ open' s}, map f (prin
   ... = _ : by simp
 
 lemma mem_nhds_sets_iff {a : α} {s : set α} :
- s ∈ (nhds a)^.sets ↔ ∃t⊆s, open' t ∧ a ∈ t := 
+ s ∈ (nhds a)^.sets ↔ ∃t⊆s, open' t ∧ a ∈ t :=
 by simp [nhds_sets]
 
 lemma mem_nhds_sets {a : α} {s : set α} (hs : open' s) (ha : a ∈ s) :
- s ∈ (nhds a)^.sets := 
+ s ∈ (nhds a)^.sets :=
 by simp [nhds_sets]; exact ⟨s, hs, subset.refl _, ha⟩
 
 lemma return_le_nhds : return ≤ (nhds : α → filter α) :=
@@ -366,19 +366,45 @@ open_iff_nhds^.mpr $ take a, assume h : a ∉ (⋃i, f i),
 
 end locally_finite
 
+section compact
+
+def compact (s : set α) := ∀{f}, f ≠ ⊥ → f ≤ principal s → ∃x∈s, f ⊓ nhds x ≠ ⊥
+
+lemma mem_sets_of_neq_bot {f : filter α} {s : set α} (h : f ⊓ principal (-s) = ⊥) : s ∈ f.sets :=
+have ∅ ∈ (f ⊓ principal (- s)).sets, from h.symm ▸ mem_bot_sets,
+let ⟨s₁, hs₁, s₂, (hs₂ : -s ⊆ s₂), (hs : s₁ ∩ s₂ ⊆ ∅)⟩ := this in
+have s₁ ⊆ s, from take a ha, classical.by_contradiction $ take ha', hs ⟨ha, hs₂ ha'⟩,
+f.upwards_sets hs₁ this
+
+lemma compact_adherence_nhdset {s t : set α} {f : filter α}
+  (hs : compact s) (hf₂ : f ≤ principal s) (ht₁ : open' t) (ht₂ : ∀a∈s, nhds a ⊓ f ≠ ⊥ → a ∈ t) :
+  t ∈ f.sets :=
+classical.by_cases mem_sets_of_neq_bot $
+  suppose f ⊓ principal (- t) ≠ ⊥,
+  let ⟨a, ha, (hfa : f ⊓ principal (-t) ⊓ nhds a ≠ ⊥)⟩ := hs this $ inf_le_left_of_le hf₂ in
+  have a ∈ t,
+    from ht₂ a ha $ neq_bot_of_le_neq_bot hfa $ le_inf inf_le_right $ inf_le_left_of_le inf_le_left,
+  have nhds a ⊓ principal (-t) ≠ ⊥,
+    from neq_bot_of_le_neq_bot hfa $ le_inf inf_le_right $ inf_le_left_of_le inf_le_right,
+  have ∀s∈(nhds a ⊓ principal (-t)).sets, s ≠ ∅,
+    from forall_sets_neq_empty_iff_neq_bot.mpr this,
+  have false,
+    from this _ ⟨t, mem_nhds_sets ht₁ ‹a ∈ t ›, -t, subset.refl _, subset.refl _⟩ (by simp),
+  by contradiction
+
+end compact
+
 section separation
 
-@[class]
-def t1_space (α : Type u) [topological_space α] :=
-∀x, closed ({x} : set α)
+class t1_space (α : Type u) [topological_space α] :=
+(t1 : ∀x, closed ({x} : set α))
 
-@[class]
-def t2_space (α : Type u) [topological_space α] :=
-∀x y, x ≠ y → ∃u v : set α, open' u ∧ open' v ∧ x ∈ u ∧ y ∈ v ∧ u ∩ v = ∅
+class t2_space (α : Type u) [topological_space α] :=
+(t2 : ∀x y, x ≠ y → ∃u v : set α, open' u ∧ open' v ∧ x ∈ u ∧ y ∈ v ∧ u ∩ v = ∅)
 
 lemma eq_of_nhds_neq_bot [ht : t2_space α] {x y : α} (h : nhds x ⊓ nhds y ≠ ⊥) : x = y :=
-classical.by_contradiction $ suppose x ≠ y, 
-let ⟨u, v, hu, hv, hx, hy, huv⟩ := ht x y this in
+classical.by_contradiction $ suppose x ≠ y,
+let ⟨u, v, hu, hv, hx, hy, huv⟩ := t2_space.t2 _ x y this in
 have h₁ : u ∈ (nhds x ⊓ nhds y).sets,
   from @mem_inf_sets_of_left α (nhds x) (nhds y) _ $ mem_nhds_sets hu hx,
 have h₂ : v ∈ (nhds x ⊓ nhds y).sets,
@@ -526,6 +552,10 @@ instance {α : Type u} : complete_lattice (topological_space α) :=
 instance inhabited_topological_space {α : Type u} : inhabited (topological_space α) :=
 ⟨⊤⟩
 
+lemma t2_space_top : @t2_space α ⊤ :=
+⟨take x y hxy, ⟨{x}, {y}, trivial, trivial, mem_insert _ _, mem_insert _ _,
+  eq_empty_of_forall_not_mem $ by intros z hz; simp at hz; cc⟩⟩
+
 instance : topological_space empty := ⊤
 instance : topological_space unit := ⊤
 instance : topological_space bool := ⊤
@@ -568,8 +598,8 @@ le_antisymm
   (generate_from_le $ take s,
     begin
       simp,
-      exact take ⟨i, open_s⟩, 
-        have g i ≤ supr g, from le_supr _ _, 
+      exact take ⟨i, open_s⟩,
+        have g i ≤ supr g, from le_supr _ _,
         this s open_s
     end)
 
