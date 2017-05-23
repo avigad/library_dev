@@ -1433,12 +1433,37 @@ lemma le_of_ultrafilter {g : filter α} (hf : ultrafilter f) (h : f ⊓ g ≠ �
   f ≤ g :=
 le_of_inf_eq $ ultrafilter_unique hf h inf_le_left
 
-lemma mem_sets_of_compl_mem_sets_of_ultrafilter {s : set α} (hf : ultrafilter f) :
+lemma mem_or_compl_mem_of_ultrafilter (hf : ultrafilter f) (s : set α) :
   s ∈ f.sets ∨ - s ∈ f.sets :=
 or_of_not_implies $ suppose - s ∉ f.sets,
   have f ≤ principal s,
     from le_of_ultrafilter hf $ take h, this $ mem_sets_of_neq_bot $ by simph,
   by simp at this; assumption
+
+lemma mem_or_mem_of_ultrafilter {s t : set α} (hf : ultrafilter f) (h : s ∪ t ∈ f.sets) :
+  s ∈ f.sets ∨ t ∈ f.sets :=
+(mem_or_compl_mem_of_ultrafilter hf s).imp_right
+  (suppose -s ∈ f.sets, f.upwards_sets (inter_mem_sets this h) $ 
+    take x ⟨hnx, hx⟩, hx.resolve_left hnx)
+
+lemma mem_of_finite_sUnion_ultrafilter {s : set (set α)} (hf : ultrafilter f) (hs : finite s) 
+  : ⋃₀ s ∈ f.sets → ∃t∈s, t ∈ f.sets :=
+begin
+  induction hs,
+  case finite.empty { simp [empty_in_sets_eq_bot, hf.left] },
+  case finite.insert t s' ht' hs' ih {
+    simp,
+    exact take h, (mem_or_mem_of_ultrafilter hf h).elim
+      (suppose t ∈ f.sets, ⟨t, this, or.inl rfl⟩)
+      (take h, let ⟨t, hts', ht⟩ := ih h in ⟨t, ht, or.inr hts'⟩) }
+end
+
+lemma mem_of_finite_Union_ultrafilter {is : set β} {s : β → set α}
+  (hf : ultrafilter f) (his : finite is) (h : (⋃i∈is, s i) ∈ f.sets) : ∃i∈is, s i ∈ f.sets :=
+have his : finite (image s is), from finite_image his,
+have h : (⋃₀ image s is) ∈ f.sets, from by simp [sUnion_image]; assumption,
+let ⟨t, ⟨i, hi, h_eq⟩, (ht : t ∈ f.sets)⟩ := mem_of_finite_sUnion_ultrafilter hf his h in
+⟨i, hi, h_eq.symm ▸ ht⟩
 
 noncomputable def ultrafilter_of (f : filter α) : filter α :=
 if h : f = ⊥ then ⊥ else epsilon (λu, u ≤ f ∧ ultrafilter u)

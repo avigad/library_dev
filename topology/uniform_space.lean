@@ -80,6 +80,17 @@ have s ∈ (uniformity^.lift' (λt:set (α×α), comp_rel t t)).sets,
   from comp_le_uniformity hs,
 (mem_lift'_iff $ monotone_comp_rel monotone_id monotone_id).mp this
 
+lemma symm_of_uniformity {s : set (α × α)} (hs : s ∈ (@uniformity α _).sets) :
+  ∃t∈(@uniformity α _).sets, (∀a b, (a, b) ∈ t → (b, a) ∈ t) ∧ t ⊆ s :=
+have vimage prod.swap s ∈ (@uniformity α _).sets, from symm_le_uniformity hs,
+⟨s ∩ vimage prod.swap s, inter_mem_sets hs this, take a b ⟨h₁, h₂⟩, ⟨h₂, h₁⟩, inter_subset_left _ _⟩
+
+lemma comp_symm_of_uniformity {s : set (α × α)} (hs : s ∈ (@uniformity α _).sets) :
+  ∃t∈(@uniformity α _).sets, (∀{a b}, (a, b) ∈ t → (b, a) ∈ t) ∧ comp_rel t t ⊆ s :=
+let ⟨t, ht₁, ht₂⟩ := comp_mem_uniformity_sets hs in
+let ⟨t', ht', ht'₁, ht'₂⟩ := symm_of_uniformity ht₁ in
+⟨t', ht', ht'₁, subset.trans (monotone_comp_rel monotone_id monotone_id ht'₂) ht₂⟩
+
 lemma uniformity_le_symm : uniformity ≤ map (@prod.swap α α) uniformity :=
 calc uniformity = id <$> uniformity : (functor.id_map _)^.symm
   ... = (prod.swap.{u u} ∘ prod.swap) <$> uniformity :
@@ -458,8 +469,96 @@ have u ∩ v = ∅, from
 ⟨u, v, hu₂, hv₂, hu₃, hv₃, this⟩⟩
 
 /- totally bounded -/
-@[class] class totally_bounded_uniformity (α : Type u) [uniform_space α] : Prop :=
-(totally_bounded : ∀d ∈ (@uniformity α _).sets, ∃s : set α, finite s ∧ (∀x, ∃y∈s, (x,y) ∈ d))
+def totally_bounded (s : set α) : Prop :=
+∀d ∈ (@uniformity α _).sets, ∃t : set α, finite t ∧ s ⊆ (⋃y∈t, {x | (x,y) ∈ d})
+
+lemma cauchy_of_totally_bounded_of_ultrafilter {s : set α} {f : filter α}
+  (hs : totally_bounded s) (hf : ultrafilter f) (h : f ≤ principal s) : cauchy f :=
+⟨hf.left, take t ht, 
+  let ⟨t', ht'₁, ht'_symm, ht'_t⟩ := comp_symm_of_uniformity ht in
+  let ⟨i, hi, hs_union⟩ := hs t' ht'₁ in
+  have (⋃y∈i, {x | (x,y) ∈ t'}) ∈ f.sets,
+    from f.upwards_sets (le_principal_iff.mp h) hs_union,
+  have ∃y∈i, {x | (x,y) ∈ t'} ∈ f.sets,
+    from mem_of_finite_Union_ultrafilter hf hi this,
+  let ⟨y, hy, hif⟩ := this in
+  have set.prod {x | (x,y) ∈ t'} {x | (x,y) ∈ t'} ⊆ comp_rel t' t',
+    from take ⟨x₁, x₂⟩ ⟨(h₁ : (x₁, y) ∈ t'), (h₂ : (x₂, y) ∈ t')⟩,
+      ⟨y, h₁, ht'_symm h₂⟩,
+  (filter.prod f f).upwards_sets (prod_mem_prod hif hif) (subset.trans this ht'_t)⟩
+
+lemma not_or_iff_implies {a b : Prop} : (¬ a ∨ b) ↔ (a → b) :=
+⟨take h ha, h.neg_resolve_left ha, classical.not_or_of_implies⟩
+
+lemma diff_right_antimono {s t u : set α} (h : t ⊆ u) : s - u ⊆ s - t :=
+take x ⟨hs, hnx⟩, ⟨hs, take hx, hnx $ h hx⟩
+
+lemma Union_subset_Union {s t : ι → set α} (h : ∀i, s i ⊆ t i) : (⋃i, s i) ⊆ (⋃i, t i) :=
+@supr_le_supr (set α) ι _ s t h
+
+lemma Union_subset_Union2 {ι₂ : Sort x} {s : ι → set α} {t : ι₂ → set α} (h : ∀i, ∃j, s i ⊆ t j) : (⋃i, s i) ⊆ (⋃i, t i) :=
+@supr_le_supr2 (set α) ι ι₂ _ s t h
+
+lemma Union_subset_Union_const {ι₂ : Sort x} {s : set α} (h : ι → ι₂) : (⋃ i:ι, s) ⊆ (⋃ j:ι₂, s) :=
+@supr_le_supr_const (set α) ι ι₂ _ s h
+
+lemma diff_neq_empty {s t : set α} : s - t = ∅ ↔ s ⊆ t :=
+⟨take h x hx, classical.by_contradiction $ suppose x ∉ t, show x ∈ (∅ : set α), from h ▸ ⟨hx, this⟩,
+  take h, bot_unique $ take x ⟨hx, hnx⟩, hnx $ h hx⟩
+
+@[simp]
+lemma diff_empty {s : set α} : s - ∅ = s :=
+set.ext $ take x, ⟨take ⟨hx, _⟩, hx, take h, ⟨h, not_false⟩⟩
+
+lemma totally_bounded_iff_filter {s : set α} :
+  totally_bounded s ↔ (∀f, f ≠ ⊥ → f ≤ principal s → ∃c ≤ f, cauchy c) :=
+⟨suppose totally_bounded s, take f hf hs,
+  ⟨ultrafilter_of f, ultrafilter_of_le,
+    cauchy_of_totally_bounded_of_ultrafilter this (ultrafilter_ultrafilter_of hf) (le_trans ultrafilter_of_le hs)⟩,
+
+   assume h : ∀f, f ≠ ⊥ → f ≤ principal s → ∃c ≤ f, cauchy c,
+   classical.by_contradiction $ take hs,
+   have ∃d, d ∈ (@uniformity α _).sets ∧ ∀t : set α, finite t → ¬ s ⊆ (⋃y∈t, {x | (x,y) ∈ d}),
+     by simp [totally_bounded, classical.not_forall_iff_exists_not, classical.not_implies_iff_and_not,
+               not_exists_iff_forall_not, classical.not_and_iff, not_or_iff_implies] at hs;
+        assumption,
+   let
+     ⟨d, hd, hd_cover⟩ := this,
+     f := ⨅t:{t : set α // finite t}, principal (s - (⋃y∈t.val, {x | (x,y) ∈ d})),
+     ⟨a, ha⟩ := @exists_mem_of_ne_empty α s (take h, hd_cover ∅ finite.empty $ h.symm ▸ empty_subset _)
+   in
+   have f ≠ ⊥,
+     from infi_neq_bot_of_directed ⟨a⟩
+       (take ⟨t₁, ht₁⟩ ⟨t₂, ht₂⟩, ⟨⟨t₁ ∪ t₂, finite_union ht₁ ht₂⟩, 
+         principal_mono.mpr $ diff_right_antimono $ Union_subset_Union $ take t, Union_subset_Union_const or.inl,
+         principal_mono.mpr $ diff_right_antimono $ Union_subset_Union $ take t, Union_subset_Union_const or.inr⟩)
+       (take ⟨t, ht⟩, by simp [diff_neq_empty]; exact hd_cover t ht),
+   have f ≤ principal s, from infi_le_of_le ⟨∅, finite.empty⟩ $ by simp; exact subset.refl s,
+   let
+     ⟨c, (hc₁ : c ≤ f), (hc₂ : cauchy c)⟩ := h f ‹f ≠ ⊥› this,
+     ⟨m, hm, (hmd : set.prod m m ⊆ d)⟩ := (@mem_prod_same_iff α d c).mp $ hc₂.right hd
+   in
+   have c ≤ principal s, from le_trans ‹c ≤ f› this,
+   have m ∩ s ∈ c.sets, from inter_mem_sets hm $ le_principal_iff.mp this,
+   let ⟨y, hym, hys⟩ := inhabited_of_mem_sets hc₂.left this in
+   let ys := (⋃y'∈({y}:set α), {x | (x, y') ∈ d}) in 
+   have m ⊆ ys,
+     from take y' hy', by dsimp; simp; exact @hmd (y', y) ⟨hy', hym⟩,
+   have c ≤ principal (s - ys),
+     from le_trans hc₁ $ infi_le_of_le ⟨{y}, finite_insert finite.empty⟩ $ le_refl _,
+   have (s - ys) ∩ (m ∩ s) ∈ c.sets,
+     from inter_mem_sets (le_principal_iff.mp this) ‹m ∩ s ∈ c.sets›,
+   have ∅ ∈ c.sets,
+     from c.upwards_sets this $ take x ⟨⟨hxs, hxys⟩, hxm, _⟩, hxys $ ‹m ⊆ ys› hxm,
+   hc₂.left $ empty_in_sets_eq_bot.mp this⟩
+
+lemma totally_bounded_iff_ultrafilter {s : set α} :
+  totally_bounded s ↔ (∀f, ultrafilter f → f ≤ principal s → cauchy f) :=
+⟨take hs f, cauchy_of_totally_bounded_of_ultrafilter hs, 
+  take h, totally_bounded_iff_filter.mpr $ take f hf hfs,
+  have cauchy (ultrafilter_of f),
+    from h (ultrafilter_of f) (ultrafilter_ultrafilter_of hf) (le_trans ultrafilter_of_le hfs),
+  ⟨ultrafilter_of f, ultrafilter_of_le, this⟩⟩
 
 /- complete space -/
 class complete_space (α : Type u) [uniform_space α] : Prop :=
