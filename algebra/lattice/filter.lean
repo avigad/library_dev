@@ -1383,7 +1383,7 @@ def towards (f : α → β) (l₁ : filter α) (l₂ : filter β) := filter.map 
 /- ultrafilter -/
 
 section ultrafilter
-open classical
+open classical zorn
 local attribute [instance] prop_decidable
 
 variables {f g : filter α}
@@ -1410,31 +1410,34 @@ le_antisymm h (hg.right _ hf h)
 
 lemma exists_ultrafilter (h : f ≠ ⊥) : ∃u, u ≤ f ∧ ultrafilter u :=
 let
+  τ                := {f' // f' ≠ ⊥ ∧ f' ≤ f},
+  r : τ → τ → Prop := λt₁ t₂, t₂.val ≤ t₁.val,
   ⟨a, ha⟩          := inhabited_of_mem_sets h univ_mem_sets,
-  t                := {f' // f' ≠ ⊥ ∧ f' ≤ f},
-  r : t → t → Prop := λt₁ t₂, t₂.val ≤ t₁.val,
-  ff : t           := ⟨f, h, le_refl f⟩,
-  ub : Π(c:set t), zorn.chain c → t :=
-    λc hc, ⟨⨅a:{a:t // a ∈ insert ff c}, a.val.val,
+  top : τ          := ⟨f, h, le_refl f⟩,
+  sup : Π(c:set τ), chain c → τ :=
+    λc hc, ⟨⨅a:{a:τ // a ∈ insert top c}, a.val.val,
       infi_neq_bot_of_directed ⟨a⟩
-        (directed_of_chain $ zorn.chain_insert hc $ take ⟨b, _, hb⟩ _ _, or.inl hb)
+        (directed_of_chain $ chain_insert hc $ take ⟨b, _, hb⟩ _ _, or.inl hb)
         (take ⟨⟨a, ha, _⟩, _⟩, ha),
-      infi_le_of_le ⟨ff, mem_insert _ _⟩ (le_refl _)⟩
+      infi_le_of_le ⟨top, mem_insert _ _⟩ (le_refl _)⟩
 in
-have (∃ (u : t), ∀ (a : t), r u a → r a u),
-  from @zorn.zorn t r
-    (take c hc, ⟨ub c hc, take a ha, infi_le_of_le ⟨a, mem_insert_of_mem _ ha⟩ (le_refl _)⟩)
-    (take f₁ f₂ f₃ h₁ h₂, le_trans h₂ h₁),
-let ⟨uu, hmin⟩ := this in
-⟨uu.val, uu.property.right, uu.property.left, take g hg₁ hg₂,
-  hmin ⟨g, hg₁, le_trans hg₂ uu.property.right⟩ hg₂⟩
+have ∀c (hc: chain c) a (ha : a ∈ c), r a (sup c hc),
+  from take c hc a ha, infi_le_of_le ⟨a, mem_insert_of_mem _ ha⟩ (le_refl _),
+have (∃ (u : τ), ∀ (a : τ), r u a → r a u),
+  from zorn (take c hc, ⟨sup c hc, this c hc⟩) (take f₁ f₂ f₃ h₁ h₂, le_trans h₂ h₁),
+let ⟨uτ, hmin⟩ := this in
+⟨uτ.val, uτ.property.right, uτ.property.left, take g hg₁ hg₂,
+  hmin ⟨g, hg₁, le_trans hg₂ uτ.property.right⟩ hg₂⟩
+
+lemma le_of_ultrafilter {g : filter α} (hf : ultrafilter f) (h : f ⊓ g ≠ ⊥) :
+  f ≤ g :=
+le_of_inf_eq $ ultrafilter_unique hf h inf_le_left
 
 lemma mem_sets_of_compl_mem_sets_of_ultrafilter {s : set α} (hf : ultrafilter f) :
   s ∈ f.sets ∨ - s ∈ f.sets :=
 or_of_not_implies $ suppose - s ∉ f.sets,
-  have f ⊓ principal s ≠ ⊥,
-    from take h, this $ mem_sets_of_neq_bot $ by simph,
-  have f ≤ principal s, from le_of_inf_eq $ ultrafilter_unique hf this inf_le_left,
+  have f ≤ principal s,
+    from le_of_ultrafilter hf $ take h, this $ mem_sets_of_neq_bot $ by simph,
   by simp at this; assumption
 
 noncomputable def ultrafilter_of (f : filter α) : filter α :=

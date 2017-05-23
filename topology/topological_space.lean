@@ -312,7 +312,7 @@ end locally_finite
 
 section compact
 
-def compact (s : set α) := ∀{f}, f ≠ ⊥ → f ≤ principal s → ∃x∈s, f ⊓ nhds x ≠ ⊥
+def compact (s : set α) := ∀{f}, f ≠ ⊥ → f ≤ principal s → ∃a∈s, f ⊓ nhds a ≠ ⊥
 
 lemma compact_adherence_nhdset {s t : set α} {f : filter α}
   (hs : compact s) (hf₂ : f ≤ principal s) (ht₁ : open' t) (ht₂ : ∀a∈s, nhds a ⊓ f ≠ ⊥ → a ∈ t) :
@@ -329,6 +329,20 @@ classical.by_cases mem_sets_of_neq_bot $
   have false,
     from this _ ⟨t, mem_nhds_sets ht₁ ‹a ∈ t ›, -t, subset.refl _, subset.refl _⟩ (by simp),
   by contradiction
+
+lemma compact_iff_ultrafilter_le_nhds {s : set α} :
+  compact s ↔ (∀f, ultrafilter f → f ≤ principal s → ∃a∈s, f ≤ nhds a) :=
+⟨assume hs : compact s, take f hf hfs,
+  let ⟨a, ha, h⟩ := hs hf.left hfs in
+  ⟨a, ha, le_of_ultrafilter hf h⟩,
+
+  assume hs : (∀f, ultrafilter f → f ≤ principal s → ∃a∈s, f ≤ nhds a),
+  take f hf hfs,
+  let ⟨a, ha, (h : ultrafilter_of f ≤ nhds a)⟩ :=
+    hs (ultrafilter_of f) (ultrafilter_ultrafilter_of hf) (le_trans ultrafilter_of_le hfs) in
+  have ultrafilter_of f ⊓ nhds a ≠ ⊥,
+    by simp [inf_of_le_left, h]; exact (ultrafilter_ultrafilter_of hf).left,
+  ⟨a, ha, neq_bot_of_le_neq_bot this (inf_le_inf ultrafilter_of_le (le_refl _))⟩⟩
 
 end compact
 
