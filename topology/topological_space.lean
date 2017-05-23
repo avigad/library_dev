@@ -10,62 +10,6 @@ open set filter lattice
 
 universes u v w
 
-@[simp]
-lemma not_not_mem_iff {α : Type u} {a : α} {s : set α} : ¬ (a ∉ s) ↔ a ∈ s :=
-classical.not_not_iff _
-
-@[simp]
-lemma singleton_neq_emptyset {α : Type u} {a : α} : {a} ≠ (∅ : set α) :=
-take h,
-have a ∉ ({a} : set α),
-  by simp [h],
-this $ mem_singleton a
-
-@[simp]
-lemma return_neq_bot {α : Type u} {a : α} : return a ≠ (⊥ : filter α) :=
-by simp [return]
-
-lemma not_imp_iff_not_imp {a b : Prop} :
-  (¬ a → ¬ b) ↔ (b → a) :=
-⟨take h hb, classical.by_contradiction $ take na, h na hb,
-  contrapos⟩
-
-lemma eq_of_sup_eq_inf_eq {α : Type u} [distrib_lattice α] {a b c : α}
-  (h₁ : b ⊓ a = c ⊓ a) (h₂ : b ⊔ a = c ⊔ a) : b = c :=
-le_antisymm
-  (calc b ≤ (c ⊓ a) ⊔ b     : le_sup_right
-    ... = (c ⊔ b) ⊓ (a ⊔ b) : sup_inf_right
-    ... = c ⊔ (c ⊓ a)       : by rw [-h₁, sup_inf_left, -h₂]; simp [sup_comm]
-    ... = c                 : sup_inf_self)
-  (calc c ≤ (b ⊓ a) ⊔ c     : le_sup_right
-    ... = (b ⊔ c) ⊓ (a ⊔ c) : sup_inf_right
-    ... = b ⊔ (b ⊓ a)       : by rw [h₁, sup_inf_left, h₂]; simp [sup_comm]
-    ... = b                 : sup_inf_self)
-
-lemma inf_eq_bot_iff_le_compl {α : Type u} [bounded_distrib_lattice α] {a b c : α}
-  (h₁ : b ⊔ c = ⊤) (h₂ : b ⊓ c = ⊥) : a ⊓ b = ⊥ ↔ a ≤ c :=
-⟨suppose a ⊓ b = ⊥,
-  calc a ≤ a ⊓ (b ⊔ c) : by simp [h₁]
-    ... = (a ⊓ b) ⊔ (a ⊓ c) : by simp [inf_sup_left]
-    ... ≤ c : by simp [this, inf_le_right],
-  suppose a ≤ c,
-  bot_unique $
-    calc a ⊓ b ≤ b ⊓ c : by rw [inf_comm]; exact inf_le_inf (le_refl _) this
-      ... = ⊥ : h₂⟩
-
-lemma compl_image_set_of {α : Type u} {p : set α → Prop} :
-  compl '' {x | p x} = {x | p (- x)} :=
-set.ext $ take x, ⟨take ⟨y, (hy : p y), (h_eq : -y = x)⟩,
-  show p (- x), by rw [-h_eq, lattice.neg_neg]; assumption,
-  assume h : p (-x), ⟨_, h, lattice.neg_neg⟩⟩
-
-lemma neg_subset_neg_iff_subset {α : Type u} {x y : set α} : - y ⊆ - x ↔ x ⊆ y :=
-@neg_le_neg_iff_le (set α) _ _ _
-
-lemma sUnion_eq_Union {α : Type u} {s : set (set α)} :
-  (⋃₀ s) = (⋃ (i : set α) (h : i ∈ s), i) :=
-set.ext $ by simp
-
 structure topological_space (α : Type u) :=
 (open'       : set α → Prop)
 (open_univ   : open' univ)
@@ -370,12 +314,6 @@ section compact
 
 def compact (s : set α) := ∀{f}, f ≠ ⊥ → f ≤ principal s → ∃x∈s, f ⊓ nhds x ≠ ⊥
 
-lemma mem_sets_of_neq_bot {f : filter α} {s : set α} (h : f ⊓ principal (-s) = ⊥) : s ∈ f.sets :=
-have ∅ ∈ (f ⊓ principal (- s)).sets, from h.symm ▸ mem_bot_sets,
-let ⟨s₁, hs₁, s₂, (hs₂ : -s ⊆ s₂), (hs : s₁ ∩ s₂ ⊆ ∅)⟩ := this in
-have s₁ ⊆ s, from take a ha, classical.by_contradiction $ take ha', hs ⟨ha, hs₂ ha'⟩,
-f.upwards_sets hs₁ this
-
 lemma compact_adherence_nhdset {s t : set α} {f : filter α}
   (hs : compact s) (hf₂ : f ≤ principal s) (ht₁ : open' t) (ht₂ : ∀a∈s, nhds a ⊓ f ≠ ⊥ → a ∈ t) :
   t ∈ f.sets :=
@@ -555,6 +493,17 @@ instance inhabited_topological_space {α : Type u} : inhabited (topological_spac
 lemma t2_space_top : @t2_space α ⊤ :=
 ⟨take x y hxy, ⟨{x}, {y}, trivial, trivial, mem_insert _ _, mem_insert _ _,
   eq_empty_of_forall_not_mem $ by intros z hz; simp at hz; cc⟩⟩
+
+lemma le_of_nhds_le_nhds {t₁ t₂ : topological_space α} (h : ∀x, @nhds α t₂ x ≤ @nhds α t₁ x) :
+  t₁ ≤ t₂ :=
+take s, show @open' α t₁ s → @open' α t₂ s,
+  begin simp [open_iff_nhds]; exact take hs a ha, h _ $ hs _ ha end
+
+lemma eq_of_nhds_eq_nhds {t₁ t₂ : topological_space α} (h : ∀x, @nhds α t₂ x = @nhds α t₁ x) :
+  t₁ = t₂ :=
+le_antisymm
+  (le_of_nhds_le_nhds $ take x, le_of_eq $ h x)
+  (le_of_nhds_le_nhds $ take x, le_of_eq $ (h x).symm)
 
 instance : topological_space empty := ⊤
 instance : topological_space unit := ⊤
