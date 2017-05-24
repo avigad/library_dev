@@ -38,6 +38,34 @@ theorem bind_assoc : ∀ {α β γ : Type u} (x : m α) (f : α → m β) (g : �
 
 end monad
 
+section prod
+variables {α : Type u} {β : Type v}
+
+@[simp] -- copied from parser
+lemma prod.mk.eta : ∀{p : α × β}, (p.1, p.2) = p
+| (a, b) := rfl
+
+def prod.swap : (α×β) → (β×α) := λp, (p.2, p.1)
+
+@[simp]
+lemma prod.swap_swap : ∀x:α×β, prod.swap (prod.swap x) = x
+| ⟨a, b⟩ := rfl
+
+@[simp]
+lemma prod.fst_swap {p : α×β} : (prod.swap p).1 = p.2 := rfl
+
+@[simp]
+lemma prod.snd_swap {p : α×β} : (prod.swap p).2 = p.1 := rfl
+
+@[simp]
+lemma prod.swap_prod_mk {a : α} {b : β} : prod.swap (a, b) = (b, a) := rfl
+
+@[simp]
+lemma prod.swap_swap_eq : prod.swap ∘ prod.swap = @id (α × β) :=
+funext $ prod.swap_swap
+
+end prod
+
 namespace lattice
 variables {α : Type u} {ι : Sort v} [complete_lattice α]
 
@@ -148,6 +176,11 @@ begin
     take ⟨⟨a, ha⟩, ⟨b, hb⟩⟩, ⟨a, b, ha, hb⟩⟩
 end
 
+@[simp]
+lemma prod_mk_mem_set_prod_eq {a : α} {b : β} {s : set α} {t : set β} :
+  (a, b) ∈ set.prod s t = (a ∈ s ∧ b ∈ t) :=
+rfl
+
 lemma monotone_inter [weak_order β] {f g : β → set α}
   (hf : monotone f) (hg : monotone g) : monotone (λx, (f x) ∩ (g x)) :=
 take a b h x ⟨h₁, h₂⟩, ⟨hf h h₁, hg h h₂⟩
@@ -156,34 +189,6 @@ take a b h x ⟨h₁, h₂⟩, ⟨hf h h₁, hg h h₂⟩
 lemma vimage_set_of_eq {p : α → Prop} {f : β → α} :
   vimage f {a | p a} = {a | p (f a)} :=
 rfl
-
-@[simp] -- copied from parser
-lemma prod.mk.eta : ∀{p : α × β}, (p.1, p.2) = p
-| (a, b) := rfl
-
-@[simp]
-lemma prod_mk_mem_set_prod_eq {a : α} {b : β} {s : set α} {t : set β} :
-  (a, b) ∈ set.prod s t = (a ∈ s ∧ b ∈ t) :=
-rfl
-
-def prod.swap : (α×β) → (β×α) := λp, (p.2, p.1)
-
-@[simp]
-lemma prod.swap_swap : ∀x:α×β, prod.swap (prod.swap x) = x
-| ⟨a, b⟩ := rfl
-
-@[simp]
-lemma prod.fst_swap {p : α×β} : (prod.swap p).1 = p.2 := rfl
-
-@[simp]
-lemma prod.snd_swap {p : α×β} : (prod.swap p).2 = p.1 := rfl
-
-@[simp]
-lemma prod.swap_prod_mk {a : α} {b : β} : prod.swap (a, b) = (b, a) := rfl
-
-@[simp]
-lemma prod.swap_swap_eq : prod.swap ∘ prod.swap = @id (α × β) :=
-funext $ prod.swap_swap
 
 @[simp]
 lemma set_of_mem_eq {s : set α} : {x | x ∈ s} = s :=
@@ -207,7 +212,32 @@ lemma monotone_set_of [weak_order α] {p : α → β → Prop}
   (hp : ∀b, monotone (λa, p a b)) : monotone (λa, {b | p a b}) :=
 take a a' h b, hp b h
 
+lemma diff_right_antimono {s t u : set α} (h : t ⊆ u) : s - u ⊆ s - t :=
+take x ⟨hs, hnx⟩, ⟨hs, take hx, hnx $ h hx⟩
+
 end set
+
+section
+variables {α : Type u} {ι : Sort v}
+
+lemma Union_subset_Union {s t : ι → set α} (h : ∀i, s i ⊆ t i) : (⋃i, s i) ⊆ (⋃i, t i) :=
+@supr_le_supr (set α) ι _ s t h
+
+lemma Union_subset_Union2 {ι₂ : Sort x} {s : ι → set α} {t : ι₂ → set α} (h : ∀i, ∃j, s i ⊆ t j) : (⋃i, s i) ⊆ (⋃i, t i) :=
+@supr_le_supr2 (set α) ι ι₂ _ s t h
+
+lemma Union_subset_Union_const {ι₂ : Sort x} {s : set α} (h : ι → ι₂) : (⋃ i:ι, s) ⊆ (⋃ j:ι₂, s) :=
+@supr_le_supr_const (set α) ι ι₂ _ s h
+
+lemma diff_neq_empty {s t : set α} : s - t = ∅ ↔ s ⊆ t :=
+⟨take h x hx, classical.by_contradiction $ suppose x ∉ t, show x ∈ (∅ : set α), from h ▸ ⟨hx, this⟩,
+  take h, bot_unique $ take x ⟨hx, hnx⟩, hnx $ h hx⟩
+
+@[simp]
+lemma diff_empty {s : set α} : s - ∅ = s :=
+set.ext $ take x, ⟨take ⟨hx, _⟩, hx, take h, ⟨h, not_false⟩⟩
+
+end
 
 @[simp] -- should be handled by implies_true_iff
 lemma implies_implies_true_iff {α : Sort u} {β : Sort v} : (α → β → true) ↔ true :=
@@ -264,6 +294,9 @@ lemma neg_subset_neg_iff_subset {α : Type u} {x y : set α} : - y ⊆ - x ↔ x
 lemma sUnion_eq_Union {α : Type u} {s : set (set α)} :
   (⋃₀ s) = (⋃ (i : set α) (h : i ∈ s), i) :=
 set.ext $ by simp
+
+lemma not_or_iff_implies {a b : Prop} : (¬ a ∨ b) ↔ (a → b) :=
+⟨take h ha, h.neg_resolve_left ha, classical.not_or_of_implies⟩
 
 section order
 variables {α : Type u} (r : α → α → Prop)
@@ -861,13 +894,37 @@ le_antisymm
   (take s ⟨t, (h₁ : vimage m t ∈ f.sets), (h₂ : vimage m t ⊆ s)⟩,
     f.upwards_sets h₁ h₂)
 
+lemma vmap_neq_bot {f : filter β} {m : α → β}
+  (hm : ∀t∈f.sets, ∃a, m a ∈ t) : vmap m f ≠ ⊥ :=
+forall_sets_neq_empty_iff_neq_bot.mp $ take s ⟨t, ht, t_s⟩,
+  let ⟨a, (ha : a ∈ vimage m t)⟩ := hm t ht in
+  neq_bot_of_le_neq_bot (ne_empty_of_mem ha) t_s
+
 lemma vmap_neq_bot_of_surj {f : filter β} {m : α → β}
   (hf : f ≠ ⊥) (hm : ∀b, ∃a, m a = b) : vmap m f ≠ ⊥ :=
-forall_sets_neq_empty_iff_neq_bot.mp $ take s ⟨t, ht, t_s⟩,
-  let ⟨x, (hx : x ∈ t)⟩ := inhabited_of_mem_sets hf ht in
-  let ⟨y, (hy : m y = x)⟩ := hm x in
-  have m y ∈ t, from hy.symm ▸ hx,
-  ne_empty_of_mem $ t_s this
+vmap_neq_bot $ take t ht,
+  let
+    ⟨b, (hx : b ∈ t)⟩ := inhabited_of_mem_sets hf ht,
+    ⟨a, (ha : m a = b)⟩ := hm b
+  in ⟨a, ha.symm ▸ hx⟩
+
+lemma map_vmap_le {f : filter β} {m : α → β} : map m (vmap m f) ≤ f :=
+take s hs, ⟨s, hs, subset.refl _⟩
+
+lemma le_vmap_map {f : filter α} {m : α → β} : f ≤ vmap m (map m f) :=
+take s ⟨t, ht, h_eq⟩, f.upwards_sets ht h_eq
+
+lemma vmap_vmap_comp {f : filter α} {m : γ → β} {n : β → α} :
+  vmap m (vmap n f) = vmap (n ∘ m) f :=
+le_antisymm
+  (take c ⟨b, hb, (h : vimage (n ∘ m) b ⊆ c)⟩, ⟨vimage n b, vimage_mem_vmap hb, h⟩)
+  (take c ⟨b, ⟨a, ha, (h₁ : vimage n a ⊆ b)⟩, (h₂ : vimage m b ⊆ c)⟩,
+    ⟨a, ha, show vimage m (vimage n a) ⊆ c, from subset.trans (vimage_mono h₁) h₂⟩)
+
+lemma le_vmap_iff_map_le {f : filter α} {g : filter β} {m : α → β} :
+  f ≤ vmap m g ↔ map m f ≤ g :=
+⟨take h, le_trans (map_mono h) map_vmap_le,
+  take h, le_trans le_vmap_map (vmap_mono h)⟩
 
 end vmap
 
@@ -1366,15 +1423,8 @@ le_antisymm
   (take b (hb : vimage m b ∈ f.sets),
     ⟨vimage m b, hb, show vimage (m ∘ n) b ⊆ b, by simp [h₁]; apply subset.refl⟩)
 
-lemma map_vmap_le {f : filter β} {m : α → β} : map m (vmap m f) ≤ f :=
-take s hs, ⟨s, hs, subset.refl _⟩
-
-lemma vmap_vmap_comp {f : filter α} {m : γ → β} {n : β → α} :
-  vmap m (vmap n f) = vmap (n ∘ m) f :=
-le_antisymm
-  (take c ⟨b, hb, (h : vimage (n ∘ m) b ⊆ c)⟩, ⟨vimage n b, vimage_mem_vmap hb, h⟩)
-  (take c ⟨b, ⟨a, ha, (h₁ : vimage n a ⊆ b)⟩, (h₂ : vimage m b ⊆ c)⟩,
-    ⟨a, ha, show vimage m (vimage n a) ⊆ c, from subset.trans (vimage_mono h₁) h₂⟩)
+lemma map_swap_vmap_swap_eq {f : filter (α × β)} : prod.swap <$> f = vmap prod.swap f :=
+map_eq_vmap_of_inverse prod.swap_swap_eq prod.swap_swap_eq
 
 /- towards -/
 
@@ -1443,10 +1493,10 @@ or_of_not_implies $ suppose - s ∉ f.sets,
 lemma mem_or_mem_of_ultrafilter {s t : set α} (hf : ultrafilter f) (h : s ∪ t ∈ f.sets) :
   s ∈ f.sets ∨ t ∈ f.sets :=
 (mem_or_compl_mem_of_ultrafilter hf s).imp_right
-  (suppose -s ∈ f.sets, f.upwards_sets (inter_mem_sets this h) $ 
+  (suppose -s ∈ f.sets, f.upwards_sets (inter_mem_sets this h) $
     take x ⟨hnx, hx⟩, hx.resolve_left hnx)
 
-lemma mem_of_finite_sUnion_ultrafilter {s : set (set α)} (hf : ultrafilter f) (hs : finite s) 
+lemma mem_of_finite_sUnion_ultrafilter {s : set (set α)} (hf : ultrafilter f) (hs : finite s)
   : ⋃₀ s ∈ f.sets → ∃t∈s, t ∈ f.sets :=
 begin
   induction hs,
@@ -1464,6 +1514,18 @@ have his : finite (image s is), from finite_image his,
 have h : (⋃₀ image s is) ∈ f.sets, from by simp [sUnion_image]; assumption,
 let ⟨t, ⟨i, hi, h_eq⟩, (ht : t ∈ f.sets)⟩ := mem_of_finite_sUnion_ultrafilter hf his h in
 ⟨i, hi, h_eq.symm ▸ ht⟩
+
+lemma ultrafilter_of_split {f : filter α} (hf : f ≠ ⊥) (h : ∀s, s ∈ f.sets ∨ - s ∈ f.sets) :
+  ultrafilter f :=
+⟨hf, take g hg g_le s hs, (h s).elim id $
+  suppose - s ∈ f.sets,
+  have s ∩ -s ∈ g.sets, from inter_mem_sets hs (g_le this),
+  by simp [empty_in_sets_eq_bot, hg] at this; contradiction⟩
+
+lemma ultrafilter_map {f : filter α} {m : α → β} (h : ultrafilter f) : ultrafilter (map m f) :=
+ultrafilter_of_split (by simp [map_eq_bot_iff, h.left]) $
+  take s, show vimage m s ∈ f.sets ∨ - vimage m s ∈ f.sets,
+    from mem_or_compl_mem_of_ultrafilter h (vimage m s)
 
 noncomputable def ultrafilter_of (f : filter α) : filter α :=
 if h : f = ⊥ then ⊥ else epsilon (λu, u ≤ f ∧ ultrafilter u)
