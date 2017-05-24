@@ -560,6 +560,15 @@ lemma totally_bounded_iff_ultrafilter {s : set α} :
     from h (ultrafilter_of f) (ultrafilter_ultrafilter_of hf) (le_trans ultrafilter_of_le hfs),
   ⟨ultrafilter_of f, ultrafilter_of_le, this⟩⟩
 
+lemma compact_of_totally_bounded_complete {s : set α}
+  (ht : totally_bounded s) (hc : ∀{f:filter α}, cauchy f → f ≤ principal s → ∃x∈s, f ≤ nhds x) :
+  compact s :=
+begin
+  rw [compact_iff_ultrafilter_le_nhds],
+  rw [totally_bounded_iff_ultrafilter] at ht,
+  exact take f hf hfs, hc (ht _ hf hfs) hfs 
+end
+
 /- complete space -/
 class complete_space (α : Type u) [uniform_space α] : Prop :=
 (complete : ∀{f:filter α}, cauchy f → ∃x, f ≤ nhds x)
