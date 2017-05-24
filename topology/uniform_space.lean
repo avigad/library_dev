@@ -474,7 +474,7 @@ def totally_bounded (s : set α) : Prop :=
 
 lemma cauchy_of_totally_bounded_of_ultrafilter {s : set α} {f : filter α}
   (hs : totally_bounded s) (hf : ultrafilter f) (h : f ≤ principal s) : cauchy f :=
-⟨hf.left, take t ht, 
+⟨hf.left, take t ht,
   let ⟨t', ht'₁, ht'_symm, ht'_t⟩ := comp_symm_of_uniformity ht in
   let ⟨i, hi, hs_union⟩ := hs t' ht'₁ in
   have (⋃y∈i, {x | (x,y) ∈ t'}) ∈ f.sets,
@@ -529,7 +529,7 @@ lemma totally_bounded_iff_filter {s : set α} :
    in
    have f ≠ ⊥,
      from infi_neq_bot_of_directed ⟨a⟩
-       (take ⟨t₁, ht₁⟩ ⟨t₂, ht₂⟩, ⟨⟨t₁ ∪ t₂, finite_union ht₁ ht₂⟩, 
+       (take ⟨t₁, ht₁⟩ ⟨t₂, ht₂⟩, ⟨⟨t₁ ∪ t₂, finite_union ht₁ ht₂⟩,
          principal_mono.mpr $ diff_right_antimono $ Union_subset_Union $ take t, Union_subset_Union_const or.inl,
          principal_mono.mpr $ diff_right_antimono $ Union_subset_Union $ take t, Union_subset_Union_const or.inr⟩)
        (take ⟨t, ht⟩, by simp [diff_neq_empty]; exact hd_cover t ht),
@@ -541,7 +541,7 @@ lemma totally_bounded_iff_filter {s : set α} :
    have c ≤ principal s, from le_trans ‹c ≤ f› this,
    have m ∩ s ∈ c.sets, from inter_mem_sets hm $ le_principal_iff.mp this,
    let ⟨y, hym, hys⟩ := inhabited_of_mem_sets hc₂.left this in
-   let ys := (⋃y'∈({y}:set α), {x | (x, y') ∈ d}) in 
+   let ys := (⋃y'∈({y}:set α), {x | (x, y') ∈ d}) in
    have m ⊆ ys,
      from take y' hy', by dsimp; simp; exact @hmd (y', y) ⟨hy', hym⟩,
    have c ≤ principal (s - ys),
@@ -554,7 +554,7 @@ lemma totally_bounded_iff_filter {s : set α} :
 
 lemma totally_bounded_iff_ultrafilter {s : set α} :
   totally_bounded s ↔ (∀f, ultrafilter f → f ≤ principal s → cauchy f) :=
-⟨take hs f, cauchy_of_totally_bounded_of_ultrafilter hs, 
+⟨take hs f, cauchy_of_totally_bounded_of_ultrafilter hs,
   take h, totally_bounded_iff_filter.mpr $ take f hf hfs,
   have cauchy (ultrafilter_of f),
     from h (ultrafilter_of f) (ultrafilter_ultrafilter_of hf) (le_trans ultrafilter_of_le hfs),
@@ -566,7 +566,7 @@ lemma compact_of_totally_bounded_complete {s : set α}
 begin
   rw [compact_iff_ultrafilter_le_nhds],
   rw [totally_bounded_iff_ultrafilter] at ht,
-  exact take f hf hfs, hc (ht _ hf hfs) hfs 
+  exact take f hf hfs, hc (ht _ hf hfs) hfs
 end
 
 /- complete space -/
