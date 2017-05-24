@@ -311,9 +311,9 @@ section pi
 lemma nhds_pi {ι : Type u} {α : ι → Type v} [t : ∀i, topological_space (α i)] {a : Πi, α i} :
   nhds a = (⨅i, vmap (λx, x i) (nhds (a i))) :=
 calc nhds a = (⨅i, @nhds _ (@topological_space.induced _ _ (λx:Πi, α i, x i) (t i)) a) : nhds_supr
-  ... = (⨅i, vmap (λx, x i) (nhds (a i))) : congr_arg infi $ funext $ take i, nhds_induced_eq_vmap
+  ... = (⨅i, vmap (λx, x i) (nhds (a i))) : by simp [nhds_induced_eq_vmap]
 
-/-- Tychnoff -/
+/-- Tychonoff's theorem -/
 lemma compact_pi_infinite {ι : Type v} {α : ι → Type u} [∀i:ι, topological_space (α i)]
   {s : Πi:ι, set (α i)} : (∀i, compact (s i)) → compact {x : Πi:ι, α i | ∀i, x i ∈ s i} :=
 begin

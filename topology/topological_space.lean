@@ -344,6 +344,34 @@ lemma compact_iff_ultrafilter_le_nhds {s : set α} :
     by simp [inf_of_le_left, h]; exact (ultrafilter_ultrafilter_of hf).left,
   ⟨a, ha, neq_bot_of_le_neq_bot this (inf_le_inf ultrafilter_of_le (le_refl _))⟩⟩
 
+lemma finite_subcover_of_compact {s : set α} {c : set (set α)}
+  (hs : compact s) (hc₁ : ∀t∈c, open' t) (hc₂ : s ⊆ ⋃₀ c) : ∃c'⊆c, finite c' ∧ s ⊆ ⋃₀ c' :=
+classical.by_contradiction $ take h,
+  have h : ∀{c'}, c' ⊆ c → finite c' → ¬ s ⊆ ⋃₀ c',
+    from take c' h₁ h₂ h₃, h ⟨c', h₁, h₂, h₃⟩,
+  let
+    f : filter α := (⨅c':{c' : set (set α) // c' ⊆ c ∧ finite c'}, principal (s - ⋃₀ c')),
+    ⟨a, ha⟩ := @exists_mem_of_ne_empty α s
+      (take h', h (empty_subset _) finite.empty $ h'.symm ▸ empty_subset _)
+  in
+  have f ≠ ⊥, from infi_neq_bot_of_directed ⟨a⟩
+    (take ⟨c₁, hc₁, hc'₁⟩ ⟨c₂, hc₂, hc'₂⟩, ⟨⟨c₁ ∪ c₂, union_subset hc₁ hc₂, finite_union hc'₁ hc'₂⟩,
+      principal_mono.mpr $ diff_right_antimono $ sUnion_mono $ subset_union_left _ _,
+      principal_mono.mpr $ diff_right_antimono $ sUnion_mono $ subset_union_right _ _⟩)
+    (take ⟨c', hc'₁, hc'₂⟩, by simp [diff_neq_empty]; exact h hc'₁ hc'₂),
+  have f ≤ principal s, from infi_le_of_le ⟨∅, empty_subset _, finite.empty⟩ $
+    show principal (s - ⋃₀∅) ≤ principal s, by simp; exact subset.refl s,
+  let
+    ⟨a, ha, (h : f ⊓ nhds a ≠ ⊥)⟩ := hs ‹f ≠ ⊥› this,
+    ⟨t, ht₁, (ht₂ : a ∈ t)⟩ := hc₂ ha
+  in
+  have f ≤ principal (-t), from infi_le_of_le ⟨{t}, by simp [ht₁], finite_insert finite.empty⟩ $
+    principal_mono.mpr $ show s - ⋃₀{t} ⊆ - t, begin simp; exact take x ⟨_, hnt⟩, hnt end,
+  have closed (- t), from closed_compl_iff_open.mp $ by simp; exact hc₁ t ht₁,
+  have a ∈ - t, from closed_iff_nhds.mp this _ $ neq_bot_of_le_neq_bot h $
+    le_inf inf_le_right (inf_le_left_of_le $ ‹f ≤ principal (- t)›),
+  this ‹a ∈ t›
+
 end compact
 
 section separation

@@ -491,42 +491,42 @@ lemma totally_bounded_iff_filter {s : set α} :
     cauchy_of_totally_bounded_of_ultrafilter this
       (ultrafilter_ultrafilter_of hf) (le_trans ultrafilter_of_le hs)⟩,
 
-   assume h : ∀f, f ≠ ⊥ → f ≤ principal s → ∃c ≤ f, cauchy c, take d hd,
-   classical.by_contradiction $ take hs,
-   have hd_cover : ∀{t:set α}, finite t → ¬ s ⊆ (⋃y∈t, {x | (x,y) ∈ d}),
-     by simp [not_exists_iff_forall_not, classical.not_and_iff, not_or_iff_implies] at hs;
-        assumption,
-   let
-     f := ⨅t:{t : set α // finite t}, principal (s - (⋃y∈t.val, {x | (x,y) ∈ d})),
-     ⟨a, ha⟩ := @exists_mem_of_ne_empty α s
-       (take h, hd_cover finite.empty $ h.symm ▸ empty_subset _)
-   in
-   have f ≠ ⊥,
-     from infi_neq_bot_of_directed ⟨a⟩
-       (take ⟨t₁, ht₁⟩ ⟨t₂, ht₂⟩, ⟨⟨t₁ ∪ t₂, finite_union ht₁ ht₂⟩,
-         principal_mono.mpr $ diff_right_antimono $ Union_subset_Union $
-           take t, Union_subset_Union_const or.inl,
-         principal_mono.mpr $ diff_right_antimono $ Union_subset_Union $
-           take t, Union_subset_Union_const or.inr⟩)
-       (take ⟨t, ht⟩, by simp [diff_neq_empty]; exact hd_cover ht),
-   have f ≤ principal s, from infi_le_of_le ⟨∅, finite.empty⟩ $ by simp; exact subset.refl s,
-   let
-     ⟨c, (hc₁ : c ≤ f), (hc₂ : cauchy c)⟩ := h f ‹f ≠ ⊥› this,
-     ⟨m, hm, (hmd : set.prod m m ⊆ d)⟩ := (@mem_prod_same_iff α d c).mp $ hc₂.right hd
-   in
-   have c ≤ principal s, from le_trans ‹c ≤ f› this,
-   have m ∩ s ∈ c.sets, from inter_mem_sets hm $ le_principal_iff.mp this,
-   let ⟨y, hym, hys⟩ := inhabited_of_mem_sets hc₂.left this in
-   let ys := (⋃y'∈({y}:set α), {x | (x, y') ∈ d}) in
-   have m ⊆ ys,
-     from take y' hy', by dsimp; simp; exact @hmd (y', y) ⟨hy', hym⟩,
-   have c ≤ principal (s - ys),
-     from le_trans hc₁ $ infi_le_of_le ⟨{y}, finite_insert finite.empty⟩ $ le_refl _,
-   have (s - ys) ∩ (m ∩ s) ∈ c.sets,
-     from inter_mem_sets (le_principal_iff.mp this) ‹m ∩ s ∈ c.sets›,
-   have ∅ ∈ c.sets,
-     from c.upwards_sets this $ take x ⟨⟨hxs, hxys⟩, hxm, _⟩, hxys $ ‹m ⊆ ys› hxm,
-   hc₂.left $ empty_in_sets_eq_bot.mp this⟩
+  assume h : ∀f, f ≠ ⊥ → f ≤ principal s → ∃c ≤ f, cauchy c, take d hd,
+  classical.by_contradiction $ take hs,
+  have hd_cover : ∀{t:set α}, finite t → ¬ s ⊆ (⋃y∈t, {x | (x,y) ∈ d}),
+    by simp [not_exists_iff_forall_not, classical.not_and_iff, not_or_iff_implies] at hs;
+       assumption,
+  let
+    f := ⨅t:{t : set α // finite t}, principal (s - (⋃y∈t.val, {x | (x,y) ∈ d})),
+    ⟨a, ha⟩ := @exists_mem_of_ne_empty α s
+      (take h, hd_cover finite.empty $ h.symm ▸ empty_subset _)
+  in
+  have f ≠ ⊥,
+    from infi_neq_bot_of_directed ⟨a⟩
+      (take ⟨t₁, ht₁⟩ ⟨t₂, ht₂⟩, ⟨⟨t₁ ∪ t₂, finite_union ht₁ ht₂⟩,
+        principal_mono.mpr $ diff_right_antimono $ Union_subset_Union $
+          take t, Union_subset_Union_const or.inl,
+        principal_mono.mpr $ diff_right_antimono $ Union_subset_Union $
+          take t, Union_subset_Union_const or.inr⟩)
+      (take ⟨t, ht⟩, by simp [diff_neq_empty]; exact hd_cover ht),
+  have f ≤ principal s, from infi_le_of_le ⟨∅, finite.empty⟩ $ by simp; exact subset.refl s,
+  let
+    ⟨c, (hc₁ : c ≤ f), (hc₂ : cauchy c)⟩ := h f ‹f ≠ ⊥› this,
+    ⟨m, hm, (hmd : set.prod m m ⊆ d)⟩ := (@mem_prod_same_iff α d c).mp $ hc₂.right hd
+  in
+  have c ≤ principal s, from le_trans ‹c ≤ f› this,
+  have m ∩ s ∈ c.sets, from inter_mem_sets hm $ le_principal_iff.mp this,
+  let ⟨y, hym, hys⟩ := inhabited_of_mem_sets hc₂.left this in
+  let ys := (⋃y'∈({y}:set α), {x | (x, y') ∈ d}) in
+  have m ⊆ ys,
+    from take y' hy', by dsimp; simp; exact @hmd (y', y) ⟨hy', hym⟩,
+  have c ≤ principal (s - ys),
+    from le_trans hc₁ $ infi_le_of_le ⟨{y}, finite_insert finite.empty⟩ $ le_refl _,
+  have (s - ys) ∩ (m ∩ s) ∈ c.sets,
+    from inter_mem_sets (le_principal_iff.mp this) ‹m ∩ s ∈ c.sets›,
+  have ∅ ∈ c.sets,
+    from c.upwards_sets this $ take x ⟨⟨hxs, hxys⟩, hxm, _⟩, hxys $ ‹m ⊆ ys› hxm,
+  hc₂.left $ empty_in_sets_eq_bot.mp this⟩
 
 lemma totally_bounded_iff_ultrafilter {s : set α} :
   totally_bounded s ↔ (∀f, ultrafilter f → f ≤ principal s → cauchy f) :=
@@ -548,6 +548,17 @@ end
 /- complete space -/
 class complete_space (α : Type u) [uniform_space α] : Prop :=
 (complete : ∀{f:filter α}, cauchy f → ∃x, f ≤ nhds x)
+
+lemma complete_of_closed [complete_space α] {s : set α} {f : filter α}
+  (h : closed s) (hf : cauchy f) (hfs : f ≤ principal s) : ∃x∈s, f ≤ nhds x :=
+let ⟨x, hx⟩ := complete_space.complete hf in
+have x ∈ s, from closed_iff_nhds.mp h x $ neq_bot_of_le_neq_bot hf.left $
+  le_inf hx hfs,
+⟨x, this, hx⟩
+
+lemma compact_of_totally_bounded_closed [complete_space α] {s : set α}
+  (ht : totally_bounded s) (hc : closed s) : compact s :=
+@compact_of_totally_bounded_complete α _ s ht $ take f, complete_of_closed hc
 
 lemma complete_space_extension [uniform_space β] {m : β → α}
   (hm : uniform_embedding m)

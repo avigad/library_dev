@@ -220,6 +220,9 @@ end set
 section
 variables {α : Type u} {ι : Sort v}
 
+lemma sUnion_mono {s t : set (set α)} (h : s ⊆ t) : (⋃₀ s) ⊆ (⋃₀ t) :=
+sUnion_subset $ take t' ht', subset_sUnion_of_mem $ h ht'
+
 lemma Union_subset_Union {s t : ι → set α} (h : ∀i, s i ⊆ t i) : (⋃i, s i) ⊆ (⋃i, t i) :=
 @supr_le_supr (set α) ι _ s t h
 
