@@ -131,9 +131,8 @@ theorem mem_univ_iff (x : α) : x ∈ @univ α ↔ true := iff.rfl
 @[simp]
 theorem mem_univ_eq (x : α) : x ∈ @univ α = true := rfl
 
--- TODO(Jeremy): make this automatic
 theorem empty_ne_univ [h : inhabited α] : (∅ : set α) ≠ univ :=
-by clarify [set_eq_def]; apply a (arbitrary α)
+by clarify [set_eq_def]
 
 /- old proof
 theorem empty_ne_univ [h : inhabited α] : (∅ : set α) ≠ univ :=
@@ -674,10 +673,6 @@ section image
 @[reducible] def eq_on (f1 f2 : α → β) (a : set α) : Prop :=
 ∀ x ∈ a, f1 x = f2 x
 
--- TODO(Jeremy): is this a bad idea?
-
-infix ` ' `:80 := image
-
 -- TODO(Jeremy): use bounded exists in image
 
 theorem mem_image_eq (f : α → β) (s : set α) (y: β) : y ∈ image f s = ∃ x, x ∈ s ∧ f x = y :=
@@ -690,16 +685,6 @@ theorem mem_image {f : α → β} {s : set α} {x : α} {y : β} (h₁ : x ∈ s
 
 theorem mem_image_of_mem (f : α → β) {x : α} {a : set α} (h : x ∈ a) : f x ∈ image f a :=
 mem_image h rfl
-
--- facilitate cases on being in the image
--- REMOVE: should be not necessary with the new equations compiler
-/-
-inductive is_mem_image (f : α → β) (s : set α) (y : β) : Prop
-| mk : Π x : α, x ∈ s → f x = y → is_mem_image
-
-theorem mem_image_dest {f : α → β} {s : set α} {y : β} (h : y ∈ f ' s) : is_mem_image f s y :=
-exists.elim h (take x hx, and.elim hx (take xs fxeq, is_mem_image.mk x xs fxeq))
--/
 
 def mem_image_elim {f : α → β} {s : set α} {C : β → Prop} (h : ∀ (x : α), x ∈ s → C (f x)) :
  ∀{y : β}, y ∈ image f s → C y

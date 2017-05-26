@@ -257,7 +257,11 @@ end classical
 
 section quantifiers
 universe variable u
-variables {A : Type u} {p q : A → Prop} {b : Prop}
+variables {α : Type u} {p q : α → Prop} {b : Prop}
+
+@[simp]
+lemma forall_const_iff_of_inhabited [h : inhabited α] {p : Prop} : (α → p) ↔ p :=
+⟨take h, h (arbitrary α), take h _, h⟩
 
 theorem forall_of_forall (h : ∀ x, (p x → q x)) (h₁ : ∀ x, p x) : ∀ x, q x :=
 take x, h x (h₁ x)
@@ -271,7 +275,7 @@ take x, assume hpx, h ⟨x, hpx⟩
 theorem exists_implies_of_forall_implies (h : ∀ x, p x → b) : (∃ x, p x) → b :=
 Exists.rec h
 
-theorem exists_implies_distrib (p : A → Prop) (b : Prop) : ((∃ x, p x) → b) ↔ (∀ x, p x → b) :=
+theorem exists_implies_distrib (p : α → Prop) (b : Prop) : ((∃ x, p x) → b) ↔ (∀ x, p x → b) :=
 iff.intro forall_implies_of_exists_implies exists_implies_of_forall_implies
 
 --theorem forall_not_of_not_exists (h : ¬ ∃ x, p x) : ∀ x, ¬ p x :=
@@ -280,7 +284,7 @@ iff.intro forall_implies_of_exists_implies exists_implies_of_forall_implies
 theorem not_exists_of_forall_not (h : ∀ x, ¬ p x) : ¬ ∃ x, p x :=
 exists_implies_of_forall_implies h
 
-theorem not_exists_iff_forall_not (p : A → Prop) : (¬ ∃ x, p x) ↔ (∀ x, ¬ p x) :=
+theorem not_exists_iff_forall_not (p : α → Prop) : (¬ ∃ x, p x) ↔ (∀ x, ¬ p x) :=
 exists_implies_distrib p false
 
 theorem decidable.exists_not_of_not_forall [decidable (∃ x, ¬ p x)] [∀ x, decidable (p x)]
@@ -291,26 +295,26 @@ decidable.by_contradiction
 theorem not_forall_of_exists_not (h : ∃ x, ¬ p x) : ¬ ∀ x, p x :=
 assume h₁, match h with ⟨x, hnpx⟩ := hnpx (h₁ x) end
 
-theorem decidable.not_forall_iff_exists_not (p : A → Prop)
+theorem decidable.not_forall_iff_exists_not (p : α → Prop)
     [decidable (∃ x, ¬ p x)] [∀ x, decidable (p x)] :
   (¬ ∀ x, p x) ↔ (∃ x, ¬ p x) :=
 iff.intro decidable.exists_not_of_not_forall not_forall_of_exists_not
 
-theorem forall_true_iff : (∀ x : A, true) ↔ true :=
+theorem forall_true_iff : (∀ x : α, true) ↔ true :=
 iff_true_intro (λ h, trivial)
 
-theorem forall_p_iff_p (A : Type u) [inhabited A] (p : Prop) : (∀ x : A, p) ↔ p :=
-iff.intro (λ h, h (inhabited.default A)) (λ hp x, hp)
+theorem forall_p_iff_p (α : Type u) [inhabited α] (p : Prop) : (∀ x : α, p) ↔ p :=
+iff.intro (λ h, h (inhabited.default α)) (λ hp x, hp)
 
-theorem exists_p_iff_p (A : Type u) [inhabited A] (p : Prop) : (∃ x : A, p) ↔ p :=
-iff.intro (Exists.rec (λ x (hpx : p), hpx)) (λ hp, ⟨default A, hp⟩)
+theorem exists_p_iff_p (α : Type u) [inhabited α] (p : Prop) : (∃ x : α, p) ↔ p :=
+iff.intro (Exists.rec (λ x (hpx : p), hpx)) (λ hp, ⟨default α, hp⟩)
 
-theorem forall_and_distrib (p q : A → Prop) : (∀ x, p x ∧ q x) ↔ (∀ x, p x) ∧ (∀ x, q x) :=
+theorem forall_and_distrib (p q : α → Prop) : (∀ x, p x ∧ q x) ↔ (∀ x, p x) ∧ (∀ x, q x) :=
 iff.intro
   (assume h, ⟨(take x, (h x)^.left), (take x, (h x)^.right)⟩)
   (assume h x, ⟨h^.left x, h^.right x⟩)
 
-theorem exists_or_distrib (p q : A → Prop) : (∃ x, p x ∨ q x) ↔ (∃ x, p x) ∨ (∃ x, q x) :=
+theorem exists_or_distrib (p q : α → Prop) : (∃ x, p x ∨ q x) ↔ (∃ x, p x) ∨ (∃ x, q x) :=
 iff.intro
   (assume ⟨x, hpq⟩, or.elim hpq (assume hpx, or.inl (exists.intro x hpx))
                                (assume hqx, or.inr (exists.intro x hqx)))
@@ -321,7 +325,7 @@ iff.intro
       (assume ⟨x, hqx⟩, ⟨x, or.inr hqx⟩))
 
 @[simp]
-theorem exists_and_iff_and_exists {q : Prop} {p : A → Prop} :
+theorem exists_and_iff_and_exists {q : Prop} {p : α → Prop} :
   (∃x, q ∧ p x) ↔ q ∧ (∃x, p x) :=
 ⟨take ⟨x, hq, hp⟩, ⟨hq, x, hp⟩, take ⟨hq, x, hp⟩, ⟨x, hq, hp⟩⟩
 
@@ -331,17 +335,17 @@ end quantifiers
 
 namespace classical
 universe variable u
-variables {A : Type u} {p : A → Prop}
+variables {α : Type u} {p : α → Prop}
 
 local attribute [instance] prop_decidable
 
 theorem exists_not_of_not_forall (h : ¬ ∀ x, p x) : ∃ x, ¬ p x :=
 decidable.exists_not_of_not_forall h
 
-theorem not_forall_iff_exists_not (p : A → Prop) : (¬ ∀ x, p x) ↔ (∃ x, ¬ p x) :=
+theorem not_forall_iff_exists_not (p : α → Prop) : (¬ ∀ x, p x) ↔ (∃ x, ¬ p x) :=
 decidable.not_forall_iff_exists_not p
 
-theorem forall_or_iff_or_forall {q : Prop} {p : A → Prop} :
+theorem forall_or_iff_or_forall {q : Prop} {p : α → Prop} :
   (∀x, q ∨ p x) ↔ q ∨ (∀x, p x) :=
 ⟨take h, if hq : q then or.inl hq else or.inr $ take x, or.resolve_left (h x) hq, 
   take h x, or.imp_right (suppose ∀x, p x, this x) h⟩
@@ -355,7 +359,7 @@ end classical
 
 section bounded_quantifiers
 universe variable u
-variables {A : Type u} {r p q : A → Prop} {b : Prop}
+variables {α : Type u} {r p q : α → Prop} {b : Prop}
 
 theorem bforall_congr (h : ∀ x (hrx : r x), p x ↔ q x) :
   (∀ x (hrx : r x), p x) ↔ (∀ x (hrx : r x), q x) :=
@@ -379,7 +383,7 @@ theorem bforall_of_bforall (h : ∀ x (hrx : r x), (p x → q x)) (h₁ : ∀ x 
   ∀ x (hrx : r x) , q x :=
 take x, assume hrx, h x hrx (h₁ x hrx)
 
-theorem bexists_of_bexists {A : Type} {p q : A → Prop}
+theorem bexists_of_bexists {α : Type} {p q : α → Prop}
     (h : ∀ x, (p x → q x)) (h₁ : ∃ x, p x) : ∃ x, q x :=
 match h₁ with ⟨x, hpx⟩ := ⟨x, h x hpx⟩ end
 
@@ -403,7 +407,7 @@ theorem bexists_implies_of_bforall_implies (h : ∀ x (hrx : r x), p x → b) :
   (∃ x (hrx : r x), p x) → b :=
 assume ⟨x, hrx, hpx⟩, h x hrx hpx
 
-theorem bexists_implies_distrib (r p : A → Prop) (b : Prop) :
+theorem bexists_implies_distrib (r p : α → Prop) (b : Prop) :
   ((∃ x (hrx : r x), p x) → b) ↔ (∀ x (hrx : r x), p x → b) :=
 iff.intro bforall_implies_of_bexists_implies bexists_implies_of_bforall_implies
 
@@ -413,7 +417,7 @@ bforall_implies_of_bexists_implies h
 theorem not_bexists_of_bforall_not (h : ∀ x (hrx : r x), ¬ p x) : ¬ ∃ x (hrx : r x), p x :=
 bexists_implies_of_bforall_implies h
 
-theorem not_bexists_iff_bforall_not (r p : A → Prop) :
+theorem not_bexists_iff_bforall_not (r p : α → Prop) :
   (¬ ∃ x (hrx : r x) , p x) ↔ (∀ x (h : r x), ¬ p x) :=
 bexists_implies_distrib r p false
 
@@ -426,12 +430,12 @@ decidable.by_contradiction
 theorem not_bforall_of_bexists_not (h : ∃ x (hrx : r x), ¬ p x) : ¬ ∀ x (hrx : r x), p x :=
 assume h₁, match h with ⟨x, hrx, hnpx⟩ := hnpx (h₁ x hrx) end
 
-theorem decidable.not_bforall_iff_bexists_not (r p : A → Prop)
+theorem decidable.not_bforall_iff_bexists_not (r p : α → Prop)
     [decidable (∃ x (hrx : r x), ¬ p x)] [∀ x, decidable (p x)] :
   (¬ ∀ x (hrx : r x), p x) ↔ (∃ x (hrx : r x), ¬ p x) :=
 iff.intro decidable.bexists_not_of_not_bforall not_bforall_of_bexists_not
 
-theorem bforall_true_iff (r : A → Prop): (∀ x (hrx : r x), true) ↔ true :=
+theorem bforall_true_iff (r : α → Prop): (∀ x (hrx : r x), true) ↔ true :=
 iff_true_intro (λ h hrx, trivial)
 
 theorem bforall_and_distrib : (∀ x, p x ∧ q x) ↔ (∀ x, p x) ∧ (∀ x, q x) :=
@@ -439,7 +443,7 @@ iff.intro
   (assume h, ⟨(take x, (h x)^.left), (take x, (h x)^.right)⟩)
   (assume h x, ⟨h^.left x, h^.right x⟩)
 
-theorem bexists_or_distrib (r p q : A → Prop) :
+theorem bexists_or_distrib (r p q : α → Prop) :
   (∃ x (hrx : r x), p x ∨ q x) ↔ (∃ x (hrx : r x), p x) ∨ (∃ x (hrx : r x), q x) :=
 iff.intro
   (assume ⟨x, hrx, hpq⟩, or.elim hpq (assume hpx, or.inl (exists.intro x (exists.intro hrx hpx)))
@@ -474,13 +478,13 @@ end
 
 namespace classical
 universe variable u
-variables {A : Type u} {r p : A → Prop}
+variables {α : Type u} {r p : α → Prop}
 
 local attribute [instance] prop_decidable
 theorem bexists_not_of_not_bforall (h : ¬ ∀ x (hrx : r x), p x) : ∃ x (hr : r x), ¬ p x :=
 decidable.bexists_not_of_not_bforall h
 
-theorem not_bforall_iff_bexists_not (r p : A → Prop) :
+theorem not_bforall_iff_bexists_not (r p : α → Prop) :
   (¬ ∀ x (hrx : r x), p x) ↔ (∃ x (hrx : r x), ¬ p x) :=
 decidable.not_bforall_iff_bexists_not r p
 
