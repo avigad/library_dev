@@ -144,11 +144,11 @@ theorem perm_cons_app_cons {l l₁ l₂ : list α} (a : α) (p : l ~ l₁++l₂)
 trans (skip a p) $ perm_middle a l₁ l₂
 
 open decidable
-theorem perm_erase [decidable_eq α] {a : α} : ∀ {l : list α}, a ∈ l → l ~ a::(erase a l)
+theorem perm_erase [decidable_eq α] {a : α} : ∀ {l : list α}, a ∈ l → l ~ a:: l.erase a
 | []     h := false.elim h
-| (x::t) h := if ax : a = x then by rw [ax, erase_cons_head] else
-  by rw[erase_cons_tail _ ax]; exact
-  have aint : a ∈ t, from mem_of_ne_of_mem ax h,
+| (x::t) h := if ax : x = a then by rw [ax, erase_cons_head] else
+  by rw [erase_cons_tail _ ax]; exact
+  have aint : a ∈ t, from mem_of_ne_of_mem (take h, ax h.symm) h,
   trans (skip _ $ perm_erase aint) (swap _ _ _)
 
 @[elab_as_eliminator]
@@ -258,24 +258,24 @@ theorem perm_of_forall_count_eq : ∀ {l₁ l₂ : list α}, (∀ a, count a l�
     take l₂,
     assume h : ∀ a, count a (b :: l) = count a l₂,
     have b ∈ l₂, from mem_of_count_pos (begin rw [-(h b)], simp, apply nat.succ_pos end),
-    have l₂ ~ b :: erase b l₂, from perm_erase this,
-    have ∀ a, count a l = count a (erase b l₂), from
+    have l₂ ~ b :: l₂.erase b, from perm_erase this,
+    have ∀ a, count a l = count a (l₂.erase b), from
       take a,
       if h' : a = b then
         nat.succ_inj (calc
           count a l + 1 = count a (b :: l)         : begin simp [h'], rw add_comm end
                    ... = count a l₂                : by rw h
-                   ... = count a (b :: erase b l₂) : count_eq_count_of_perm (by assumption) a
-                   ... = count a (erase b l₂) + 1  : begin simp [h'], rw add_comm end)
+                   ... = count a (b :: l₂.erase b) : count_eq_count_of_perm (by assumption) a
+                   ... = count a (l₂.erase b) + 1  : begin simp [h'], rw add_comm end)
       else
         calc
           count a l = count a (b :: l)          : by simp [h']
                 ... = count a l₂                : by rw h
-                ... = count a (b :: erase b l₂) : count_eq_count_of_perm (by assumption) a
-                ... = count a (erase b l₂)      : by simp [h'],
-    have l ~ erase b l₂, from perm_of_forall_count_eq this,
+                ... = count a (b :: l₂.erase b) : count_eq_count_of_perm (by assumption) a
+                ... = count a (l₂.erase b)      : by simp [h'],
+    have l ~ l₂.erase b, from perm_of_forall_count_eq this,
     calc
-      b :: l ~ b :: erase b l₂ : skip b this
+      b :: l ~ b :: l₂.erase b : skip b this
          ... ~ l₂              : perm.symm (by assumption)
 
 theorem perm_iff_forall_count_eq_count (l₁ l₂ : list α) : l₁ ~ l₂ ↔ ∀ a, count a l₁ = count a l₂ :=
@@ -511,7 +511,7 @@ perm_induction_on p
 
 -- attribute [congr]
 theorem erase_perm_erase_of_perm [decidable_eq α] (a : α) {l₁ l₂ : list α} (p : l₁ ~ l₂) :
-  erase a l₁ ~ erase a l₂ :=
+  l₁.erase a ~ l₂.erase a :=
 if h₁ : a ∈ l₁ then
 have h₂ : a ∈ l₂, from mem_of_perm p h₁,
 perm_cons_inv $ trans (perm_erase h₁).symm $ trans p (perm_erase h₂)

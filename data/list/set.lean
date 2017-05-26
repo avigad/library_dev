@@ -72,71 +72,67 @@ end insert
 section erase
 variable [decidable_eq α]
 
-def erase (a : α) : list α → list α
-| []     := []
-| (b::l) := if a = b then l else b :: erase l
-
 @[simp]
-lemma erase_nil (a : α) : erase a [] = [] :=
+lemma erase_nil (a : α) : [].erase a = [] :=
 rfl
 
-lemma erase_cons (a b : α) (l : list α)  : erase a (b :: l) = if a = b then l else b :: erase a l :=
+lemma erase_cons (a b : α) (l : list α) : (b :: l).erase a = if b = a then l else b :: l.erase a :=
 rfl
 
 @[simp]
-lemma erase_cons_head (a : α) (l : list α) : erase a (a :: l) = l :=
+lemma erase_cons_head (a : α) (l : list α) : (a :: l).erase a = l :=
 by simp [erase_cons, if_pos]
 
 @[simp]
-lemma erase_cons_tail {a b : α} (l : list α) (h : a ≠ b) : erase a (b::l) = b :: erase a l :=
+lemma erase_cons_tail {a b : α} (l : list α) (h : b ≠ a) : (b::l).erase a = b :: l.erase a :=
 by simp [erase_cons, if_neg, h]
 
 @[simp]
-lemma length_erase_of_mem {a : α} : ∀ {l}, a ∈ l → length (erase a l) = pred (length l)
+lemma length_erase_of_mem {a : α} : ∀{l:list α}, a ∈ l → length (l.erase a) = pred (length l)
 | []         h := rfl
 | [x]        h := begin simp at h, simp [h] end
-| (x::y::xs) h := if h' : a = x then
+| (x::y::xs) h := if h' : x = a then
                     by simp [h', one_add]
                   else
-                    have ainyxs : a ∈ y::xs, from or_resolve_right h h',
+                    have ainyxs : a ∈ y::xs, from or_resolve_right h $ by cc,
                     by simp [h', length_erase_of_mem ainyxs, one_add]
 
 @[simp]
-lemma erase_of_not_mem {a : α} : ∀ {l}, a ∉ l → erase a l = l
+lemma erase_of_not_mem {a : α} : ∀{l : list α}, a ∉ l → l.erase a = l
 | []      h  := rfl
 | (x::xs) h  :=
-  have anex   : a ≠ x,  from λ aeqx  : a = x,  absurd (or.inl aeqx) h,
+  have anex   : x ≠ a,  from λ aeqx  : x = a,  absurd (or.inl aeqx.symm) h,
   have aninxs : a ∉ xs, from λ ainxs : a ∈ xs, absurd (or.inr ainxs) h,
   by simp [anex, erase_of_not_mem aninxs]
 
-lemma erase_append_left {a : α} : ∀ {l₁} (l₂), a ∈ l₁ → erase a (l₁++l₂) = erase a l₁ ++ l₂
+lemma erase_append_left {a : α} : ∀ {l₁:list α} (l₂), a ∈ l₁ → (l₁++l₂).erase a = l₁.erase a ++ l₂
 | []      l₂  h := absurd h (not_mem_nil a)
-| (x::xs) l₂  h := if h' : a = x then by simp [h']
+| (x::xs) l₂  h := if h' : x = a then by simp [h']
                    else
-                     have a ∈ xs, from mem_of_ne_of_mem h' h,
+                     have a ∈ xs, from mem_of_ne_of_mem (take h, h' h.symm) h,
                      by simp [erase_append_left l₂ this, h']
 
-lemma erase_append_right {a : α} : ∀ {l₁} (l₂), a ∉ l₁ → erase a (l₁++l₂) = l₁ ++ erase a l₂
+lemma erase_append_right {a : α} : ∀{l₁ : list α} (l₂), a ∉ l₁ → (l₁++l₂).erase a = l₁ ++ l₂.erase a
 | []      l₂ h := rfl
-| (x::xs) l₂ h := if h' : a = x then begin simp [h'] at h, contradiction end
+| (x::xs) l₂ h := if h' : x = a then begin simp [h'] at h, contradiction end
                   else
                     have a ∉ xs, from not_mem_of_not_mem_cons h,
                     by simp [erase_append_right l₂ this, h']
 
-lemma erase_sublist (a : α) : ∀ l, erase a l <+ l
+lemma erase_sublist (a : α) : ∀(l : list α), l.erase a <+ l
 | []        := sublist.refl nil
-| (x :: xs) := if h : a = x then
+| (x :: xs) := if h : x = a then
                  by simp [h]
                else
                  begin simp [h], apply cons_sublist_cons, apply erase_sublist xs end
 
-lemma erase_subset (a : α) (l) : erase a l ⊆ l :=
+lemma erase_subset (a : α) (l : list α) : l.erase a ⊆ l :=
 subset_of_sublist (erase_sublist a l)
 
-theorem mem_erase_of_ne_of_mem {a b : α} : ∀ {l : list α}, a ≠ b → a ∈ l → a ∈ erase b l
+theorem mem_erase_of_ne_of_mem {a b : α} : ∀ {l : list α}, a ≠ b → a ∈ l → a ∈ l.erase b
 | []       aneb anil := begin simp at anil, contradiction end
-| (c :: l) aneb acl  := if h : b = c then
-                         begin simp [h^.symm, aneb] at acl, simp [h, acl] end
+| (c :: l) aneb acl  := if h : c = b then
+                         begin simp [h, aneb] at acl, simp [h, acl] end
                         else
                           begin
                             simp [h], simp at acl, cases acl with h' h',
@@ -144,9 +140,9 @@ theorem mem_erase_of_ne_of_mem {a b : α} : ∀ {l : list α}, a ≠ b → a ∈
                             simp [mem_erase_of_ne_of_mem aneb h']
                           end
 
-theorem mem_of_mem_erase {a b : α} : ∀ {l}, a ∈ erase b l → a ∈ l
+theorem mem_of_mem_erase {a b : α} : ∀{l:list α}, a ∈ l.erase b → a ∈ l
 | []       h := begin simp at h, contradiction end
-| (c :: l) h := if h' : b = c then
+| (c :: l) h := if h' : c = b then
                   begin simp [h'] at h, simp [h] end
                 else
                   begin
@@ -530,31 +526,31 @@ theorem nodup_map {f : α → β} (inj : injective f) : ∀ {l : list α}, nodup
       end,
   nodup_cons nfxinm ndmfxs
 
-theorem nodup_erase_of_nodup [decidable_eq α] (a : α) : ∀ {l}, nodup l → nodup (erase a l)
+theorem nodup_erase_of_nodup [decidable_eq α] (a : α) : ∀ {l}, nodup l → nodup (l.erase a)
 | []     n := nodup_nil
 | (b::l) n := by_cases
-  (λ aeqb : a = b, begin rw [aeqb, erase_cons_head], exact (nodup_of_nodup_cons n) end)
-  (λ aneb : a ≠ b,
+  (λ aeqb : b = a, begin rw [aeqb, erase_cons_head], exact (nodup_of_nodup_cons n) end)
+  (λ aneb : b ≠ a,
     have nbinl   : b ∉ l,                  from not_mem_of_nodup_cons n,
     have ndl     : nodup l,                from nodup_of_nodup_cons n,
-    have ndeal   : nodup (erase a l),      from nodup_erase_of_nodup ndl,
-    have nbineal : b ∉ erase a l,          from λ i, absurd (erase_subset _ _ i) nbinl,
-    have aux   : nodup (b :: erase a l), from nodup_cons nbineal ndeal,
+    have ndeal   : nodup (l.erase a),      from nodup_erase_of_nodup ndl,
+    have nbineal : b ∉ l.erase a,          from λ i, absurd (erase_subset _ _ i) nbinl,
+    have aux   : nodup (b :: l.erase a),   from nodup_cons nbineal ndeal,
     begin rw [erase_cons_tail _ aneb], exact aux end)
 
-theorem mem_erase_of_nodup [decidable_eq α] (a : α) : ∀ {l}, nodup l → a ∉ erase a l
+theorem mem_erase_of_nodup [decidable_eq α] (a : α) : ∀ {l}, nodup l → a ∉ l.erase a
 | []     n := (not_mem_nil _)
 | (b::l) n :=
   have ndl     : nodup l,       from nodup_of_nodup_cons n,
-  have naineal : a ∉ erase a l, from mem_erase_of_nodup ndl,
-  have nbinl : b ∉ l,         from not_mem_of_nodup_cons n,
+  have naineal : a ∉ l.erase a, from mem_erase_of_nodup ndl,
+  have nbinl   : b ∉ l,         from not_mem_of_nodup_cons n,
   by_cases
-  (λ aeqb : a = b, begin rw [aeqb, erase_cons_head], exact nbinl end)
-  (λ aneb : a ≠ b,
-    have aux : a ∉ b :: erase a l, from
-      assume ainbeal : a ∈ b :: erase a l, or.elim (eq_or_mem_of_mem_cons ainbeal)
-        (λ aeqb   : a = b, absurd aeqb aneb)
-        (λ aineal : a ∈ erase a l, absurd aineal naineal),
+  (λ aeqb : b = a, begin rw [aeqb.symm, erase_cons_head], exact nbinl end)
+  (λ aneb : b ≠ a,
+    have aux : a ∉ b :: l.erase a, from
+      assume ainbeal : a ∈ b :: l.erase a, or.elim (eq_or_mem_of_mem_cons ainbeal)
+        (λ aeqb   : a = b, absurd aeqb.symm aneb)
+        (λ aineal : a ∈ l.erase a, absurd aineal naineal),
     begin rw [erase_cons_tail _ aneb], exact aux end)
 
 def erase_dup [decidable_eq α] : list α → list α
