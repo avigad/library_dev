@@ -252,11 +252,13 @@ do repeat (intro1 >> skip),
   - Open an SMT state, and use ematching and congruence closure, with all the universal
     statements in the context.
 
-  TODO(Jeremy): allow users to specify extra theorems for ematching?
+  TODO(Jeremy): allow users to specify attribute for ematching lemmas, and maybe
+    also another list?
 -/
 
 meta def mk_hinst_lemmas : list expr → smt_tactic hinst_lemmas
-| [] := return hinst_lemmas.mk
+| []        := -- return hinst_lemmas.mk
+               do get_hinst_lemmas_for_attr `ematch
 | (h :: hs) := do his ← mk_hinst_lemmas hs,
                   t ← infer_type h,
                   match t with
