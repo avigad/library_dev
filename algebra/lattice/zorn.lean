@@ -10,29 +10,10 @@ Ported from Isabelle/HOL (written by Jacques D. Fleuriot, Tobias Nipkow, and Chr
 import ...data.set
 noncomputable theory
 
+universes u
 open set classical
 local attribute [instance] decidable_inhabited
 local attribute [instance] prop_decidable
-
-universes u
-section
-variable {α : Type u}
-
-lemma or_of_not_implies {a b : Prop} (h : ¬ b → a) : (a ∨ b) :=
-classical.by_cases (suppose b, or.inr this) (suppose ¬ b, or.inl $ h this)
-
-theorem sUnion_subset_iff {s : set (set α)} {t : set α} : (⋃₀ s) ⊆ t ↔ ∀t' ∈ s, t' ⊆ t :=
-⟨take h t' ht', subset.trans (subset_sUnion_of_mem ht') h, sUnion_subset⟩
-
-theorem not_subset_iff {s t : set α} : ¬ (s ⊆ t) ↔ (∃a∈s, a ∉ t) :=
-show ¬ (∀a∈s, a ∈ t) ↔ (∃a∈s, a ∉ t),
-  by simp [not_forall_iff_exists_not, not_implies_iff_and_not]
-
-lemma ssubset_insert {s : set α} {a : α} (h : a ∉ s) : s ⊂ insert a s :=
-⟨subset_insert _ _, suppose s = insert a s, h $ this.symm ▸ mem_insert _ _⟩
-
-def pairwise_on (s : set α) (r : α → α → Prop) := ∀x∈s, ∀y∈s, x ≠ y → r x y
-end
 
 namespace zorn
 

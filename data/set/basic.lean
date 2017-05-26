@@ -297,6 +297,9 @@ take y, assume ys, or.inr ys
 theorem mem_insert (x : α) (s : set α) : x ∈ insert x s :=
 or.inl rfl
 
+lemma ssubset_insert {s : set α} {a : α} (h : a ∉ s) : s ⊂ insert a s :=
+⟨subset_insert _ _, suppose s = insert a s, h $ this.symm ▸ mem_insert _ _⟩
+
 theorem mem_insert_of_mem {x : α} {s : set α} (y : α) : x ∈ s → x ∈ insert y s :=
 assume h, or.inr h
 
@@ -822,6 +825,9 @@ le_Sup tS
 theorem sUnion_subset {S : set (set α)} {t : set α} (h : ∀t' ∈ S, t' ⊆ t) : (⋃₀ S) ⊆ t :=
 Sup_le h
 
+theorem sUnion_subset_iff {s : set (set α)} {t : set α} : (⋃₀ s) ⊆ t ↔ ∀t' ∈ s, t' ⊆ t :=
+⟨take h t' ht', subset.trans (subset_sUnion_of_mem ht') h, sUnion_subset⟩
+
 theorem subset_sInter {S : set (set α)} {t : set α} (h : ∀t' ∈ S, t ⊆ t') : t ⊆ (⋂₀ S) :=
 le_Inf h
 
@@ -969,6 +975,10 @@ lemma eq_vimage_subtype_val_iff {p : α → Prop} {s : set (subtype p)} {t : set
 end vimage
 
 /- disjoint sets -/
+
+section pairwise
+def pairwise_on (s : set α) (r : α → α → Prop) := ∀x∈s, ∀y∈s, x ≠ y → r x y
+end pairwise
 
 section disjoint
 variable [semilattice_inf_bot α]

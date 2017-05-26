@@ -113,6 +113,9 @@ iff.intro (assume h, trivial) (assume h, decidable.em a)
 theorem decidable.not_or_self_iff (a : Prop) [decidable a] : ¬ a ∨ a ↔ true :=
 iff.intro (assume h, trivial) (assume h, (decidable.em a)^.symm)
 
+lemma decidable.or_of_not_implies {a b : Prop} [decidable b] (h : ¬ b → a) : (a ∨ b) :=
+decidable.by_cases or.inr (or.inl ∘ h)
+
 /- distributivity -/
 
 theorem and_distrib (a b c : Prop) : a ∧ (b ∨ c) ↔ (a ∧ b) ∨ (a ∧ c) :=
@@ -247,6 +250,9 @@ decidable.or_iff_not_and_not a b
 
 theorem and_iff_not_or_not (a b : Prop) : a ∧ b ↔ ¬ (¬ a ∨ ¬ b) :=
 decidable.and_iff_not_or_not a b
+
+lemma or_of_not_implies {a b : Prop} (h : ¬ b → a) : (a ∨ b) :=
+decidable.or_of_not_implies h
 
 end classical
 
