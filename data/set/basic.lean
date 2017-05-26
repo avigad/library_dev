@@ -3,51 +3,14 @@ Copyright (c) 2014 Jeremy Avigad. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors Jeremy Avigad, Leonardo de Moura
 
--- TODO: in emacs mode, change "\sub" to regular subset, use "\ssub" for strict,
-         similarly for "\sup"
-
 -- QUESTION: can make the first argument in ∀ x ∈ a, ... implicit?
--- QUESTION: how should we handle facts that only hold classically?
 -/
 import logic.basic data.set  -- from the library in the main repo
-import ...algebra.lattice ...algebra.lattice.complete_boolean_algebra
+import algebra.lattice algebra.lattice.complete_boolean_algebra
 open function tactic set lattice
-
+ 
 universes u v w x
 variables {α : Type u} {β : Type v} {γ : Type w} {ι : Sort x}
-
-lemma or_imp_iff_and_imp {a b c : Prop} : ((a ∨ b) → c) ↔ ((a → c) ∧ (b → c)) :=
-⟨take h, ⟨take ha, h (or.inl ha), take hb, h (or.inr hb)⟩,
-  take ⟨ha, hb⟩, or.rec ha hb⟩
-
-lemma forall_and_comm {α : Sort u} {p q : α → Prop} : (∀a, p a ∧ q a) ↔ ((∀a, p a) ∧ (∀a, q a)) :=
-⟨take h, ⟨take a, (h a)^.left, take a, (h a)^.right⟩,
-  take ⟨ha, hb⟩ a, ⟨ha a, hb a⟩⟩
-
-lemma forall_eq_elim {α : Type u} {p : α → Prop} {a' : α} : (∀a, a = a' → p a) ↔ p a' :=
-⟨take h, h a' rfl, take h a eq, eq^.symm ▸ h⟩
-
-lemma eq_iff_le_and_le {α : Type u} [weak_order α] {a b : α} : a = b ↔ (a ≤ b ∧ b ≤ a) :=
-⟨take eq, eq ▸ ⟨le_refl a, le_refl a⟩, take ⟨ab, ba⟩, le_antisymm ab ba⟩
-
-@[simp]
-lemma prod.mk.inj_iff {α : Type u} {β : Type v} {a₁ a₂ : α} {b₁ b₂ : β} :
-  (a₁, b₁) = (a₂, b₂) ↔ (a₁ = a₂ ∧ b₁ = b₂) :=
-⟨prod.mk.inj, by cc⟩
-
-@[simp]
-lemma prod.forall {α : Type u} {β : Type v} {p : α × β → Prop} :
-  (∀x, p x) ↔ (∀a b, p (a, b)) :=
-⟨take h a b, h (a, b), take h ⟨a, b⟩, h a b⟩
-
-@[simp]
-lemma prod.exists {α : Type u} {β : Type v} {p : α × β → Prop} :
-  (∃x, p x) ↔ (∃a b, p (a, b)) :=
-⟨take ⟨⟨a, b⟩, h⟩, ⟨a, b, h⟩, take ⟨a, b, h⟩, ⟨⟨a, b⟩, h⟩⟩
-
-@[simp]
-lemma set_of_subset_set_of {p q : α → Prop} : {a | p a} ⊆ {a | q a} = (∀a, p a → q a) :=
-rfl
 
 namespace set
 

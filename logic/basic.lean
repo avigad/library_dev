@@ -11,6 +11,42 @@ maybe it is useful for writing automation.
 -/
 
 /-
+    miscellany
+
+    TODO: move elsewhere
+-/
+
+section miscellany
+
+universes u v
+variables {α : Type u} {β : Type v}
+
+lemma eq_iff_le_and_le {α : Type u} [weak_order α] {a b : α} : a = b ↔ (a ≤ b ∧ b ≤ a) :=
+⟨take eq, eq ▸ ⟨le_refl a, le_refl a⟩, take ⟨ab, ba⟩, le_antisymm ab ba⟩
+
+@[simp]
+lemma prod.mk.inj_iff {α : Type u} {β : Type v} {a₁ a₂ : α} {b₁ b₂ : β} :
+  (a₁, b₁) = (a₂, b₂) ↔ (a₁ = a₂ ∧ b₁ = b₂) :=
+⟨prod.mk.inj, by cc⟩
+
+@[simp]
+lemma prod.forall {α : Type u} {β : Type v} {p : α × β → Prop} :
+  (∀x, p x) ↔ (∀a b, p (a, b)) :=
+⟨take h a b, h (a, b), take h ⟨a, b⟩, h a b⟩
+
+@[simp]
+lemma prod.exists {α : Type u} {β : Type v} {p : α × β → Prop} :
+  (∃x, p x) ↔ (∃a b, p (a, b)) :=
+⟨take ⟨⟨a, b⟩, h⟩, ⟨a, b, h⟩, take ⟨a, b, h⟩, ⟨⟨a, b⟩, h⟩⟩
+
+@[simp]
+lemma set_of_subset_set_of {p q : α → Prop} : {a | p a} ⊆ {a | q a} = (∀a, p a → q a) :=
+rfl
+
+
+end miscellany
+
+/-
     propositional connectives
 -/
 
@@ -200,6 +236,12 @@ theorem decidable.and_iff_not_or_not (a b : Prop) [decidable a] [decidable b] :
   a ∧ b ↔ ¬ (¬ a ∨ ¬ b) :=
 by rewrite [-decidable.not_and_iff, decidable.not_not_iff]
 
+/- other identities -/
+
+lemma or_imp_iff_and_imp {a b c : Prop} : ((a ∨ b) → c) ↔ ((a → c) ∧ (b → c)) :=
+⟨take h, ⟨take ha, h (or.inl ha), take hb, h (or.inr hb)⟩,
+  take ⟨ha, hb⟩, or.rec ha hb⟩
+
 end propositional
 
 /- classical versions -/
@@ -255,7 +297,6 @@ lemma or_of_not_implies {a b : Prop} (h : ¬ b → a) : (a ∨ b) :=
 decidable.or_of_not_implies h
 
 end classical
-
 
 /-
   quantifiers
@@ -335,6 +376,16 @@ theorem exists_and_iff_and_exists {q : Prop} {p : α → Prop} :
   (∃x, q ∧ p x) ↔ q ∧ (∃x, p x) :=
 ⟨take ⟨x, hq, hp⟩, ⟨hq, x, hp⟩, take ⟨hq, x, hp⟩, ⟨x, hq, hp⟩⟩
 
+/- other identities -/
+
+lemma forall_and_comm {α : Sort u} {p q : α → Prop} : (∀a, p a ∧ q a) ↔ ((∀a, p a) ∧ (∀a, q a)) :=
+⟨take h, ⟨take a, (h a)^.left, take a, (h a)^.right⟩,
+  take ⟨ha, hb⟩ a, ⟨ha a, hb a⟩⟩
+
+lemma forall_eq_elim {α : Type u} {p : α → Prop} {a' : α} : (∀a, a = a' → p a) ↔ p a' :=
+⟨take h, h a' rfl, take h a eq, eq^.symm ▸ h⟩
+
+
 end quantifiers
 
 /- classical versions -/
@@ -357,7 +408,6 @@ theorem forall_or_iff_or_forall {q : Prop} {p : α → Prop} :
   take h x, or.imp_right (suppose ∀x, p x, this x) h⟩
 
 end classical
-
 
 /-
    bounded quantifiers
