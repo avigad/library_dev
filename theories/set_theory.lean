@@ -2,11 +2,6 @@ import data.set.basic
 
 universes u v
 
-@[simp]
-lemma subtype.eta {α : Type u} {p : α → Prop} {a : subtype p} {h : p (a.val)} :
-  {subtype . val := a.val, property := h} = a :=
-by cases a; refl
-
 def arity (α : Type u) : nat → Type u
 | 0     := α
 | (n+1) := α → arity n

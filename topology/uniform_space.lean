@@ -628,7 +628,6 @@ have g ⊓ nhds x ≠ ⊥,
 ⟨x, calc f ≤ g : by assumption
   ... ≤ nhds x : le_nhds_of_cauchy_adhp ‹cauchy g› this⟩⟩
 
-
 /- separation space -/
 section separation_space
 

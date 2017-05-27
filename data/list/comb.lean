@@ -524,7 +524,7 @@ lemma mem_of_dinj_of_mem_dmap (Pdi : dinj p f) :
 
 lemma not_mem_dmap_of_dinj_of_not_mem (Pdi : dinj p f) {l : list α} {a} (Pa : p a) :
   a ∉ l → (f a Pa) ∉ dmap p f l :=
-contrapos (mem_of_dinj_of_mem_dmap Pdi Pa)
+mt (mem_of_dinj_of_mem_dmap Pdi Pa)
 
 end dmap
 

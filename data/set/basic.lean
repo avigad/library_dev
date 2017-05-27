@@ -180,6 +180,12 @@ by finish [subset_def, set_eq_def, iff_def]
 theorem union_eq_self_of_subset_right {s t : set α} (h : t ⊆ s) : s ∪ t = s :=
 by finish [subset_def, set_eq_def, iff_def]
 
+lemma union_subset_iff {s t u : set α} : s ∪ t ⊆ u ↔ s ⊆ u ∧ t ⊆ u :=
+@sup_le_iff (set α) _ s t u
+
+theorem union_subset_union {s₁ s₂ t₁ t₂ : set α} (h₁ : s₁ ⊆ t₁) (h₂ : s₂ ⊆ t₂) : s₁ ∪ s₂ ⊆ t₁ ∪ t₂ :=
+@sup_le_sup (set α) _ _ _ _ _ h₁ h₂
+
 attribute [simp] union_comm union_assoc union_left_comm
 
 /- intersection -/
@@ -219,6 +225,9 @@ ext (take x, true_and _)
 
 theorem inter_subset_inter_right {s t : set α} (u : set α) (H : s ⊆ t) : s ∩ u ⊆ t ∩ u :=
 by finish [subset_def]
+
+theorem inter_subset_inter {s₁ s₂ t₁ t₂ : set α} (h₁ : s₁ ⊆ t₁) (h₂ : s₂ ⊆ t₂) : s₁ ∩ s₂ ⊆ t₁ ∩ t₂ :=
+@inf_le_inf (set α) _ _ _ _ _ h₁ h₂
 
 theorem inter_subset_inter_left {s t : set α} (u : set α) (H : s ⊆ t) : u ∩ s ⊆ u ∩ t :=
 take x, assume xus, and.intro (and.left xus) (H (and.right xus))
@@ -312,17 +321,29 @@ theorem mem_singleton (a : α) : a ∈ ({a} : set α) := mem_insert a _
 theorem eq_of_mem_singleton {x y : α} (h : x ∈ ({y} : set α)) : x = y :=
 by finish
 
+@[simp]
+theorem singleton_eq_singleton_iff {x y : α} : {x} = ({y} : set α) ↔ x = y :=
+⟨take eq, eq_of_mem_singleton $ eq ▸ mem_singleton x, by intro; simph⟩
+
 theorem mem_singleton_of_eq {x y : α} (H : x = y) : x ∈ ({y} : set α) :=
 by finish
 
 theorem insert_eq (x : α) (s : set α) : insert x s = ({x} : set α) ∪ s :=
 by finish [set_eq_def]
 
+@[simp] lemma union_insert_eq {a : α} {s t : set α} :
+  s ∪ (insert a t) = insert a (s ∪ t) :=
+by simp [insert_eq]
+
 @[simp]
 theorem pair_eq_singleton (a : α) : ({a, a} : set α) = {a} :=
 by finish
 
 theorem singleton_ne_empty (a : α) : ({a} : set α) ≠ ∅ := insert_ne_empty _ _
+
+@[simp]
+lemma singleton_subset_iff {a : α} {s : set α} : {a} ⊆ s ↔ a ∈ s :=
+⟨λh, h (by simp), λh b e, by simp at e; simph⟩ 
 
 /- separation -/
 
@@ -439,6 +460,8 @@ theorem mem_powerset_iff (x s : set α) : x ∈ powerset s ↔ x ⊆ s := iff.rf
 
 section image
 
+infix ` '' `:80 := image
+
 @[reducible] def eq_on (f1 f2 : α → β) (a : set α) : Prop :=
 ∀ x ∈ a, f1 x = f2 x
 
@@ -454,6 +477,15 @@ theorem mem_image {f : α → β} {s : set α} {x : α} {y : β} (h₁ : x ∈ s
 
 theorem mem_image_of_mem (f : α → β) {x : α} {a : set α} (h : x ∈ a) : f x ∈ image f a :=
 mem_image h rfl
+
+theorem mono_image {f : α → β} {s t : set α} (h : s ⊆ t) : image f s ⊆ image f t :=
+take x ⟨y, hy, y_eq⟩, y_eq ▸ mem_image_of_mem _ $ h hy
+
+/- image and vimage are a Galois connection -/
+theorem image_subset_iff_subset_vimage {s : set α} {t : set β} {f : α → β} :
+  set.image f s ⊆ t ↔ s ⊆ {x | f x ∈ t} :=
+⟨take h x hx, h (mem_image_of_mem f hx),
+  take h x hx, match x, hx with ._, ⟨y, hy, rfl⟩ := h hy end⟩
 
 def mem_image_elim {f : α → β} {s : set α} {C : β → Prop} (h : ∀ (x : α), x ∈ s → C (f x)) :
  ∀{y : β}, y ∈ image f s → C y

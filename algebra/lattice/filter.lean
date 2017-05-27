@@ -259,8 +259,7 @@ this $ mem_singleton a
 
 lemma not_imp_iff_not_imp {a b : Prop} :
   (¬ a → ¬ b) ↔ (b → a) :=
-⟨take h hb, classical.by_contradiction $ take na, h na hb,
-  contrapos⟩
+⟨take h hb, classical.by_contradiction $ take na, h na hb, mt⟩
 
 lemma eq_of_sup_eq_inf_eq {α : Type u} [distrib_lattice α] {a b c : α}
   (h₁ : b ⊓ a = c ⊓ a) (h₂ : b ⊔ a = c ⊔ a) : b = c :=

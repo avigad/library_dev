@@ -69,10 +69,10 @@ theorem implies_false_iff (a : Prop) : (a → false) ↔ ¬ a := iff.rfl
 theorem {u} not_elim {A : Sort u} (H1 : ¬a) (H2 : a) : A := absurd H2 H1
 
 theorem not_not_of_not_implies : ¬(a → b) → ¬¬a :=
-contrapos not_elim
+mt not_elim
 
 theorem not_of_not_implies : ¬(a → b) → ¬b :=
-contrapos implies_intro
+mt implies_intro
 
 theorem decidable.not_not_iff (a : Prop) [decidable a] : ¬¬a ↔ a :=
 iff.intro decidable.by_contradiction not_not_intro
@@ -86,10 +86,10 @@ decidable.by_contradiction (not_not_of_not_implies h)
 /- and -/
 
 theorem not_and_of_not_left (b : Prop) : ¬a → ¬(a ∧ b) :=
-contrapos and.left
+mt and.left
 
 theorem not_and_of_not_right (a : Prop) {b : Prop} : ¬b → ¬(a ∧ b) :=
-contrapos and.right
+mt and.right
 
 theorem and_implies_left (h : a → b) : a ∧ c → b ∧ c :=
 and_implies h implies_self
