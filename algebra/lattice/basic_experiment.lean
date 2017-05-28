@@ -140,7 +140,7 @@ lemma sup_of_le_right (h : a ≤ b) : a ⊔ b = b :=
 by apply @le_antisymm α _ ; finish
 
 lemma sup_le_sup (h₁ : a ≤ b) (h₂ : c ≤ d) : a ⊔ c ≤ b ⊔ d :=
-by finish 
+by finish
 
 lemma le_of_sup_eq (h : a ⊔ b = b) : a ≤ b :=
 by finish
@@ -155,10 +155,6 @@ by apply @le_antisymm α _ ; finish
 --
 -- TODO(Jeremy): stopped here
 --
-
--- #exit
-
-
 
 instance semilattice_sup_to_is_commutative [semilattice_sup α] : is_commutative α sup :=
 ⟨@sup_comm _ _⟩
@@ -217,7 +213,7 @@ lemma inf_idem : a ⊓ a = a :=
 inf_of_le_left (le_refl _)
 
 lemma inf_comm : a ⊓ b = b ⊓ a :=
-have ∀{a b : α}, a ⊓ b ≤ b ⊓ a, 
+have ∀{a b : α}, a ⊓ b ≤ b ⊓ a,
   from take a b, le_inf inf_le_right inf_le_left,
 le_antisymm this this
 
@@ -240,11 +236,11 @@ section semilattice_sup_top
 variables {α : Type u} [semilattice_sup_top α] {a : α}
 
 @[simp]
-lemma top_sup_eq : ⊤ ⊔ a = ⊤ := 
+lemma top_sup_eq : ⊤ ⊔ a = ⊤ :=
 sup_of_le_left le_top
 
 @[simp]
-lemma sup_top_eq : a ⊔ ⊤ = ⊤ := 
+lemma sup_top_eq : a ⊔ ⊤ = ⊤ :=
 sup_of_le_right le_top
 
 end semilattice_sup_top
@@ -255,17 +251,16 @@ section semilattice_sup_bot
 variables {α : Type u} [semilattice_sup_bot α] {a b : α}
 
 @[simp]
-lemma bot_sup_eq : ⊥ ⊔ a = a := 
+lemma bot_sup_eq : ⊥ ⊔ a = a :=
 sup_of_le_right bot_le
 
 @[simp]
-lemma sup_bot_eq : a ⊔ ⊥ = a := 
+lemma sup_bot_eq : a ⊔ ⊥ = a :=
 sup_of_le_left bot_le
 
 @[simp]
 lemma sup_eq_bot_iff : a ⊔ b = ⊥ ↔ (a = ⊥ ∧ b = ⊥) :=
-by simp [eq_bot_iff, sup_le_iff]
-
+by rw [eq_bot_iff, sup_le_iff]; simp
 
 end semilattice_sup_bot
 
@@ -275,16 +270,16 @@ section semilattice_inf_top
 variables {α : Type u} [semilattice_inf_top α] {a b : α}
 
 @[simp]
-lemma top_inf_eq : ⊤ ⊓ a = a := 
+lemma top_inf_eq : ⊤ ⊓ a = a :=
 inf_of_le_right le_top
 
 @[simp]
-lemma inf_top_eq : a ⊓ ⊤ = a := 
+lemma inf_top_eq : a ⊓ ⊤ = a :=
 inf_of_le_left le_top
 
 @[simp]
 lemma inf_eq_top_iff : a ⊓ b = ⊤ ↔ (a = ⊤ ∧ b = ⊤) :=
-by simp [eq_top_iff, le_inf_iff]
+by rw [eq_top_iff, le_inf_iff]; simp
 
 end semilattice_inf_top
 
@@ -294,11 +289,11 @@ section semilattice_inf_bot
 variables {α : Type u} [semilattice_inf_bot α] {a : α}
 
 @[simp]
-lemma bot_inf_eq : ⊥ ⊓ a = ⊥ := 
+lemma bot_inf_eq : ⊥ ⊓ a = ⊥ :=
 inf_of_le_left bot_le
 
 @[simp]
-lemma inf_bot_eq : a ⊓ ⊥ = ⊥ := 
+lemma inf_bot_eq : a ⊓ ⊥ = ⊥ :=
 inf_of_le_right bot_le
 
 end semilattice_inf_bot
