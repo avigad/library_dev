@@ -156,7 +156,7 @@ by apply @le_antisymm α _ ; finish
 -- TODO(Jeremy): stopped here
 --
 
-
+#exit
 
 
 
@@ -265,6 +265,7 @@ sup_of_le_left bot_le
 @[simp]
 lemma sup_eq_bot_iff : a ⊔ b = ⊥ ↔ (a = ⊥ ∧ b = ⊥) :=
 by simp [eq_bot_iff, sup_le_iff]
+
 
 end semilattice_sup_bot
 
