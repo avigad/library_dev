@@ -156,7 +156,7 @@ by apply @le_antisymm α _ ; finish
 -- TODO(Jeremy): stopped here
 --
 
-#exit
+-- #exit
 
 
 
