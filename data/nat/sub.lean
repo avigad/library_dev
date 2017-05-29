@@ -53,7 +53,7 @@ calc
 
 protected theorem le_sub_of_add_le {m n k : ℕ} (h : m + k ≤ n) : m ≤ n - k :=
 calc
-  m = m + k - k : by rewrite nat.add_sub_cancel
+  m = m + k - k : by rw nat.add_sub_cancel
     ... ≤ n - k : nat.sub_le_sub_right h k
 
 protected theorem lt_sub_of_add_lt {m n k : ℕ} (h : m + k < n) : m < n - k :=
@@ -61,12 +61,15 @@ lt_of_succ_le (nat.le_sub_of_add_le (calc
     succ m + k = succ (m + k) : by rw succ_add
            ... ≤ n            : succ_le_of_lt h))
 
+protected theorem add_lt_of_lt_sub {m n k : ℕ} (h : m < n - k) : m + k < n :=
+@nat.lt_of_sub_lt_sub_right _ _ k (by rwa nat.add_sub_cancel)
+
 protected theorem sub_lt_of_lt_add {k n m : nat} (h₁ : k < n + m) (h₂ : n ≤ k) : k - n < m :=
 have succ k ≤ n + m,   from succ_le_of_lt h₁,
 have succ (k - n) ≤ m, from
-  calc succ (k - n) = succ k - n : by rewrite (succ_sub h₂)
+  calc succ (k - n) = succ k - n : by rw (succ_sub h₂)
         ...     ≤ n + m - n      : nat.sub_le_sub_right this n
-        ...     = m              : by rewrite nat.add_sub_cancel_left,
+        ...     = m              : by rw nat.add_sub_cancel_left,
 lt_of_succ_le this
 
 
@@ -146,9 +149,9 @@ by rw [mul_comm k n, mul_comm k m, dist_mul_right, mul_comm]
 /-
 or.elim (lt_or_ge i j)
   (suppose i < j,
-    by rewrite [max_eq_right_of_lt this, min_eq_left_of_lt this, dist_eq_sub_of_lt this])
+    by rw [max_eq_right_of_lt this, min_eq_left_of_lt this, dist_eq_sub_of_lt this])
   (suppose i ≥ j,
-    by rewrite [max_eq_left this , min_eq_right this, dist_eq_sub_of_ge this])
+    by rw [max_eq_left this , min_eq_right this, dist_eq_sub_of_ge this])
 -/
 
 lemma dist_succ_succ {i j : nat} : dist (succ i) (succ j) = dist i j :=
@@ -160,6 +163,6 @@ assume hne, nat.lt_by_cases
      begin rw [dist_eq_sub_of_le (le_of_lt this)], apply nat.sub_pos_of_lt this end)
   (suppose i = j, by contradiction)
   (suppose i > j,
-     begin rewrite [dist_eq_sub_of_ge (le_of_lt this)], apply nat.sub_pos_of_lt this end)
+     begin rw [dist_eq_sub_of_ge (le_of_lt this)], apply nat.sub_pos_of_lt this end)
 
 end nat

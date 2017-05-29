@@ -44,7 +44,7 @@ dvd.elim H (λ z H1, by rw [H1, mul_mod_right])
 theorem dvd_iff_mod_eq_zero (m n : ℕ) : m ∣ n ↔ n % m = 0 :=
 ⟨mod_eq_zero_of_dvd, dvd_of_mod_eq_zero⟩
 
-instance : decidable_rel (@has_dvd.dvd nat _) :=
+instance decidable_dvd : decidable_rel (@has_dvd.dvd nat _) :=
 λm n, decidable_of_decidable_of_iff (by apply_instance) (dvd_iff_mod_eq_zero _ _).symm
 
 protected theorem mul_div_cancel' {m n : ℕ} (H : n ∣ m) : n * (m / n) = m :=

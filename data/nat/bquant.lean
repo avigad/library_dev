@@ -1,3 +1,5 @@
+import .sub
+
 open nat
 
 def ball (n : nat) (P : nat → Prop) := ∀ k : ℕ, k < n → P k
@@ -38,3 +40,11 @@ def ball (n : nat) (P : nat → Prop) := ∀ k : ℕ, k < n → P k
       (λ ih_pos, decidable.rec_on (H n₁)
         (λ p_neg, decidable.is_false (not_ball_of_not p_neg))
         (λ p_pos, decidable.is_true (ball_succ_of_ball ih_pos p_pos))))
+
+instance decidable_lo_hi (lo hi : nat) (P : nat → Prop) [H : decidable_pred P] : decidable (∀x, lo ≤ x → x < hi → P x) :=
+suffices ball (hi - lo) (λx, P (lo + x)) ↔ (∀x, lo ≤ x → x < hi → P x), from
+decidable_of_decidable_of_iff (by apply_instance) this,
+⟨λal x hl hh, by note := al (x - lo) (lt_of_not_ge $
+  (not_congr (nat.sub_le_sub_right_iff _ _ _ hl)).2 $ not_le_of_gt hh);
+  rwa [nat.add_sub_of_le hl] at this,
+λal x h, al _ (nat.le_add_right _ _) (by rw add_comm; exact nat.add_lt_of_lt_sub h)⟩
