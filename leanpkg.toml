@@ -1,6 +1,5 @@
 [package]
 name = "library_dev"
 version = "0.1"
-timeout = 10000
 
 [dependencies]
