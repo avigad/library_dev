@@ -36,7 +36,7 @@ def restrict (f : α →. β) {p : set α} (H : p ⊆ f.dom) : α →. β :=
 theorem dom_iff_graph (f : α →. β) (x : α) : x ∈ f.dom ↔ ∃y, (x, y) ∈ f.graph :=
 ⟨λh, ⟨f.fn x h, h, rfl⟩, λ⟨y, h, _⟩, h⟩
 
-protected def pure (x : β) : α →. β := pfun.lift (λy, x)
+protected def pure (x : β) : α →. β := ↑(function.const α x)
 
 protected def bind (f : α →. β) (g : β → α →. γ) : α →. γ :=
 ⟨λa, ∃b: dom f a, (g (f.fn a b)).dom a, λa ha,

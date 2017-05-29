@@ -152,6 +152,10 @@ iff.intro (assume h, trivial) (assume h, (decidable.em a)^.symm)
 lemma decidable.or_of_not_implies {a b : Prop} [decidable b] (h : ¬ b → a) : (a ∨ b) :=
 decidable.by_cases or.inr (or.inl ∘ h)
 
+lemma not_imp_iff_not_imp {a b : Prop} [decidable a] :
+  (¬ a → ¬ b) ↔ (b → a) :=
+⟨take h hb, decidable.by_contradiction $ take na, h na hb, mt⟩
+
 /- distributivity -/
 
 theorem and_distrib (a b c : Prop) : a ∧ (b ∨ c) ↔ (a ∧ b) ∨ (a ∧ c) :=

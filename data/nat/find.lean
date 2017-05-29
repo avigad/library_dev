@@ -11,8 +11,6 @@ find      {p : nat → Prop} [d : decidable_pred p] : (∃ x, p x) → nat
 find_spec {p : nat → Prop} [d : decidable_pred p] (ex : ∃ x, p x) : p (find ex)
 -/
 
-import data.nat.basic
-
 namespace nat
 section find_x
 parameter {p : ℕ → Prop}
