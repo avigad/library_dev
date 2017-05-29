@@ -72,6 +72,15 @@ section comm_semiring
     dvd.elim dvd_cd (take f, assume deq,
       dvd.intro (e * f) (by simp [beq, deq])))
 
+  theorem mul_dvd_mul_left (a : A) {b c : A} (h : b ∣ c) : a * b ∣ a * c :=
+  mul_dvd_mul (dvd_refl a) h
+
+  theorem mul_dvd_mul_right {a b : A} (h : a ∣ b) (c : A) : a * c ∣ b * c :=
+  mul_dvd_mul h (dvd_refl c)
+
+  theorem dvd_add {a b c : A} (h₁ : a ∣ b) (h₂ : a ∣ c) : a ∣ b + c :=
+  dvd.elim h₁ (λ d hd, dvd.elim h₂ (λ e he, dvd.intro (d + e) (by simp [left_distrib, hd, he])))
+
 /-
   -- TODO: this should work, but doesn't.
   -- The function definition system says we don't have well-founded recursion
@@ -124,49 +133,40 @@ section
 end
 
 section
-  variables [comm_ring A] (a b c d e : A)
+  variables [comm_ring A] {a b c d e : A}
 
   local attribute [simp] left_distrib right_distrib
 
-  theorem dvd_add {a b c : A} (h₁ : a ∣ b) (h₂ : a ∣ c) : a ∣ b + c :=
-  dvd.elim h₁ (λ d hd, dvd.elim h₂ (λ e he, dvd.intro (d + e) (by simp [hd, he])))
+  theorem dvd_neg_of_dvd (h : a ∣ b) : (a ∣ -b) :=
+  dvd.elim h
+    (take c, suppose b = a * c,
+      dvd.intro (-c) (by simp [this]))
+
+  theorem dvd_of_dvd_neg (h : a ∣ -b) : (a ∣ b) :=
+  let t := dvd_neg_of_dvd h in by rwa neg_neg at t
 
   theorem dvd_neg_iff_dvd : (a ∣ -b) ↔ (a ∣ b) :=
-  iff.intro
-    (suppose a ∣ -b,
-      dvd.elim this
-        (take c, suppose -b = a * c,
-          dvd.intro (-c) (by simp [this^.symm])))
-    (suppose a ∣ b,
-      dvd.elim this
-        (take c, suppose b = a * c,
-          dvd.intro (-c) (by simp [this^.symm])))
+  ⟨dvd_of_dvd_neg, dvd_neg_of_dvd⟩
 
-  theorem dvd_neg_of_dvd : (a ∣ b) → (a ∣ -b) :=
-  iff.mpr (dvd_neg_iff_dvd a b)
+  theorem neg_dvd_of_dvd (h : a ∣ b) : -a ∣ b :=
+  dvd.elim h
+    (take c, suppose b = a * c,
+      dvd.intro (-c) (by simp [this]))
 
-  theorem dvd_of_dvd_neg : (a ∣ -b) → (a ∣ b) :=
-  iff.mp (dvd_neg_iff_dvd a b)
+  theorem dvd_of_neg_dvd (h : -a ∣ b) : a ∣ b :=
+  let t := neg_dvd_of_dvd h in by rwa neg_neg at t
 
   theorem neg_dvd_iff_dvd : (-a ∣ b) ↔ (a ∣ b) :=
-  iff.intro
-    (suppose -a ∣ b,
-      dvd.elim this
-        (take c, suppose b = -a * c,
-          dvd.intro (-c) (by simp [this])))
-    (suppose a ∣ b,
-      dvd.elim this
-        (take c, suppose b = a * c,
-          dvd.intro (-c) (by simp [this])))
-
-  theorem neg_dvd_of_dvd : a ∣ b → -a ∣ b :=
-  iff.mpr (neg_dvd_iff_dvd a b)
-
-  theorem dvd_of_neg_dvd : -a ∣ b → a ∣ b :=
-  iff.mp (neg_dvd_iff_dvd a b)
+  ⟨dvd_of_neg_dvd, neg_dvd_of_dvd⟩
 
   theorem dvd_sub (h₁ : a ∣ b) (h₂ : a ∣ c) : a ∣ b - c :=
-  dvd_add h₁ (dvd_neg_of_dvd a c h₂)
+  dvd_add h₁ (dvd_neg_of_dvd h₂)
+
+  theorem dvd_add_iff_left {a b c : A} (h : a ∣ c) : a ∣ b ↔ a ∣ b + c :=
+  ⟨λh₂, dvd_add h₂ h, λH, by note t := dvd_sub H h; rwa add_sub_cancel at t⟩
+
+  theorem dvd_add_iff_right {a b c : A} (h : a ∣ b) : a ∣ c ↔ a ∣ b + c :=
+  by rw add_comm; exact dvd_add_iff_left h
 end
 
 /- integral domains -/
