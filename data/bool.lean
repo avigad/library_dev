@@ -172,4 +172,8 @@ namespace bool
   @[simp]
   lemma bxor_left_comm (a b c : bool) : bxor a (bxor b c) = bxor b (bxor a c) :=
   by cases a; cases b; simp
+
+  instance forall_decidable {P : bool → Prop} [decidable_pred P] : decidable (∀b, P b) :=
+  suffices P ff ∧ P tt ↔ _, from decidable_of_decidable_of_iff (by apply_instance) this,
+  ⟨λ⟨pf, pt⟩ b, bool.rec_on b pf pt, λal, ⟨al _, al _⟩⟩
 end bool
