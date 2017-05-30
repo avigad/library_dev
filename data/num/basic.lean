@@ -77,7 +77,6 @@ namespace pos_num
 
   def pred' : pos_num → option pos_num
   | 1        := none
-  | 2        := some 1
   | (bit0 n) := some (option.cases_on (pred' n) 1 bit1)
   | (bit1 n) := bit0 n
 
