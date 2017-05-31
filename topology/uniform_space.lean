@@ -1013,9 +1013,9 @@ instance : complete_lattice (uniform_space α) :=
   le_inf        := take a b c h₁ h₂, le_Sup ⟨h₁, h₂⟩,
   inf_le_left   := take a b, Sup_le $ take x ⟨ha, hb⟩, ha,
   inf_le_right  := take a b, Sup_le $ take x ⟨ha, hb⟩, hb,
-  top           := top,
+  top           := ⊤,
   le_top        := take u, u.refl,
-  bot           := bot,
+  bot           := ⊥,
   bot_le        := take a, show a.uniformity ≤ ⊤, from le_top,
   Sup           := Sup,
   le_Sup        := take s u, le_Sup,
@@ -1113,8 +1113,8 @@ classical.by_cases
     end)
   (suppose ¬ nonempty ι,
     le_antisymm
-      (have supr u = bot, from bot_unique $ supr_le $ take i, (this ⟨i⟩).elim,
-        have (supr u).to_topological_space = bot,
+      (have supr u = ⊥, from bot_unique $ supr_le $ take i, (this ⟨i⟩).elim,
+        have (supr u).to_topological_space = ⊥,
           from this.symm ▸ to_topological_space_bot,
         this.symm ▸ bot_le)
       (supr_le $ take i, to_topological_space_mono $ le_supr _ _))

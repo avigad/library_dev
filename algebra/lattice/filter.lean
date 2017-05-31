@@ -530,7 +530,7 @@ instance monad_filter : monad filter :=
 
 instance : alternative filter :=
 { filter.monad_filter with
-  failure := λα, bot,
+  failure := λα, ⊥,
   orelse  := λα x y, x ⊔ y }
 
 def at_top [weak_order α] : filter α := ⨅ a, principal {b | a ≤ b}
@@ -655,7 +655,7 @@ private theorem infi_finite_distrib {s : set (filter α)} {f : filter α} (h : f
   (⨅ a ∈ s, f ⊔ a) = f ⊔ (Inf s) :=
 begin
   induction h with a s hn hs hi,
-  { simp, exact infi_const bot },
+  { simp, exact infi_const ⊥ },
   { rw [infi_insert], simp [hi, infi_or, sup_inf_left] }
 end
 
@@ -701,10 +701,10 @@ filter_eq $ set.ext $ by simp [union_subset_iff]
 lemma supr_principal {ι : Sort w} {s : ι → set α} : (⨆x, principal (s x)) = principal (⋃i, s i) :=
 filter_eq $ set.ext $ take x, by simp [supr_sets_eq]; exact (@supr_le_iff (set α) _ _ _ _)^.symm
 
-lemma principal_univ : principal (univ : set α) = top :=
+lemma principal_univ : principal (univ : set α) = ⊤ :=
 rfl
 
-lemma principal_empty : principal (∅ : set α) = bot :=
+lemma principal_empty : principal (∅ : set α) = ⊥ :=
 rfl
 
 @[simp]

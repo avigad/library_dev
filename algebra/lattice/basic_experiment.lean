@@ -36,16 +36,12 @@ class has_sup (α : Type u) := (sup : α → α → α)
 class has_inf (α : Type u) := (inf : α → α → α)
 class has_imp (α : Type u) := (imp : α → α → α) /- Better name -/
 
-def top {α : Type u} [has_top α] : α := has_top.top α
-def bot {α : Type u} [has_bot α] : α := has_bot.bot α
-def sup {α : Type u} [has_sup α] : α → α → α := has_sup.sup
-def inf {α : Type u} [has_inf α] : α → α → α := has_inf.inf
 def imp {α : Type u} [has_imp α] : α → α → α := has_imp.imp
 
-infix ⊔ := sup
-infix ⊓ := inf
-notation `⊤` := top
-notation `⊥` := bot
+infix ⊔ := has_sup.sup
+infix ⊓ := has_inf.inf
+notation `⊤` := has_top.top _
+notation `⊥` := has_bot.bot _
 
 class order_top (α : Type u) extends has_top α, weak_order α :=
 (le_top : ∀ a : α, a ≤ ⊤)
@@ -156,7 +152,7 @@ by apply @le_antisymm α _ ; finish
 -- TODO(Jeremy): stopped here
 --
 
-instance semilattice_sup_to_is_commutative [semilattice_sup α] : is_commutative α sup :=
+instance semilattice_sup_to_is_commutative [semilattice_sup α] : is_commutative α (⊔) :=
 ⟨@sup_comm _ _⟩
 
 lemma sup_assoc : a ⊔ b ⊔ c = a ⊔ (b ⊔ c) :=
@@ -164,7 +160,7 @@ le_antisymm
   (sup_le (sup_le le_sup_left (le_sup_right_of_le le_sup_left)) (le_sup_right_of_le le_sup_right))
   (sup_le (le_sup_left_of_le le_sup_left) (sup_le (le_sup_left_of_le le_sup_right) le_sup_right))
 
-instance semilattice_sup_to_is_associative [semilattice_sup α] : is_associative α sup :=
+instance semilattice_sup_to_is_associative [semilattice_sup α] : is_associative α (⊔) :=
 ⟨@sup_assoc _ _⟩
 
 end semilattice_sup
@@ -217,7 +213,7 @@ have ∀{a b : α}, a ⊓ b ≤ b ⊓ a,
   from take a b, le_inf inf_le_right inf_le_left,
 le_antisymm this this
 
-instance semilattice_inf_to_is_commutative [semilattice_inf α] : is_commutative α inf :=
+instance semilattice_inf_to_is_commutative [semilattice_inf α] : is_commutative α (⊓) :=
 ⟨@inf_comm _ _⟩
 
 lemma inf_assoc : a ⊓ b ⊓ c = a ⊓ (b ⊓ c) :=
@@ -225,7 +221,7 @@ le_antisymm
   (le_inf (inf_le_left_of_le inf_le_left) (le_inf (inf_le_left_of_le inf_le_right) inf_le_right))
   (le_inf (le_inf inf_le_left (inf_le_right_of_le inf_le_left)) (inf_le_right_of_le inf_le_right))
 
-instance semilattice_inf_to_is_associative [semilattice_inf α] : is_associative α inf :=
+instance semilattice_inf_to_is_associative [semilattice_inf α] : is_associative α (⊓) :=
 ⟨@inf_assoc _ _⟩
 
 end semilattice_inf

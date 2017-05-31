@@ -514,11 +514,11 @@ instance {α : Type u} : complete_lattice (topological_space α) :=
   le_sup_left   := take a b, le_Inf $ take x, assume h : a ≤ x ∧ b ≤ x, h^.left,
   le_sup_right  := take a b, le_Inf $ take x, assume h : a ≤ x ∧ b ≤ x, h^.right,
   sup_le        := take a b c h₁ h₂, Inf_le $ show c ∈ {x | a ≤ x ∧ b ≤ x}, from ⟨h₁, h₂⟩,
-  inf           := inf,
+  inf           := (⊓),
   le_inf        := take a b h h₁ h₂ s hs, ⟨h₁ s hs, h₂ s hs⟩,
   inf_le_left   := take a b s ⟨h₁, h₂⟩, h₁,
   inf_le_right  := take a b s ⟨h₁, h₂⟩, h₂,
-  top           := top,
+  top           := ⊤,
   le_top        := take a t ht, trivial,
   bot           := Inf univ,
   bot_le        := take a, Inf_le $ mem_univ a,
@@ -599,8 +599,8 @@ lemma sup_eq_generate_from { g₁ g₂ : topological_space α } :
 le_antisymm
   (sup_le (take s, generate_open.basic _ ∘ or.inl) (take s, generate_open.basic _ ∘ or.inr))
   (generate_from_le $ take s hs,
-    have h₁ : g₁ ≤ sup g₁ g₂, from le_sup_left,
-    have h₂ : g₂ ≤ sup g₁ g₂, from le_sup_right,
+    have h₁ : g₁ ≤ g₁ ⊔ g₂, from le_sup_left,
+    have h₂ : g₂ ≤ g₁ ⊔ g₂, from le_sup_right,
     or.rec_on hs (h₁ s) (h₂ s))
 
 lemma nhds_mono {t₁ t₂ : topological_space α} {a : α} (h : t₁ ≤ t₂) : @nhds α t₂ a ≤ @nhds α t₁ a :=

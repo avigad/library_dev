@@ -91,19 +91,19 @@ lemma le_Inf_inter {s t : set α} : Inf s ⊔ Inf t ≤ Inf (s ∩ t) :=
 le_Inf (take a ⟨a_s, a_t⟩, sup_le (Inf_le a_s) (Inf_le a_t))
 
 @[simp]
-lemma Sup_empty : Sup ∅ = (bot : α) :=
+lemma Sup_empty : Sup ∅ = (⊥ : α) :=
 le_antisymm (Sup_le (take _, false.elim)) bot_le
 
 @[simp]
-lemma Inf_empty : Inf ∅ = (top : α) :=
+lemma Inf_empty : Inf ∅ = (⊤ : α) :=
 le_antisymm le_top (le_Inf (take _, false.elim))
 
 @[simp]
-lemma Sup_univ : Sup univ = (top : α) :=
+lemma Sup_univ : Sup univ = (⊤ : α) :=
 le_antisymm le_top (le_Sup ⟨⟩)
 
 @[simp]
-lemma Inf_univ : Inf univ = (bot : α) :=
+lemma Inf_univ : Inf univ = (⊥ : α) :=
 le_antisymm (Inf_le ⟨⟩) bot_le
 
 @[simp]
@@ -254,11 +254,11 @@ le_antisymm
 /- supr and infi under Prop -/
 
 @[simp]
-lemma infi_false {s : false → α} : infi s = top :=
+lemma infi_false {s : false → α} : infi s = ⊤ :=
 le_antisymm le_top (le_infi $ take i, false.elim i)
 
 @[simp]
-lemma supr_false {s : false → α} : supr s = bot :=
+lemma supr_false {s : false → α} : supr s = ⊥ :=
 le_antisymm (supr_le $ take i, false.elim i) bot_le
 
 @[simp]
@@ -341,11 +341,11 @@ calc Sup (set.image f s) = (⨆a, ⨆h : ∃b, b ∈ s ∧ f b = a, a) : Sup_eq_
 
 /- should work using the simplifier! -/
 @[simp]
-lemma infi_emptyset {f : β → α} : (⨅ x ∈ (∅ : set β), f x) = top :=
+lemma infi_emptyset {f : β → α} : (⨅ x ∈ (∅ : set β), f x) = ⊤ :=
 le_antisymm le_top (le_infi $ take x, le_infi false.elim)
 
 @[simp]
-lemma supr_emptyset {f : β → α} : (⨆ x ∈ (∅ : set β), f x) = bot :=
+lemma supr_emptyset {f : β → α} : (⨆ x ∈ (∅ : set β), f x) = ⊥ :=
 le_antisymm (supr_le $ take x, supr_le false.elim) bot_le
 
 @[simp]
@@ -391,11 +391,11 @@ show (⨆ x ∈ insert b (∅ : set β), f x) = f b,
 /- supr and infi under Type -/
 
 @[simp]
-lemma infi_empty {s : empty → α} : infi s = top :=
+lemma infi_empty {s : empty → α} : infi s = ⊤ :=
 le_antisymm le_top (le_infi $ take i, empty.rec_on _ i)
 
 @[simp]
-lemma supr_empty {s : empty → α} : supr s = bot :=
+lemma supr_empty {s : empty → α} : supr s = ⊥ :=
 le_antisymm (supr_le $ take i, empty.rec_on _ i) bot_le
 
 @[simp]

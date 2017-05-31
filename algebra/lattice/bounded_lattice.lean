@@ -78,20 +78,20 @@ end logic
 instance bounded_lattice_fun {α : Type u} {β : Type v} [bounded_lattice β] :
   bounded_lattice (α → β) :=
 { weak_order_fun with
-  sup          := λf g a, sup (f a) (g a),
+  sup          := λf g a, f a ⊔ g a,
   le_sup_left  := take f g a, le_sup_left,
   le_sup_right := take f g a, le_sup_right,
   sup_le       := take f g h Hfg Hfh a, sup_le (Hfg a) (Hfh a),
 
-  inf          := λf g a, inf (f a) (g a),
+  inf          := λf g a, f a ⊓ g a,
   inf_le_left  := take f g a, inf_le_left,
   inf_le_right := take f g a, inf_le_right,
   le_inf       := take f g h Hfg Hfh a, le_inf (Hfg a) (Hfh a),
 
-  top          := λa, top,
+  top          := λa, ⊤,
   le_top       := take f a, le_top,
 
-  bot          := λa, bot,
+  bot          := λa, ⊥,
   bot_le       := take f a, bot_le }
 
 end lattice
