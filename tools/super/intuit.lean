@@ -1,4 +1,4 @@
-import tools.super.clausifier tools.super.cdcl tools.super.trim
+import super.clausifier super.cdcl super.trim
 open tactic super expr monad
 
 -- Intuitionistic propositional prover based on
@@ -15,7 +15,8 @@ set_goals [subgoal],
 for' s^.trail (λe,
   if e^.phase then do
     name ← get_unused_name `model (some 1),
-    assertv name e^.hyp^.local_type e^.hyp
+    assertv name e^.hyp^.local_type e^.hyp,
+    return ()
   else
     return ()),
 is_solved ← first (do
