@@ -135,7 +135,7 @@ meta def normalize_hyp (simps : simp_lemmas) (h : expr) : tactic expr :=
 do htype ← infer_type h,
    mcond (is_prop htype)
      ((do (new_htype, heq) ← simplify simps htype,
-           newh ← assert' (expr.local_pp_name h) new_htype,
+           newh ← assert (expr.local_pp_name h) new_htype,
            mk_eq_mp heq h >>= exact,
            try $ clear h,
            return newh) <|> return h)
@@ -230,7 +230,7 @@ do ctx ← local_context,
    extra_simps ← mmap mk_const logic_eval_simps,
    first $ ctx.for $ λ h,
      do t ← infer_type h,
-        mcond (is_prop t) (simp_at_using_hs h extra_simps) failed
+        mcond (is_prop t) (simp_at_using_hs h extra_simps >> skip) failed
 
 meta def self_simplify_hyps : tactic unit :=
 self_simplify_hyps_aux >> repeat self_simplify_hyps_aux
@@ -359,27 +359,27 @@ local postfix `?`:9001 := optional
 local postfix *:9001 := many
 
 meta def clarify (hs : parse opt_qexpr_list) (cfg : auto_config := {}) : tactic unit :=
-do s ← mk_simp_set [] hs [],
+do s ← mk_simp_set ff [] hs [],
    auto.clarify s cfg
 
 meta def safe (hs : parse opt_qexpr_list) (cfg : auto_config := {}) : tactic unit :=
-do s ← mk_simp_set [] hs [],
+do s ← mk_simp_set ff [] hs [],
    auto.safe s cfg
 
 meta def finish (hs : parse opt_qexpr_list) (cfg : auto_config := {}) : tactic unit :=
-do s ← mk_simp_set [] hs [],
+do s ← mk_simp_set ff [] hs [],
    auto.finish s cfg
 
 meta def iclarify (hs : parse opt_qexpr_list) (cfg : auto_config := {}) : tactic unit :=
-do s ← mk_simp_set [] hs [],
+do s ← mk_simp_set ff [] hs [],
    auto.iclarify s cfg
 
 meta def isafe (hs : parse opt_qexpr_list) (cfg : auto_config := {}) : tactic unit :=
-do s ← mk_simp_set [] hs [],
+do s ← mk_simp_set ff [] hs [],
    auto.isafe s cfg
 
 meta def ifinish (hs : parse opt_qexpr_list) (cfg : auto_config := {}) : tactic unit :=
-do s ← mk_simp_set [] hs [],
+do s ← mk_simp_set ff [] hs [],
    auto.ifinish s cfg
 
 end interactive

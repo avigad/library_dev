@@ -412,10 +412,10 @@ private def sorted_merge_sort.F :
     -- this should be handled by the simplifier, i.e. cancel out +1 and rewrite _ < _ + 1 to _ <= _
     { apply f,
       show length (split l)^.fst + (1 + 0) < length l + (1 + 1),
-        from add_lt_add_of_le_of_lt (length_split_fst_le l) (add_lt_add_of_le_of_lt (le_refl 1) zero_lt_one) },
+        exact add_lt_add_of_le_of_lt (length_split_fst_le l) (add_lt_add_of_le_of_lt (le_refl 1) zero_lt_one) },
     { apply f,
       show length (split l)^.snd + (1 + 0) < length l + (1 + 1),
-        from add_lt_add_of_le_of_lt (length_split_snd_le l) (add_lt_add_of_le_of_lt (le_refl 1) zero_lt_one) }
+        exact add_lt_add_of_le_of_lt (length_split_snd_le l) (add_lt_add_of_le_of_lt (le_refl 1) zero_lt_one) }
   end
 
 theorem sorted_merge_sort : ∀ l : list α, sorted r (merge_sort l) :=

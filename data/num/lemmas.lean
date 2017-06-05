@@ -357,11 +357,14 @@ namespace num
   lemma bitwise_to_nat_lemma {f : num → num → num} (m n) :
     (f m n : ℕ) = (f ((m : ℕ) : num) ((n : ℕ) : num) : ℕ) := by simp
 
+/- TODO(Jeremy): I commented these out to get library_dev to compile. Mario, should we delete
+   them?
   @[simp] lemma lor_to_nat   : ∀ m n, (lor    m n : ℕ) = nat.lor    m n := bitwise_to_nat_lemma
   @[simp] lemma land_to_nat  : ∀ m n, (land   m n : ℕ) = nat.land   m n := bitwise_to_nat_lemma
   @[simp] lemma ldiff_to_nat : ∀ m n, (ldiff  m n : ℕ) = nat.ldiff  m n := bitwise_to_nat_lemma
   @[simp] lemma lxor_to_nat  : ∀ m n, (lxor   m n : ℕ) = nat.lxor   m n := bitwise_to_nat_lemma
   @[simp] lemma shiftl_to_nat (m n) : (shiftl m n : ℕ) = nat.shiftl m n := by unfold nat.shiftl; simp
   @[simp] lemma shiftr_to_nat (m n) : (shiftr m n : ℕ) = nat.shiftr m n := by unfold nat.shiftr; simp
+-/
 
 end num

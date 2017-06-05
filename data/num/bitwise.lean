@@ -116,19 +116,6 @@ namespace num
 
 end num
 
-namespace nat
-  def lor    (m n : ℕ) : ℕ := num.lor m n
-  def land   (m n : ℕ) : ℕ := num.land m n
-  def ldiff  (m n : ℕ) : ℕ := num.ldiff m n
-  def lxor   (m n : ℕ) : ℕ := num.lxor m n
-  def shiftl (m n : ℕ) : ℕ := num.shiftl m n
-  def shiftr (m n : ℕ) : ℕ := num.shiftr m n
-
-  def test_bit (m n : ℕ) : bool := num.test_bit m n
-
-  def size (n : ℕ) : ℕ := num.size n
-end nat
-
 namespace int
   open nat
 

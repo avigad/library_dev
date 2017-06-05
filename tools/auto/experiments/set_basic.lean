@@ -92,6 +92,8 @@ theorem set_eq_def (s t : set α) : s = t ↔ ∀ x, x ∈ s ↔ x ∈ t :=
 
 theorem empty_def : (∅ : set α) = { x | false } := rfl
 
+set_option pp.all true
+
 theorem exists_mem_of_ne_empty {s : set α} (h : s ≠ ∅) : ∃ x, x ∈ s :=
 by finish [set_eq_def]
 

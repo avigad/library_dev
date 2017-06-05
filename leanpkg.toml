@@ -1,7 +1,7 @@
 [package]
 name = "library_dev"
 version = "0.1"
-timeout = 10000
+timeout = 20000
 
 [dependencies]
 super = {git = "https://github.com/leanprover/super.git", rev = "1448ed15556583231994897ea9a549fd42fd9c0d"}

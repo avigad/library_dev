@@ -1049,9 +1049,10 @@ lemma to_topological_space_vmap {f : α → β} {u : uniform_space β} :
 eq_of_nhds_eq_nhds $ take a,
 begin
   simp [nhds_induced_eq_vmap, nhds_eq_uniformity, nhds_eq_uniformity],
-  show vmap f (uniformity.lift' (vimage (λb, (f a, b)))) =
+  change vmap f (uniformity.lift' (vimage (λb, (f a, b)))) =
       (u.uniformity.vmap (λp:α×α, (f p.1, f p.2))).lift' (vimage (λa', (a, a'))),
-    by rw [vmap_lift'_eq monotone_vimage, vmap_lift'_eq2 monotone_vimage]; exact rfl
+  rw [vmap_lift'_eq monotone_vimage, vmap_lift'_eq2 monotone_vimage],
+  exact rfl
 end
 
 instance : uniform_space empty := ⊤
@@ -1103,7 +1104,7 @@ classical.by_cases
     eq_of_nhds_eq_nhds $ take a,
     begin
       rw [nhds_supr, nhds_eq_uniformity],
-      show _ = (supr u).uniformity.lift' (vimage $ prod.mk a),
+      change _ = (supr u).uniformity.lift' (vimage $ prod.mk a),
       begin
         rw [supr_uniformity, lift'_infi],
         exact (congr_arg _ $ funext $ take i, @nhds_eq_uniformity α (u i) a),
