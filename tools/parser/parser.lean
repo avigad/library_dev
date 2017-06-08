@@ -48,10 +48,10 @@ lemma {u v} list.bind_singleton {α : Type u} {β : Type v} {f : α → β} :
 
 variables {α β : Type}
 
-def parser (α : Type) : Type := string → list (α × string)
+def parser (α : Type) : Type := list char → list (α × list char)
 
 @[inline] def parser_fmap (f : α → β) (a : parser α) : parser β :=
-λ s, list.map (λ p : α × string, (f p.1, p.2)) (a s)
+λ s, list.map (λ p : α × list char, (f p.1, p.2)) (a s)
 
 @[inline] def parser_pure (a : α) : parser α := λ s, [(a, s)]
 
@@ -66,7 +66,7 @@ instance monad_parser : monad parser :=
     by simp [parser_fmap]; exact list.map_id _,
   pure_bind             := take α β a f, funext $ take s,
     by simp [parser_bind, parser_pure],
-  bind_assoc            := take α β γ p f g, funext $ take s, 
+  bind_assoc            := take α β γ p f g, funext $ take s,
     by simp [parser_bind, list.bind_assoc],
   bind_pure_comp_eq_map := take α β f p, funext $ take s,
     by simp [parser_bind, parser_pure, parser_fmap, list.bind_singleton, function.comp] }
@@ -85,19 +85,14 @@ namespace parser
 
 def parser_bignum := 1000
 
-/- When viewed as a list, a string "abcde" is really the list [#"e", #"d", #"c", #"b", #"a"].
-   However, the parsers below start working on the head of the list. So to apply it to a
-   string that came from quoted string, reverse the string first.
--/
-
 def parse (p : parser α) (s : string) : option α :=
-match p (list.reverse s) with
+match p (s.to_list) with
 | []            := none
 | ((a, s) :: l) := some a
 end
 
 def item : parser char
-| ""      := []
+| []      := []
 | (c::cs) := [(c, cs)]
 
 section an_example
@@ -115,12 +110,12 @@ do c ← item, if p c then return c else failure
 
 def take_char (c : char) : parser char := sat (λ x, x = c)
 
-def take_string_aux : string → parser unit
-| ""      := return ()
+def take_string_aux : list char → parser unit
+| []      := return ()
 | (c::cs) := do take_char c, take_string_aux cs, return ()
 
-def take_string (s : string) : parser string :=
-do take_string_aux (list.reverse s) >> return s
+def take_string (s : list char) : parser (list char) :=
+do take_string_aux s >> return s
 
 def many_aux (p : parser α) : ℕ → parser (list α)
 | 0     := return []
@@ -159,13 +154,13 @@ def chainr (p : parser α) (op : parser (α → α → α)) (a : α) : parser α
 chainr1 p op <|> return a
 
 /-- consume whitespace -/
-def space : parser string := many (sat char.is_whitespace)
+def space : parser (list char) := many (sat char.is_whitespace)
 
 /-- parse with p, and then consume whitespace -/
 def token (p : parser α) : parser α := do a ← p, space, return a
 
 /-- consume s -/
-def symb (s : string) : parser string := token (take_string s)
+def symb (s : list char) : parser (list char) := token (take_string s)
 
 /-- consume leading whitespace, and then apply p -/
 def apply (p : parser α) : parser α := do space, p
