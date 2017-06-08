@@ -30,6 +30,9 @@ when the API changes.
 import ..tactic.simp_tactic ...logic.basic
 open tactic expr
 
+declare_trace auto.done
+declare_trace auto.finish
+
 -- TODO(Jeremy): move these
 theorem implies_and_iff (p q r : Prop) : (p → q ∧ r) ↔ (p → q) ∧ (p → r) :=
 iff.intro (λ h, ⟨λ hp, (h hp).left, λ hp, (h hp).right⟩) (λ h hp, ⟨h.left hp, h.right hp⟩)
@@ -42,9 +45,6 @@ theorem iff_def (p q : Prop) : (p ↔ q) ↔ (p → q) ∧ (q → p) :=
 
 theorem {u} bexists_def {α : Type u} (p q : α → Prop) : (∃ x (h : p x), q x) ↔ ∃ x, p x ∧ q x :=
 ⟨λ ⟨x, px, qx⟩, ⟨x, px, qx⟩, λ ⟨x, px, qx⟩, ⟨x, px, qx⟩⟩
-
--- theorem {u} forall_def {α : Type u} (p q : α → Prop) : (∀ x (h : p x), q x) ↔ ∀ x, p x → q x :=
--- iff.refl _
 
 
 namespace auto
@@ -63,8 +63,9 @@ private meta def add_simps : simp_lemmas → list name → tactic simp_lemmas
 -/
 
 structure auto_config : Type :=
-(use_simp := tt)        -- call the simplifier
-(classical := tt)       -- use classical logic
+(use_simp := tt)           -- call the simplifier
+(classical := tt)          -- use classical logic
+(max_ematch_rounds := 20)  -- for the "done" tactic
 
 /-
   Preprocess goal.
@@ -158,7 +159,10 @@ do ctx ← local_context,
    first $ ctx.for $ λ h,
      do t ← infer_type h >>= whnf_reducible,
         guard (is_app_of t ``Exists),
-        to_expr ``(exists.elim %%h) >>= apply >> intros >> clear h
+        tgt ← target,
+        to_expr ``(@exists.elim _ _ %%tgt %%h) >>= apply,
+        intros,
+        clear h
 
 -- eliminate all existential quantifiers, fails if there aren't any
 meta def eelims : tactic unit := eelim >> repeat eelim
@@ -272,7 +276,8 @@ meta def mk_hinst_lemmas : list expr → smt_tactic hinst_lemmas
                   end
 
 meta def done (s : simp_lemmas) (cfg : auto_config := {}) : tactic unit :=
-do /- if cfg^.use_simp then simp_all s else skip, -/
+do when_tracing `auto.done (trace "entering done" >> trace_state),
+   /- if cfg^.use_simp then simp_all s else skip, -/
    contradiction <|>
    (solve1 $
      (do revert_all,
@@ -280,7 +285,8 @@ do /- if cfg^.use_simp then simp_all s else skip, -/
          (do smt_tactic.intros,
              ctx ← local_context,
              hs ← mk_hinst_lemmas ctx,
-             smt_tactic.repeat (smt_tactic.ematch_using hs >> smt_tactic.try smt_tactic.close))))
+             smt_tactic.repeat_at_most cfg.max_ematch_rounds
+               (smt_tactic.ematch_using hs >> smt_tactic.try smt_tactic.close))))
 
 /-
   Tactics that perform case splits.
@@ -326,8 +332,10 @@ local_context >>= case_some_hyp_aux s cont
 -/
 
 meta def safe_core (s : simp_lemmas) (cfg : auto_config) : case_option → tactic unit :=
-λ co,
-do if cfg^.use_simp then simp_all s else skip,
+λ co, focus1 $
+do when_tracing `auto.finish (trace "entering safe_core"),
+   if cfg^.use_simp then simp_all s else skip,
+   when_tracing `auto.finish (trace "preprocessing hypotheses"),
    preprocess_hyps cfg,
    done s cfg <|>
      (mcond (case_some_hyp co safe_core)
