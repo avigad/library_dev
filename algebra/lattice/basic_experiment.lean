@@ -130,7 +130,7 @@ lemma sup_le_iff : a ⊔ b ≤ c ↔ a ≤ c ∧ b ≤ c :=
 -- TODO: if we just write le_antisymm, Lean doesn't know which ≤ we want to use
 -- Can we do anything about that?
 lemma sup_of_le_left (h : b ≤ a) : a ⊔ b = a :=
-by apply @le_antisymm α _ ; finish
+by apply @le_antisymm; finish
 
 lemma sup_of_le_right (h : a ≤ b) : a ⊔ b = b :=
 by apply @le_antisymm α _ ; finish
@@ -143,22 +143,22 @@ by finish
 
 @[simp]
 lemma sup_idem : a ⊔ a = a :=
-by apply @le_antisymm α _ ; finish
+by apply @le_antisymm; finish
 
 lemma sup_comm : a ⊔ b = b ⊔ a :=
-by apply @le_antisymm α _ ; finish
-
---
--- TODO(Jeremy): stopped here
---
+by apply @le_antisymm; finish
 
 instance semilattice_sup_to_is_commutative [semilattice_sup α] : is_commutative α (⊔) :=
 ⟨@sup_comm _ _⟩
 
 lemma sup_assoc : a ⊔ b ⊔ c = a ⊔ (b ⊔ c) :=
+by apply @le_antisymm; finish
+
+/- old proof:
 le_antisymm
   (sup_le (sup_le le_sup_left (le_sup_right_of_le le_sup_left)) (le_sup_right_of_le le_sup_right))
   (sup_le (le_sup_left_of_le le_sup_left) (sup_le (le_sup_left_of_le le_sup_right) le_sup_right))
+-/
 
 instance semilattice_sup_to_is_associative [semilattice_sup α] : is_associative α (⊔) :=
 ⟨@sup_assoc _ _⟩
@@ -176,7 +176,15 @@ variables {α : Type u} [semilattice_inf α] {a b c d : α}
 lemma inf_le_left : a ⊓ b ≤ a :=
 semilattice_inf.inf_le_left a b
 
+@[ematch]
+lemma inf_le_left' : (: a ⊓ b :) ≤ a :=
+semilattice_inf.inf_le_left a b
+
 lemma inf_le_right : a ⊓ b ≤ b :=
+semilattice_inf.inf_le_right a b
+
+@[ematch]
+lemma inf_le_right' : (: a ⊓ b :) ≤ b :=
 semilattice_inf.inf_le_right a b
 
 lemma le_inf : a ≤ b → a ≤ c → a ≤ b ⊓ c :=
@@ -188,38 +196,47 @@ le_trans inf_le_left h
 lemma inf_le_right_of_le (h : b ≤ c) : a ⊓ b ≤ c :=
 le_trans inf_le_right h
 
+@[simp]
 lemma le_inf_iff : a ≤ b ⊓ c ↔ a ≤ b ∧ a ≤ c :=
 ⟨assume h : a ≤ b ⊓ c, ⟨le_trans h inf_le_left, le_trans h inf_le_right⟩,
   take ⟨h₁, h₂⟩, le_inf h₁ h₂⟩
 
 lemma inf_of_le_left (h : a ≤ b) : a ⊓ b = a :=
+by apply @le_antisymm; finish
+
+/- old proof:
 le_antisymm inf_le_left (le_inf (le_refl _) h)
+-/
 
 lemma inf_of_le_right (h : b ≤ a) : a ⊓ b = b :=
-le_antisymm inf_le_right (le_inf h (le_refl _))
+by apply @le_antisymm; finish
 
 lemma inf_le_inf (h₁ : a ≤ b) (h₂ : c ≤ d) : a ⊓ c ≤ b ⊓ d :=
-le_inf (inf_le_left_of_le h₁) (inf_le_right_of_le h₂)
+by finish
 
 lemma le_of_inf_eq (h : a ⊓ b = a) : a ≤ b :=
-h ▸ inf_le_right
+by finish
 
 @[simp]
 lemma inf_idem : a ⊓ a = a :=
-inf_of_le_left (le_refl _)
+by apply @le_antisymm; finish
 
 lemma inf_comm : a ⊓ b = b ⊓ a :=
-have ∀{a b : α}, a ⊓ b ≤ b ⊓ a,
-  from take a b, le_inf inf_le_right inf_le_left,
-le_antisymm this this
+by apply @le_antisymm; finish
 
 instance semilattice_inf_to_is_commutative [semilattice_inf α] : is_commutative α (⊓) :=
 ⟨@inf_comm _ _⟩
 
+set_option pp.all true
+
 lemma inf_assoc : a ⊓ b ⊓ c = a ⊓ (b ⊓ c) :=
+by apply @le_antisymm; finish
+
+/- old proof:
 le_antisymm
   (le_inf (inf_le_left_of_le inf_le_left) (le_inf (inf_le_left_of_le inf_le_right) inf_le_right))
   (le_inf (le_inf inf_le_left (inf_le_right_of_le inf_le_left)) (inf_le_right_of_le inf_le_right))
+-/
 
 instance semilattice_inf_to_is_associative [semilattice_inf α] : is_associative α (⊓) :=
 ⟨@inf_assoc _ _⟩
@@ -304,18 +321,30 @@ variables {α : Type u} [lattice α] {a b c d : α}
 /- Distributivity laws -/
 /- TODO: better names? -/
 lemma sup_inf_le : a ⊔ (b ⊓ c) ≤ (a ⊔ b) ⊓ (a ⊔ c) :=
+by finish
+
+/- old proof
 sup_le (le_inf le_sup_left le_sup_left) $
   le_inf (inf_le_left_of_le le_sup_right) (inf_le_right_of_le le_sup_right)
+-/
 
 lemma le_inf_sup : (a ⊓ b) ⊔ (a ⊓ c) ≤ a ⊓ (b ⊔ c) :=
+by finish
+
+/- old proof
 le_inf (sup_le inf_le_left inf_le_left) $
   sup_le (le_sup_left_of_le inf_le_right) (le_sup_right_of_le inf_le_right)
+-/
 
 lemma inf_sup_self : a ⊓ (a ⊔ b) = a :=
+le_antisymm (by finish) (by finish)
+
+/- old proof
 le_antisymm inf_le_left (le_inf (le_refl a) le_sup_left)
+-/
 
 lemma sup_inf_self : a ⊔ (a ⊓ b) = a :=
-le_antisymm (sup_le (le_refl a) inf_le_left) le_sup_left
+le_antisymm (by finish) (by finish)
 
 end lattice
 
