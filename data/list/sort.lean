@@ -9,6 +9,19 @@ import .perm
 
 -- TODO(Jeremy): move this
 
+namespace well_founded_tactics
+open tactic
+
+meta def default_dec_tac' : tactic unit :=
+abstract $ do assumption <|> default_dec_tac
+
+/-do clear_internals,
+   unfold_wf_rel,
+   process_lex (unfold_sizeof >> cancel_nat_add_lt >> trivial_nat_lt)
+-/
+
+end well_founded_tactics
+
 namespace nat
 
 theorem add_pos_left {m : ℕ} (h : m > 0) (n : ℕ) : m + n > 0 :=
@@ -47,8 +60,8 @@ end nat
 namespace list
 
 section sorted
-universe variable uu
-variables {α : Type uu} (r : α → α → Prop)
+universe variable u
+variables {α : Type u} (r : α → α → Prop)
 
 def sorted : list α → Prop
 | []       := true
@@ -77,8 +90,8 @@ end sorted
 -/
 
 section sort
-universe variable uu
-parameters {α : Type uu} (r : α → α → Prop) [decidable_rel r]
+universe variable u
+parameters {α : Type u} (r : α → α → Prop) [decidable_rel r]
 local infix `≼` : 50 := r
 
 /- insertion sort -/
@@ -88,15 +101,6 @@ section insertion_sort
 def ordered_insert (a : α) : list α → list α
 | []       := [a]
 | (b :: l) := if a ≼ b then a :: (b :: l) else b :: ordered_insert l
-
---@[simp]
---theorem ordered_insert_nil (a : α) : ordered_insert a [] = [a] := rfl
-
---@[simp]
---theorem ordered_insert_cons (a b : α) (l : list α) :
---  ordered_insert a (b :: l) = if a ≼ b then a :: (b :: l) else b :: ordered_insert a l :=
---rfl
-
 
 def insertion_sort : list α → list α
 | []       := []
@@ -228,6 +232,7 @@ end
 
 -- Do the well-founded recursion by hand, until the function definition system supports it.
 
+/-
 private def merge.F :
   Π p : list α × list α,
       (Π p₁ : list α × list α, length p₁.1 + length p₁.2 < length p.1 + length p.2 → list α) →
@@ -240,26 +245,39 @@ private def merge.F :
                            b :: f (a :: l, l') begin apply nat.le_refl end
 
 def merge := well_founded.fix (inv_image.wf _ nat.lt_wf) merge.F
+-/
 
-theorem merge.def (p : list α × list α) : merge p = merge.F p (λ p h, merge p) :=
-well_founded.fix_eq (inv_image.wf _ nat.lt_wf) merge.F p
+def merge : list α → list α → list α 
+| [] l               := l
+| (a :: l) []        := a :: l
+| (a :: l) (b :: l') := if a ≼ b then
+                           a :: (merge l (b :: l'))  --begin simp without add_comm, apply nat.le_refl end
+                         else
+                           b :: (merge (a :: l) l')   --begin apply nat.le_refl end
 
-@[simp]
-theorem merge.equations.eq_1 (l : list α) : merge ([], l) = l :=
-begin rw merge.def, reflexivity end
+/-
+example (l : list α) : merge [] l = l := by simp [merge]
 
-@[simp]
-theorem merge.equations.eq_2 (a : α) (l : list α) : merge (a :: l, []) = a :: l :=
-begin rw merge.def, reflexivity end
+example (a b : α) (l l' : list α) : merge (a :: l) (b :: l') = if a ≼ b then
+                           a :: (merge l (b :: l'))
+                         else
+                           b :: (merge (a :: l) l'):=
+by simp [merge]
+-/
 
-@[simp]
+theorem merge.equations.eq_1 (l : list α) : merge [] l = l := by simp [merge]
+
+theorem merge.equations.eq_2 (a : α) (l : list α) : merge (a :: l) [] = a :: l := by simp [merge]
+
+
 theorem merge.equations.eq_3 (a b : α) (l l' : list α) :
-  merge (a :: l, b :: l') = if a ≼ b then
-                             a :: merge (l, b :: l')
+  merge (a :: l) (b :: l') = if a ≼ b then
+                             a :: merge l (b :: l')
                            else
-                             b :: merge (a :: l, l') :=
-begin rw merge.def, reflexivity end
+                             b :: merge (a :: l) l' :=
+by simp [merge]
 
+/-
 private def merge_sort.F :
   Π l : list α, (Π l₁ : list α, length l₁ < length l → list α) → list α
 | []            f := []
@@ -270,6 +288,31 @@ private def merge_sort.F :
                      merge (l₁, l₂)
 
 def merge_sort := well_founded.fix (inv_image.wf _ nat.lt_wf) merge_sort.F
+-/
+
+def merge_sort : list α → list α
+| []            := []
+| [a]           := [a]
+| (a :: b :: l) := let p := split (a :: b :: l) in
+                   have list.sizeof (a :: (split l).1) < 1 + (1 + list.sizeof l), 
+                     begin 
+                       simp [list.sizeof] 
+                     end, --from length_split_cons_cons_fst_lt a b l, 
+                   have list.sizeof (b :: (split l).2) < 1 + (1 + list.sizeof l), from sorry, 
+                   merge (merge_sort p.1) (merge_sort p.2)
+
+/-
+                         l₁ := merge_sort p.1, -- (length_split_cons_cons_fst_lt a b l),
+                         l₂ := merge_sort p.2 in -- (length_split_cons_cons_snd_lt a b l) in
+                     have list.sizeof (a :: (split l).fst) < 1 + (1 + list.sizeof l), from sorry, 
+                     merge l₁ l₂
+
+-/
+
+#check well_founded_tactics
+
+--def merge_sort := well_founded.fix (inv_image.wf _ nat.lt_wf) merge_sort.F
+
 
 theorem merge_sort.def (l : list α) : merge_sort l = merge_sort.F l (λ l h, merge_sort l) :=
 well_founded.fix_eq (inv_image.wf _ nat.lt_wf) merge_sort.F l
