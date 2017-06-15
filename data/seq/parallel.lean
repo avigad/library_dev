@@ -36,6 +36,8 @@ def parallel.aux1 : list (computation α) × wseq (computation α) →
 def parallel (S : wseq (computation α)) : computation α :=
 corec parallel.aux1 ([], S)
 
+/- Pending lean PR #1670
+
 lemma terminates_parallel.aux : ∀ {l : list (computation α)} {S c},
   c ∈ l → terminates c → terminates (corec parallel.aux1 (l, S)) :=
 begin
@@ -175,7 +177,7 @@ begin
         rw seq.destruct_eq_cons e,
         exact seq.mem_cons_of_mem _ dS' } } }
 end
-
+-/
 /-
 theorem parallel_empty (S : wseq (computation α)) (h : S.head ~> none) :
 parallel S = empty _ :=
