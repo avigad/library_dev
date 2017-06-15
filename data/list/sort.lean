@@ -247,7 +247,7 @@ private def merge.F :
 def merge := well_founded.fix (inv_image.wf _ nat.lt_wf) merge.F
 -/
 
-def merge : list α → list α → list α 
+def merge : list α → list α → list α
 | [] l               := l
 | (a :: l) []        := a :: l
 | (a :: l) (b :: l') := if a ≼ b then
@@ -294,17 +294,28 @@ def merge_sort : list α → list α
 | []            := []
 | [a]           := [a]
 | (a :: b :: l) := let p := split (a :: b :: l) in
-                   have list.sizeof (a :: (split l).1) < 1 + (1 + list.sizeof l), 
-                     begin 
-                       simp [list.sizeof] 
-                     end, --from length_split_cons_cons_fst_lt a b l, 
-                   have list.sizeof (b :: (split l).2) < 1 + (1 + list.sizeof l), from sorry, 
+                   have list.sizeof (split l).1 < 1 + list.sizeof l, from sorry,
+                   have list.sizeof (split l).2 < 1 + list.sizeof l, from sorry,
+/-                   have list.sizeof (a :: (split l).1) < 1 + (1 + list.sizeof l),
+                     begin
+                       simp [list.sizeof]
+                     end, --from length_split_cons_cons_fst_lt a b l,
+                   have list.sizeof (b :: (split l).2) < 1 + (1 + list.sizeof l), from sorry,
+-/
                    merge (merge_sort p.1) (merge_sort p.2)
+
+using_well_founded { dec_tac := tactic.abstract $ do
+                                well_founded_tactics.clear_internals,
+                                well_founded_tactics.unfold_wf_rel,
+                                /-tactic.repeat_at_most 5-/
+                                well_founded_tactics.unfold_sizeof, well_founded_tactics.unfold_sizeof,
+                                well_founded_tactics.cancel_nat_add_lt,
+                                tactic.assumption }
 
 /-
                          l₁ := merge_sort p.1, -- (length_split_cons_cons_fst_lt a b l),
                          l₂ := merge_sort p.2 in -- (length_split_cons_cons_snd_lt a b l) in
-                     have list.sizeof (a :: (split l).fst) < 1 + (1 + list.sizeof l), from sorry, 
+                     have list.sizeof (a :: (split l).fst) < 1 + (1 + list.sizeof l), from sorry,
                      merge l₁ l₂
 
 -/
@@ -313,6 +324,7 @@ def merge_sort : list α → list α
 
 --def merge_sort := well_founded.fix (inv_image.wf _ nat.lt_wf) merge_sort.F
 
+#exit
 
 theorem merge_sort.def (l : list α) : merge_sort l = merge_sort.F l (λ l h, merge_sort l) :=
 well_founded.fix_eq (inv_image.wf _ nat.lt_wf) merge_sort.F l
