@@ -237,11 +237,11 @@ def append (s₁ s₂ : seq α) : seq α :=
   end) (s₁, s₂)
 
 def map (f : α → β) : seq α → seq β | ⟨s, al⟩ :=
-⟨s.map (λo, option.cases_on o none (some ∘ f)),
+⟨s.map (option_map f),
 λn, begin
   dsimp [stream.map],
   ginduction s n with e; dsimp; intro,
-  { rw al e }, { contradiction }
+  { rw al e, assumption }, { contradiction }
 end⟩
 
 def join : seq (seq1 α) → seq α :=
@@ -253,9 +253,10 @@ corec (λS, match destruct S with
     end)
   end)
 
-def dropn : ℕ → seq α → seq α
-| 0     s := s
-| (n+1) s := dropn n (tail s)
+def dropn (s : seq α) : ℕ → seq α
+| 0     := s
+| (n+1) := tail (dropn n)
+attribute [simp] dropn
 
 def taken : ℕ → seq α → list α
 | 0     s := []
@@ -348,15 +349,16 @@ end
 @[simp] lemma map_nil (f : α → β) : map f nil = nil := rfl
 
 @[simp] lemma map_cons (f : α → β) (a) : ∀ s, map f (cons a s) = cons (f a) (map f s)
-| ⟨s, al⟩ := by apply subtype.eq; dsimp [cons, map]; rw stream.map_cons
+| ⟨s, al⟩ := by apply subtype.eq; dsimp [cons, map]; rw stream.map_cons; refl
 
 @[simp] lemma map_id : ∀ (s : seq α), map id s = s
 | ⟨s, al⟩ := begin
   apply subtype.eq; dsimp [cons, map],
-  have e : (@option.rec α (λ_, option α) none some) = id,
-  { apply funext, intro, cases x; refl },
-  rw [e, stream.map_id]
+  rw [option.map_id, stream.map_id]; refl
 end
+
+@[simp] lemma map_tail (f : α → β) : ∀ s, map f (tail s) = tail (map f s)
+| ⟨s, al⟩ := by apply subtype.eq; dsimp [tail, map]; rw stream.map_tail; refl
 
 lemma map_comp (f : α → β) (g : β → γ) : ∀ (s : seq α), map (g ∘ f) s = map g (map f s)
 | ⟨s, al⟩ := begin
@@ -377,6 +379,9 @@ begin
     { intros x s, refine ⟨s, t, rfl, rfl⟩ }
   end end
 end
+
+@[simp] lemma map_nth (f : α → β) : ∀ s n, nth (map f s) n = option_map f (nth s n)
+| ⟨s, al⟩ n := rfl
 
 instance : functor seq :=
 { map := @map, id_map := @map_id, map_comp := @map_comp }
@@ -457,6 +462,22 @@ def to_list' {α} (s : seq α) : computation (list α) :=
   | none         := sum.inl l.reverse
   | some (a, s') := sum.inr (a::l, s')
   end) ([], s)
+
+theorem dropn_add (s : seq α) (m) : ∀ n, dropn s (m + n) = dropn (dropn s m) n
+| 0     := rfl
+| (n+1) := congr_arg tail (dropn_add n)
+
+theorem dropn_tail (s : seq α) (n) : dropn (tail s) n = dropn s (n + 1) :=
+by rw add_comm; symmetry; apply dropn_add
+
+theorem nth_tail : ∀ (s : seq α) n, nth (tail s) n = nth s (n + 1)
+| ⟨f, al⟩ n := rfl
+
+@[simp] theorem head_dropn (s : seq α) (n) : head (dropn s n) = nth s n :=
+begin
+  revert s, induction n with n IH; intro, { refl },
+  rw [nat.succ_eq_add_one, -nth_tail, -dropn_tail], apply IH
+end
 
 end seq
 

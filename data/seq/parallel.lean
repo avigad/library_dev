@@ -7,8 +7,8 @@ Parallel computation of a computable sequence of computations by
 a diagonal enumeration.
 The important theorems of this operation are proven as
 terminates_parallel and exists_of_mem_parallel.
-(It is not technically nondeterministic, but it is probably not
-useful to rely on which of the sequence of results is returned first.)
+(This operation is nondeterministic in the sense that it does not
+honor sequence equivalence (irrelevance of computation time).)
 -/
 import data.seq.wseq
 universe u
@@ -176,11 +176,11 @@ begin
         exact seq.mem_cons_of_mem _ dS' } } }
 end
 
-/-
 theorem parallel_empty (S : wseq (computation α)) (h : S.head ~> none) :
 parallel S = empty _ :=
 eq_empty_of_not_terminates $ λ ⟨a, m⟩,
-_
--/
+let ⟨c, cs, ac⟩ := exists_of_mem_parallel S m,
+    ⟨n, nm⟩ := exists_nth_of_mem cs,
+    ⟨c', h'⟩ := head_some_of_nth_some _ nm in by injection h h'
 
 end computation
