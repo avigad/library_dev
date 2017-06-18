@@ -340,10 +340,10 @@ mem_unique h1.mem h2.mem
 
 def results.len_unique {s : computation α} {a b m n}
   (h1 : results s a m) (h2 : results s b n) : m = n :=
-by note := h1.terminates; note := h2.terminates; rw [-h1.length, h2.length]
+by have := h1.terminates; have := h2.terminates; rw [-h1.length, h2.length]
 
 def exists_results_of_mem {s : computation α} {a} (h : a ∈ s) : ∃ n, results s a n :=
-by note := terminates_of_mem h; note := results_of_terminates' s h; exact ⟨_, this⟩
+by have := terminates_of_mem h; have := results_of_terminates' s h; exact ⟨_, this⟩
 
 @[simp] theorem get_ret (a : α) : get (return a) = a :=
 get_eq_of_mem _ ⟨0, rfl⟩
@@ -369,13 +369,13 @@ end
 
 theorem results_think {s : computation α} {a n}
   (h : results s a n) : results (think s) a (n + 1) :=
-by note := h.terminates; exact ⟨think_mem h.mem, by rw [length_think, h.length]⟩
+by have := h.terminates; exact ⟨think_mem h.mem, by rw [length_think, h.length]⟩
 
 theorem of_results_think {s : computation α} {a n}
   (h : results (think s) a n) : ∃ m, results s a m ∧ n = m + 1 :=
 begin
-  note := of_think_terminates h.terminates,
-  note := results_of_terminates' _ (of_think_mem h.mem),
+  have := of_think_terminates h.terminates,
+  have := results_of_terminates' _ (of_think_mem h.mem),
   exact ⟨_, this, results.len_unique h (results_think this)⟩,
 end
 
@@ -390,7 +390,7 @@ theorem results_thinkN {s : computation α} {a m} :
 | (n+1) h := results_think (results_thinkN n h)
 
 theorem results_thinkN_ret (a : α) (n) : results (thinkN (return a) n) a n :=
-by note := results_thinkN n (results_ret a); rwa zero_add at this
+by have := results_thinkN n (results_ret a); rwa zero_add at this
 
 @[simp] theorem length_thinkN (s : computation α) [h : terminates s] (n) :
   length (thinkN s n) = length s + n :=
@@ -527,7 +527,7 @@ end
 theorem results_bind {s : computation α} {f : α → computation β} {a b m n}
   (h1 : results s a m) (h2 : results (f a) b n) : results (bind s f) b (n + m) :=
 begin
-  note := h1.mem, revert m,
+  have := h1.mem, revert m,
   apply mem_rec_on this _ (λ s IH, _); intros m h1,
   { rw [ret_bind], rw h1.len_unique (results_ret _), exact h2 },
   { rw [think_bind], cases of_results_think h1 with m' h, cases h with h1 e,
@@ -701,86 +701,113 @@ theorem equiv_ret_of_mem {s : computation α} {a} (h : a ∈ s) : s ~ return a :
 equiv_of_mem h (ret_mem _)
 
 def lift_rel (R : α → β → Prop) (ca : computation α) (cb : computation β) : Prop :=
-(terminates ca ↔ terminates cb) ∧ ∀ {a b}, a ∈ ca → b ∈ cb → R a b
+(∀ {a}, a ∈ ca → ∃ {b}, b ∈ cb ∧ R a b) ∧
+ ∀ {b}, b ∈ cb → ∃ {a}, a ∈ ca ∧ R a b 
 
 theorem lift_rel.swap (R : α → β → Prop) (ca : computation α) (cb : computation β) :
   lift_rel (function.swap R) cb ca ↔ lift_rel R ca cb :=
-and_congr iff.comm ⟨λ h a b ac bc, h bc ac, λ h b a bc ac, h ac bc⟩
+and_comm _ _
 
 theorem lift_eq_iff_equiv (c1 c2 : computation α) : lift_rel (=) c1 c2 ↔ c1 ~ c2 :=
 ⟨λ⟨h1, h2⟩ a,
-  ⟨λ a1, by {cases h1.1 ⟨_, a1⟩ with b b2, rw h2 a1 b2, exact b2},
-   λ a2, by {cases h1.2 ⟨_, a2⟩ with b b1, rw -h2 b1 a2, exact b1},⟩,
-λe, ⟨terminates_congr e, λ a b a1, mem_unique ((e _).1 a1)⟩⟩
+  ⟨λ a1, let ⟨b, b2, ab⟩ := h1 a1 in by rwa ab,
+   λ a2, let ⟨b, b1, ab⟩ := h2 a2 in by rwa -ab⟩,
+λe, ⟨λ a a1, ⟨a, (e _).1 a1, rfl⟩, λ a a2, ⟨a, (e _).2 a2, rfl⟩⟩⟩
 
 def lift_rel.refl (R : α → α → Prop) (H : reflexive R) : reflexive (lift_rel R) :=
-λ s, ⟨iff.rfl, λ a b as bs, by {rw mem_unique as bs, apply H}⟩
+λ s, ⟨λ a as, ⟨a, as, H a⟩, λ b bs, ⟨b, bs, H b⟩⟩
 
 def lift_rel.symm (R : α → α → Prop) (H : symmetric R) : symmetric (lift_rel R) :=
-λ s1 s2 ⟨l, r⟩, ⟨l.symm, λ a b a2 b1, H (r b1 a2)⟩
+λ s1 s2 ⟨l, r⟩,
+ ⟨λ a a2, let ⟨b, b1, ab⟩ := r a2 in ⟨b, b1, H ab⟩,
+  λ a a1, let ⟨b, b2, ab⟩ := l a1 in ⟨b, b2, H ab⟩⟩
 
 def lift_rel.trans (R : α → α → Prop) (H : transitive R) : transitive (lift_rel R) :=
-λ s1 s2 s3 ⟨l1, r1⟩ ⟨l2, r2⟩, ⟨l1.trans l2, λ a c a1 c3,
-  let ⟨b, b2⟩ := l1.1 ⟨_, a1⟩ in H (r1 a1 b2) (r2 b2 c3)⟩
+λ s1 s2 s3 ⟨l1, r1⟩ ⟨l2, r2⟩,
+ ⟨λ a a1, let ⟨b, b2, ab⟩ := l1 a1, ⟨c, c3, bc⟩ := l2 b2 in ⟨c, c3, H ab bc⟩,
+  λ c c3, let ⟨b, b2, bc⟩ := r2 c3, ⟨a, a1, ab⟩ := r1 b2 in ⟨a, a1, H ab bc⟩⟩
 
 def lift_rel.equiv (R : α → α → Prop) : equivalence R → equivalence (lift_rel R)
 | ⟨refl, symm, trans⟩ :=
   ⟨lift_rel.refl R refl, lift_rel.symm R symm, lift_rel.trans R trans⟩ 
 
 def lift_rel.imp {R S : α → β → Prop} (H : ∀ {a b}, R a b → S a b) (s t) :
- lift_rel R s t → lift_rel S s t :=
-and.imp id (λ h a b as bt, H (h as bt))
+  lift_rel R s t → lift_rel S s t | ⟨l, r⟩ :=
+⟨λ a as, let ⟨b, bt, ab⟩ := l as in ⟨b, bt, H ab⟩,
+ λ b bt, let ⟨a, as, ab⟩ := r bt in ⟨a, as, H ab⟩⟩
+
+def terminates_of_lift_rel {R : α → β → Prop} {s t} :
+ lift_rel R s t → (terminates s ↔ terminates t) | ⟨l, r⟩ :=
+⟨λ ⟨a, as⟩, let ⟨b, bt, ab⟩ := l as in ⟨b, bt⟩,
+ λ ⟨b, bt⟩, let ⟨a, as, ab⟩ := r bt in ⟨a, as⟩⟩
+
+def rel_of_lift_rel {R : α → β → Prop} {ca cb} :
+ lift_rel R ca cb → ∀ {a b}, a ∈ ca → b ∈ cb → R a b
+| ⟨l, r⟩ a b ma mb :=
+  let ⟨b', mb', ab'⟩ := l ma in by rw mem_unique mb mb'; exact ab'
 
 theorem lift_rel_of_mem {R : α → β → Prop} {a b ca cb}
-  (h1 : a ∈ ca) (h2 : b ∈ cb) (h3 : R a b) : lift_rel R ca cb :=
-⟨⟨λ_, ⟨_, h2⟩, λ_, ⟨_, h1⟩⟩, λ a' b' ma mb,
-by rw [mem_unique ma h1, mem_unique mb h2]; exact h3⟩
+  (ma : a ∈ ca) (mb : b ∈ cb) (ab : R a b) : lift_rel R ca cb :=
+⟨λ a' ma', by rw mem_unique ma' ma; exact ⟨b, mb, ab⟩,
+ λ b' mb', by rw mem_unique mb' mb; exact ⟨a, ma, ab⟩⟩
 
 theorem exists_of_lift_rel_left {R : α → β → Prop} {ca cb}
-  (H : lift_rel R ca cb) {a} (h : a ∈ ca) : ∃ b ∈ cb, R a b :=
-let ⟨b, mb⟩ := H.left.1 ⟨a, h⟩ in ⟨b, mb, H.right h mb⟩
+  (H : lift_rel R ca cb) {a} (h : a ∈ ca) : ∃ {b}, b ∈ cb ∧ R a b :=
+H.left h
 
 theorem exists_of_lift_rel_right {R : α → β → Prop} {ca cb}
-  (H : lift_rel R ca cb) (b) (h : b ∈ cb) : ∃ a ∈ ca, R a b :=
-let ⟨a, ma⟩ := H.left.2 ⟨b, h⟩ in ⟨a, ma, H.right ma h⟩
+  (H : lift_rel R ca cb) (b) (h : b ∈ cb) : ∃ {a}, a ∈ ca ∧ R a b :=
+H.right h
+ 
+theorem lift_rel_def {R : α → β → Prop} {ca cb} : lift_rel R ca cb ↔ 
+  (terminates ca ↔ terminates cb) ∧ ∀ {a b}, a ∈ ca → b ∈ cb → R a b := 
+⟨λh, ⟨terminates_of_lift_rel h, λ a b ma mb, 
+  let ⟨b', mb', ab⟩ := h.left ma in by rwa mem_unique mb mb'⟩, 
+λ⟨l, r⟩, 
+ ⟨λ a ma, let ⟨b, mb⟩ := l.1 ⟨_, ma⟩ in ⟨b, mb, r ma mb⟩, 
+  λ b mb, let ⟨a, ma⟩ := l.2 ⟨_, mb⟩ in ⟨a, ma, r ma mb⟩⟩⟩  
 
 theorem lift_rel_bind {δ} (R : α → β → Prop) (S : γ → δ → Prop)
   {s1 : computation α} {s2 : computation β}
   {f1 : α → computation γ} {f2 : β → computation δ}
   (h1 : lift_rel R s1 s2) (h2 : ∀ {a b}, R a b → lift_rel S (f1 a) (f2 b))
   : lift_rel S (bind s1 f1) (bind s2 f2) :=
-begin
-  cases h1 with l1 r1,
-  refine ⟨⟨λh, _, λh, _⟩, λb b' b1 b'2, _⟩,
-  { cases h with b h,
-    cases exists_of_mem_bind h with a a1, cases a1 with a1 b1,
-    cases l1.1 ⟨a, a1⟩ with a' a'2,
-    cases h2 (r1 a1 a'2) with l2 r2,
-    cases l2.1 ⟨_, b1⟩ with b' b'2,
-    exact ⟨_, mem_bind a'2 b'2⟩ },
-  { cases h with b h,
-    cases exists_of_mem_bind h with a a2, cases a2 with a2 b2,
-    cases l1.2 ⟨a, a2⟩ with a' a'1,
-    cases h2 (r1 a'1 a2) with l2 r2,
-    cases l2.2 ⟨_, b2⟩ with b' b'1,
-    exact ⟨_, mem_bind a'1 b'1⟩ },
-  { cases exists_of_mem_bind b1 with a a1, cases a1 with a1 b1,
-    cases exists_of_mem_bind b'2 with a' a'2, cases a'2 with a'2 b'2,
-    cases h2 (r1 a1 a'2) with l2 r2,
-    exact r2 b1 b'2 }
-end
+let ⟨l1, r1⟩ := h1 in
+⟨λ c cB,
+  let ⟨a, a1, c1⟩ := exists_of_mem_bind cB,
+      ⟨b, b2, ab⟩ := l1 a1,
+      ⟨l2, r2⟩ := h2 ab,
+      ⟨d, d2, cd⟩ := l2 c1 in
+  ⟨_, mem_bind b2 d2, cd⟩,
+λ d dB,
+  let ⟨b, b1, d1⟩ := exists_of_mem_bind dB,
+      ⟨a, a2, ab⟩ := r1 b1,
+      ⟨l2, r2⟩ := h2 ab,
+      ⟨c, c2, cd⟩ := r2 d1 in
+  ⟨_, mem_bind a2 c2, cd⟩⟩
+
+@[simp] theorem lift_rel_return_left (R : α → β → Prop) (a : α) (cb : computation β) :
+  lift_rel R (return a) cb ↔ ∃ {b}, b ∈ cb ∧ R a b :=
+⟨λ⟨l, r⟩, l (ret_mem _),
+ λ⟨b, mb, ab⟩,
+  ⟨λ a' ma', by rw eq_of_ret_mem ma'; exact ⟨b, mb, ab⟩,
+   λ b' mb', ⟨_, ret_mem _, by rw mem_unique mb' mb; exact ab⟩⟩⟩
+
+@[simp] theorem lift_rel_return_right (R : α → β → Prop) (ca : computation α) (b : β) :
+  lift_rel R ca (return b) ↔ ∃ {a}, a ∈ ca ∧ R a b :=
+by rw [lift_rel.swap, lift_rel_return_left]
 
 @[simp] theorem lift_rel_return (R : α → β → Prop) (a : α) (b : β) :
   lift_rel R (return a) (return b) ↔ R a b :=
-⟨λh, h.right (ret_mem _) (ret_mem _),
-λh, ⟨by constructor; intro; apply_instance, λ a' b' ma mb,
-  by rw [mem_unique ma (ret_mem _), mem_unique mb (ret_mem _)]; exact h⟩⟩
+by rw [lift_rel_return_left]; exact
+⟨λ⟨b', mb', ab'⟩, by rwa eq_of_ret_mem mb' at ab',
+ λab, ⟨_, ret_mem _, ab⟩⟩
 
 @[simp] theorem lift_rel_think_left (R : α → β → Prop) (ca : computation α) (cb : computation β) :
   lift_rel R (think ca) cb ↔ lift_rel R ca cb :=
-and_congr
-  (iff_congr ⟨@of_think_terminates _ _, @computation.think_terminates _ _⟩ iff.rfl)
-  ⟨λ h a b ma mb, h (think_mem ma) mb, λ h a b ma mb, h (of_think_mem ma) mb⟩
+and_congr (forall_congr $ λb, imp_congr ⟨of_think_mem, think_mem⟩ iff.rfl)
+ (forall_congr $ λb, imp_congr iff.rfl $
+    exists_congr $ λ b, and_congr ⟨of_think_mem, think_mem⟩ iff.rfl)
 
 @[simp] theorem lift_rel_think_right (R : α → β → Prop) (ca : computation α) (cb : computation β) :
   lift_rel R ca (think cb) ↔ lift_rel R ca cb :=
@@ -789,13 +816,13 @@ by rw [-lift_rel.swap R, -lift_rel.swap R]; apply lift_rel_think_left
 theorem lift_rel_mem_cases {R : α → β → Prop} {ca cb}
   (Ha : ∀ a ∈ ca, lift_rel R ca cb)
   (Hb : ∀ b ∈ cb, lift_rel R ca cb) : lift_rel R ca cb :=
-⟨⟨λ⟨a, h⟩, (Ha a h).left.1 ⟨a, h⟩, λ⟨b, h⟩, (Hb b h).left.2 ⟨b, h⟩⟩,
-λ a b ha hb, (Ha a ha).right ha hb⟩
+⟨λ a ma, (Ha _ ma).left ma, λ b mb, (Hb _ mb).right mb⟩
 
 theorem lift_rel_congr {R : α → β → Prop} {ca ca' : computation α} {cb cb' : computation β}
   (ha : ca ~ ca') (hb : cb ~ cb') : lift_rel R ca cb ↔ lift_rel R ca' cb' :=
-and_congr (iff_congr (terminates_congr ha) (terminates_congr hb)) $
-forall_congr $ λ a, forall_congr $ λ b, imp_congr (ha _) $ imp_congr (hb _) iff.rfl
+and_congr
+  (forall_congr $ λ a, imp_congr (ha _) $ exists_congr $ λ b, and_congr (hb _) iff.rfl)
+  (forall_congr $ λ b, imp_congr (hb _) $ exists_congr $ λ a, and_congr (ha _) iff.rfl)
 
 theorem lift_rel_map {δ} (R : α → β → Prop) (S : γ → δ → Prop)
   {s1 : computation α} {s2 : computation β}
@@ -814,14 +841,14 @@ def lift_rel_aux (R : α → β → Prop)
   (C : computation α → computation β → Prop) :
   α ⊕ computation α → β ⊕ computation β → Prop
 | (sum.inl a)  (sum.inl b)  := R a b
-| (sum.inl a)  (sum.inr cb) := ∃ b ∈ cb, R a b
-| (sum.inr ca) (sum.inl b)  := ∃ a ∈ ca, R a b
+| (sum.inl a)  (sum.inr cb) := ∃ {b}, b ∈ cb ∧ R a b
+| (sum.inr ca) (sum.inl b)  := ∃ {a}, a ∈ ca ∧ R a b
 | (sum.inr ca) (sum.inr cb) := C ca cb
 attribute [simp] lift_rel_aux
 
 @[simp] def lift_rel_aux.ret_left (R : α → β → Prop)
   (C : computation α → computation β → Prop) (a cb) :
-  lift_rel_aux R C (sum.inl a) (destruct cb) ↔ ∃ b ∈ cb, R a b :=
+  lift_rel_aux R C (sum.inl a) (destruct cb) ↔ ∃ {b}, b ∈ cb ∧ R a b :=
 begin
   apply cb.cases_on (λ b, _) (λ cb, _),
   { exact ⟨λ h, ⟨_, ret_mem _, h⟩, λ ⟨b', mb, h⟩,
@@ -833,11 +860,11 @@ end
 
 theorem lift_rel_aux.swap (R : α → β → Prop) (C) (a b) :
   lift_rel_aux (function.swap R) (function.swap C) b a = lift_rel_aux R C a b :=
-by cases a with a ca; cases b with b cb; simp [lift_rel_aux]
+by cases a with a ca; cases b with b cb; simp only [lift_rel_aux]
 
 @[simp] def lift_rel_aux.ret_right (R : α → β → Prop)
   (C : computation α → computation β → Prop) (b ca) :
-  lift_rel_aux R C (destruct ca) (sum.inl b) ↔ ∃ a ∈ ca, R a b :=
+  lift_rel_aux R C (destruct ca) (sum.inl b) ↔ ∃ {a}, a ∈ ca ∧ R a b :=
 by rw [-lift_rel_aux.swap, lift_rel_aux.ret_left]
 
 lemma lift_rel_rec.lem {R : α → β → Prop} (C : computation α → computation β → Prop)
@@ -845,17 +872,10 @@ lemma lift_rel_rec.lem {R : α → β → Prop} (C : computation α → computat
   (ca cb) (Hc : C ca cb) (a) (ha : a ∈ ca) : lift_rel R ca cb :=
 begin
   revert cb, refine mem_rec_on ha _ (λ ca' IH, _);
-  intros cb Hc; note h := H Hc,
-  { simp at h, cases h with b hb, cases hb with mb rab,
-    refine ⟨⟨λ_, ⟨_, mb⟩, λ_, by apply_instance⟩, λ a' b' ma' mb', _⟩,
-    rw [mem_unique ma' (ret_mem _), mem_unique mb' mb], exact rab },
-  { note h := H Hc, simp, revert h, apply cb.cases_on (λ b, _) (λ cb', _),
-    { intro h; simp [lift_rel_aux] at h,
-      cases h with a ha, cases ha with ma rab,
-      refine ⟨⟨λ_, by apply_instance, λ_, ⟨_, ma⟩⟩, λ a' b' ma' mb', _⟩,
-      rw [mem_unique ma' ma, mem_unique mb' (ret_mem _)], exact rab },
-    { intro h; simp [lift_rel_aux] at h,
-      simp, exact IH _ h } }
+  intros cb Hc; have h := H Hc,
+  { simp at h, simp [h] },
+  { have h := H Hc, simp, revert h, apply cb.cases_on (λ b, _) (λ cb', _);
+    intro h; simp at h; simp [h], exact IH _ h }
 end
 
 theorem lift_rel_rec {R : α → β → Prop} (C : computation α → computation β → Prop)

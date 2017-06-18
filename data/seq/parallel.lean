@@ -181,6 +181,6 @@ parallel S = empty _ :=
 eq_empty_of_not_terminates $ λ ⟨a, m⟩,
 let ⟨c, cs, ac⟩ := exists_of_mem_parallel S m,
     ⟨n, nm⟩ := exists_nth_of_mem cs,
-    ⟨c', h'⟩ := head_some_of_nth_some _ nm in by injection h h'
+    ⟨c', h'⟩ := head_some_of_nth_some nm in by injection h h'
 
 end computation
