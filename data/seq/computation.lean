@@ -451,6 +451,9 @@ corec (bind.F f) (sum.inl c)
 
 instance : has_bind computation := ⟨@bind⟩
 
+theorem has_bind_eq_bind {β} (c : computation α) (f : α → computation β) :
+  c >>= f = bind c f := rfl
+
 def join (c : computation (computation α)) : computation α := c >>= id
 
 @[simp] lemma map_ret (f : α → β) (a) : map f (return a) = return (f a) := rfl
@@ -463,10 +466,19 @@ by apply s.cases_on; intro; simp
 
 @[simp] theorem map_id : ∀ (s : computation α), map id s = s
 | ⟨f, al⟩ := begin
-  apply subtype.eq; dsimp [think, map],
+  apply subtype.eq; dsimp [map],
   have e : (@option.rec α (λ_, option α) none some) = id,
   { apply funext, intro, cases x; refl },
   rw [e, stream.map_id]
+end
+
+lemma map_comp (f : α → β) (g : β → γ) :
+  ∀ (s : computation α), map (g ∘ f) s = map g (map f s)
+| ⟨s, al⟩ := begin
+  apply subtype.eq; dsimp [map],
+  rw stream.map_map,
+  apply congr_arg (λ f : _ → option γ, stream.map f s),
+  apply funext, intro, cases x with x; refl
 end
 
 @[simp] lemma ret_bind (a) (f : α → computation β) :
@@ -505,6 +517,9 @@ begin
     end end },
   { exact or.inr ⟨s, rfl, rfl⟩ }
 end
+
+@[simp] theorem bind_ret' (s : computation α) : bind s return = s :=
+by rw bind_ret; change (λ x : α, x) with @id α; rw map_id
 
 @[simp] theorem bind_assoc (s : computation α) (f : α → computation β) (g : β → computation γ) :
   bind (bind s f) g = bind s (λ (x : α), bind (f x) g) :=
@@ -588,6 +603,8 @@ instance : monad computation :=
   bind_pure_comp_eq_map := @bind_ret,
   pure_bind := @ret_bind,
   bind_assoc := @bind_assoc }
+
+theorem has_map_eq_map {β} (f : α → β) (c : computation α) : f <$> c = map f c := rfl
 
 @[simp] lemma return_def (a) : (_root_.return a : computation α) = return a := rfl
 
@@ -756,16 +773,16 @@ theorem exists_of_lift_rel_left {R : α → β → Prop} {ca cb}
 H.left h
 
 theorem exists_of_lift_rel_right {R : α → β → Prop} {ca cb}
-  (H : lift_rel R ca cb) (b) (h : b ∈ cb) : ∃ {a}, a ∈ ca ∧ R a b :=
+  (H : lift_rel R ca cb) {b} (h : b ∈ cb) : ∃ {a}, a ∈ ca ∧ R a b :=
 H.right h
  
-theorem lift_rel_def {R : α → β → Prop} {ca cb} : lift_rel R ca cb ↔ 
-  (terminates ca ↔ terminates cb) ∧ ∀ {a b}, a ∈ ca → b ∈ cb → R a b := 
-⟨λh, ⟨terminates_of_lift_rel h, λ a b ma mb, 
-  let ⟨b', mb', ab⟩ := h.left ma in by rwa mem_unique mb mb'⟩, 
-λ⟨l, r⟩, 
- ⟨λ a ma, let ⟨b, mb⟩ := l.1 ⟨_, ma⟩ in ⟨b, mb, r ma mb⟩, 
-  λ b mb, let ⟨a, ma⟩ := l.2 ⟨_, mb⟩ in ⟨a, ma, r ma mb⟩⟩⟩  
+theorem lift_rel_def {R : α → β → Prop} {ca cb} : lift_rel R ca cb ↔
+  (terminates ca ↔ terminates cb) ∧ ∀ {a b}, a ∈ ca → b ∈ cb → R a b :=
+⟨λh, ⟨terminates_of_lift_rel h, λ a b ma mb,
+  let ⟨b', mb', ab⟩ := h.left ma in by rwa mem_unique mb mb'⟩,
+λ⟨l, r⟩,
+ ⟨λ a ma, let ⟨b, mb⟩ := l.1 ⟨_, ma⟩ in ⟨b, mb, r ma mb⟩,
+  λ b mb, let ⟨a, ma⟩ := l.2 ⟨_, mb⟩ in ⟨a, ma, r ma mb⟩⟩⟩ 
 
 theorem lift_rel_bind {δ} (R : α → β → Prop) (S : γ → δ → Prop)
   {s1 : computation α} {s2 : computation β}

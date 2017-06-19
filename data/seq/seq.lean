@@ -36,6 +36,10 @@ protected def mem (a : α) (s : seq α) := some a ∈ s.1
 instance : has_mem α (seq α) :=
 ⟨seq.mem⟩
 
+theorem le_stable (s : seq α) {m n} (h : m ≤ n) :
+  s.1 m = none → s.1 n = none :=
+by {cases s with f al, induction h with n h IH, exacts [id, λ h2, al (IH h2)]}
+
 theorem not_mem_nil (a : α) : a ∉ @nil α :=
 λ ⟨n, (h : some a = none)⟩, by injection h
 
@@ -48,6 +52,10 @@ lemma mem_cons_of_mem (y : α) {a : α} : ∀ {s : seq α}, a ∈ s → a ∈ co
 lemma eq_or_mem_of_mem_cons {a b : α} : ∀ {s : seq α}, a ∈ cons b s → a = b ∨ a ∈ s
 | ⟨f, al⟩ h := or_of_or_of_implies_left
   (stream.eq_or_mem_of_mem_cons h) (λh, by injection h)
+
+@[simp] lemma mem_cons_iff {a b : α} {s : seq α} : a ∈ cons b s ↔ a = b ∨ a ∈ s :=
+⟨eq_or_mem_of_mem_cons, λo, by cases o with e m;
+  [{rw e, apply mem_cons}, exact mem_cons_of_mem _ m]⟩
 
 def destruct (s : seq α) : option (seq1 α) :=
 (λa', (a', s.tail)) <$> nth s 0
@@ -102,6 +110,21 @@ def cases_on {C : seq α → Sort v} (s : seq α)
   ginduction destruct s with H,
   { rw destruct_eq_nil H, apply h1 },
   { cases a with a s', rw destruct_eq_cons H, apply h2 }
+end
+
+theorem mem_rec_on {C : seq α → Prop} {a s} (M : a ∈ s)
+  (h1 : ∀ b s', (a = b ∨ C s') → C (cons b s')) : C s :=
+begin
+  cases M with k e, unfold stream.nth at e,
+  revert s, induction k with k IH; intros s e,
+  { have TH : s = cons a (tail s),
+    { apply destruct_eq_cons,
+      unfold destruct nth has_map.map, rw -e, refl },
+    rw TH, apply h1 _ _ (or.inl rfl) },
+  revert e, apply s.cases_on _ (λ b s', _); intro e,
+  { injection e },
+  { rw [show (cons b s').val (nat.succ k) = s'.val k, by cases s'; refl] at e,
+    apply h1 _ _ (or.inr (IH e)) }
 end
 
 def corec.F (f : β → option (α × β)) : option β → option α × option β
@@ -353,7 +376,7 @@ end
 
 @[simp] lemma map_id : ∀ (s : seq α), map id s = s
 | ⟨s, al⟩ := begin
-  apply subtype.eq; dsimp [cons, map],
+  apply subtype.eq; dsimp [map],
   rw [option.map_id, stream.map_id]; refl
 end
 
@@ -362,7 +385,7 @@ end
 
 lemma map_comp (f : α → β) (g : β → γ) : ∀ (s : seq α), map (g ∘ f) s = map g (map f s)
 | ⟨s, al⟩ := begin
-  apply subtype.eq; dsimp [cons, map],
+  apply subtype.eq; dsimp [map],
   rw stream.map_map,
   apply congr_arg (λ f : _ → option γ, stream.map f s),
   apply funext, intro, cases x with x; refl
@@ -478,6 +501,32 @@ begin
   revert s, induction n with n IH; intro, { refl },
   rw [nat.succ_eq_add_one, -nth_tail, -dropn_tail], apply IH
 end
+
+theorem mem_map (f : α → β) {a : α} : ∀ {s : seq α}, a ∈ s → f a ∈ map f s
+| ⟨g, al⟩ := stream.mem_map (option_map f)
+
+lemma exists_of_mem_map {f} {b : β} : ∀ {s : seq α}, b ∈ map f s → ∃ a, a ∈ s ∧ f a = b
+| ⟨g, al⟩ h := let ⟨o, om, oe⟩ := stream.exists_of_mem_map h in
+  by cases o; injection oe; exact ⟨a, om, h⟩
+
+def of_mem_append {s₁ s₂ : seq α} {a : α} (h : a ∈ append s₁ s₂) : a ∈ s₁ ∨ a ∈ s₂ :=
+begin
+  have := h, revert this,
+  generalize2 (append s₁ s₂) ss e, intro h, revert s₁,
+  apply mem_rec_on h _,
+  intros b s' o s₁,
+  apply s₁.cases_on _ (λ c t₁, _); intros m e;
+  have := congr_arg destruct e; simp at this; injections with i1 i2 i3,
+  { simp at m, exact or.inr m },
+  { simp at m, cases m with e' m,
+    { rw e', exact or.inl (mem_cons _ _) },
+    { rw i2, cases o with e' IH,
+      { rw e', exact or.inl (mem_cons _ _) },
+      { exact or.imp_left (mem_cons_of_mem _) (IH m i3) } } }
+end
+
+def mem_append_left {s₁ s₂ : seq α} {a : α} (h : a ∈ s₁) : a ∈ append s₁ s₂ :=
+by apply mem_rec_on h; intros; simph
 
 end seq
 

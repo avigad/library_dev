@@ -13,6 +13,9 @@ corec_eq _ _ _
 
 lemma map_tail {α β} (f : α → β) (s : stream α) : map f (tail s) = tail (map f s) :=
 rfl
+
+lemma exists_of_mem_map {α β f} {b : β} {s : stream α} : b ∈ map f s → ∃ a, a ∈ s ∧ f a = b :=
+assume ⟨n, h⟩, ⟨nth n s, ⟨n, rfl⟩, h.symm⟩
 end stream
 
 -- To be merged into data.lazy_list

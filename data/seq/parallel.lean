@@ -11,11 +11,11 @@ terminates_parallel and exists_of_mem_parallel.
 honor sequence equivalence (irrelevance of computation time).)
 -/
 import data.seq.wseq
-universe u
+universes u v
 
 namespace computation
 open wseq
-variables {α : Type u}
+variables {α : Type u} {β : Type v}
 
 def parallel.aux2 : list (computation α) → α ⊕ list (computation α) :=
 list.foldr (λc o, match o with
@@ -84,7 +84,7 @@ begin
         cases c with c; simp [parallel.aux1]; apply IH; simp [this] } } }
 end
 
-theorem terminates_parallel (S : wseq (computation α))
+theorem terminates_parallel {S : wseq (computation α)}
    {c} (h : c ∈ S) [T : terminates c] : terminates (parallel S) :=
 suffices ∀ n (l : list (computation α)) S c,
   c ∈ l ∨ some (some c) = seq.nth S n →
@@ -121,7 +121,7 @@ begin
         rw D, cases o with c; simp [parallel.aux1, TT] } } }
 end
 
-theorem exists_of_mem_parallel (S : wseq (computation α))
+theorem exists_of_mem_parallel {S : wseq (computation α)}
    {a} (h : a ∈ parallel S) : ∃ c ∈ S, a ∈ c :=
 suffices ∀ C, a ∈ C → ∀ (l : list (computation α)) S,
   corec parallel.aux1 (l, S) = C → ∃ c, (c ∈ l ∨ c ∈ S) ∧ a ∈ c,
@@ -176,11 +176,85 @@ begin
         exact seq.mem_cons_of_mem _ dS' } } }
 end
 
+lemma map_parallel (f : α → β) (S) : map f (parallel S) = parallel (S.map (map f)) :=
+begin
+  refine eq_of_bisim (λ c1 c2, ∃ l S,
+    c1 = map f (corec parallel.aux1 (l, S)) ∧
+    c2 = corec parallel.aux1 (l.map (map f), S.map (map f))) _ ⟨[], S, rfl, rfl⟩,
+  intros c1 c2 h, exact match c1, c2, h with ._, ._, ⟨l, S, rfl, rfl⟩ := begin
+    clear _match,
+    have : parallel.aux2 (l.map (map f)) = lmap f (rmap (list.map (map f)) (parallel.aux2 l)),
+    { simp [parallel.aux2], induction l with c l IH; simp, rw [IH], dsimp,
+      cases list.foldr parallel.aux2._match_1 (sum.inr list.nil) l; simp [parallel.aux2],
+      cases destruct c; simp },
+    simp [parallel.aux1], rw this, cases parallel.aux2 l with a l'; simp,
+    apply S.cases_on _ (λ c S, _) (λ S, _); simp; simp [parallel.aux1];
+    exact ⟨_, _, rfl, rfl⟩
+  end end
+end
+
 theorem parallel_empty (S : wseq (computation α)) (h : S.head ~> none) :
 parallel S = empty _ :=
 eq_empty_of_not_terminates $ λ ⟨a, m⟩,
-let ⟨c, cs, ac⟩ := exists_of_mem_parallel S m,
+let ⟨c, cs, ac⟩ := exists_of_mem_parallel m,
     ⟨n, nm⟩ := exists_nth_of_mem cs,
     ⟨c', h'⟩ := head_some_of_nth_some nm in by injection h h'
+
+-- The reason this isn't trivial from exists_of_mem_parallel is because it eliminates to Sort
+def parallel_rec {S : wseq (computation α)} (C : α → Sort v)
+  (H : ∀ s ∈ S, ∀ a ∈ s, C a) {a} (h : a ∈ parallel S) : C a :=
+begin
+  let T : wseq (computation (α × computation α)) :=
+    S.map (λc, c.map (λ a, (a, c))),
+  have : S = T.map (map (λ c, c.1)),
+  { rw [-wseq.map_comp], refine (wseq.map_id _).symm.trans (congr_arg (λ f, wseq.map f S) _),
+    apply funext, intro c, dsimp [id], rw [-map_comp], exact (map_id _).symm },
+  have pe := congr_arg parallel this, rw -map_parallel at pe,
+  have h' := h, rw pe at h',
+  have : terminates (parallel T) := (terminates_map_iff _ _).1 ⟨_, h'⟩,
+  ginduction get (parallel T) with e a' c,
+  have : a ∈ c ∧ c ∈ S,
+  { cases exists_of_mem_map h' with d h, cases h with dT cd,
+    rw get_eq_of_mem _ dT at e, cases e, dsimp at cd, cases cd,
+    cases exists_of_mem_parallel dT with d' h, cases h with dT' ad',
+    cases wseq.exists_of_mem_map dT' with c' h, cases h with cs' e',
+    rw -e' at ad',
+    cases exists_of_mem_map ad' with a' h, cases h with ac' e', injection e' with i1 i2,
+    constructor, rwa [i1, i2] at ac', rwa i2 at cs' },
+  cases this with ac cs, apply H _ cs _ ac
+end
+
+theorem parallel_promises {S : wseq (computation α)} {a}
+  (H : ∀ s ∈ S, s ~> a) : parallel S ~> a :=
+λ a' ma', let ⟨c, cs, ac⟩ := exists_of_mem_parallel ma' in H _ cs ac
+
+theorem mem_parallel {S : wseq (computation α)} {a}
+  (H : ∀ s ∈ S, s ~> a) {c} (cs : c ∈ S) (ac : a ∈ c) : a ∈ parallel S :=
+by have := terminates_of_mem ac; have := terminates_parallel cs;
+   exact mem_of_promises _ (parallel_promises H)
+
+lemma parallel_congr_lem {S T : wseq (computation α)} {a}
+  (H : S.lift_rel equiv T) : (∀ s ∈ S, s ~> a) ↔ (∀ t ∈ T, t ~> a) :=
+⟨λ h1 t tT, let ⟨s, sS, se⟩ := wseq.exists_of_lift_rel_right H tT in
+  (promises_congr se _).1 (h1 _ sS),
+λ h2 s sS, let ⟨t, tT, se⟩ := wseq.exists_of_lift_rel_left H sS in
+  (promises_congr se _).2 (h2 _ tT)⟩
+
+-- The parallel operation is only deterministic when all computation paths lead to the same value
+theorem parallel_congr_left {S T : wseq (computation α)} {a}
+  (h1 : ∀ s ∈ S, s ~> a) (H : S.lift_rel equiv T) : parallel S ~ parallel T :=
+let h2 := (parallel_congr_lem H).1 h1 in
+λ a', ⟨λh, by have aa := parallel_promises h1 h; rw -aa; rw -aa at h; exact
+  let ⟨s, sS, as⟩ := exists_of_mem_parallel h,
+      ⟨t, tT, st⟩ := wseq.exists_of_lift_rel_left H sS,
+      aT := (st _).1 as in mem_parallel h2 tT aT,
+λh, by have aa := parallel_promises h2 h; rw -aa; rw -aa at h; exact
+  let ⟨s, sS, as⟩ := exists_of_mem_parallel h,
+      ⟨t, tT, st⟩ := wseq.exists_of_lift_rel_right H sS,
+      aT := (st _).2 as in mem_parallel h1 tT aT⟩
+
+theorem parallel_congr_right {S T : wseq (computation α)} {a}
+  (h2 : ∀ t ∈ T, t ~> a) (H : S.lift_rel equiv T) : parallel S ~ parallel T :=
+parallel_congr_left ((parallel_congr_lem H).2 h2) H
 
 end computation
