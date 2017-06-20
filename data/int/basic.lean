@@ -8,6 +8,29 @@ The integers, with addition, multiplication, and subtraction.
 import ..nat.sub
 open nat
 
+namespace int
+
+theorem of_nat_add_neg_succ_of_nat_of_lt {m n : ℕ} (h : m < succ n) : of_nat m + -[1+n] = -[1+ n - m] := 
+begin
+ change sub_nat_nat _ _ = _, 
+ assert h' : succ n - m = succ (n - m), 
+ apply succ_sub,
+ apply le_of_lt_succ h,
+ simph [sub_nat_nat]
+end
+
+theorem of_nat_add_neg_succ_of_nat_of_ge {m n : ℕ} (h : m ≥ succ n) : of_nat m + -[1+n] = of_nat (m - succ n) := 
+begin
+ change sub_nat_nat _ _ = _,
+ assert h' : succ n - m = 0,
+ apply sub_eq_zero_of_le h,
+ simph [sub_nat_nat]
+end
+
+@[simp] lemma neg_add_neg (m n : ℕ) : -[1+m] + -[1+n] = -[1+nat.succ(m+n)] := rfl
+
+end int
+
 -- TODO: where to put these?
 meta def simp_coe_attr : user_attribute :=
 { name     := `simp.coe,
