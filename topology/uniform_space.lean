@@ -1045,7 +1045,8 @@ lemma uniform_continuous_vmap {f : α → β} {u : uniform_space β} :
 map_vmap_le
 
 lemma to_topological_space_vmap {f : α → β} {u : uniform_space β} :
-  (uniform_space.vmap f u).to_topological_space = topological_space.induced f u.to_topological_space :=
+  @uniform_space.to_topological_space _ (uniform_space.vmap f u) =
+  topological_space.induced f (@uniform_space.to_topological_space β u) :=
 eq_of_nhds_eq_nhds $ take a,
 begin
   simp [nhds_induced_eq_vmap, nhds_eq_uniformity, nhds_eq_uniformity],
@@ -1071,7 +1072,7 @@ uniform_space.vmap prod.fst t₁ ⊔ uniform_space.vmap prod.snd t₂
   but we want to have the uniformity of uniform convergence on function spaces -/
 
 lemma to_topological_space_mono {u₁ u₂ : uniform_space α} (h : u₁ ≤ u₂) :
-  u₁.to_topological_space ≤ u₂.to_topological_space :=
+  @uniform_space.to_topological_space _ u₁ ≤ @uniform_space.to_topological_space _ u₂ :=
 le_of_nhds_le_nhds $ take a,
   by rw [@nhds_eq_uniformity α u₁ a, @nhds_eq_uniformity α u₂ a]; exact (lift'_mono h $ le_refl _)
 
@@ -1082,11 +1083,11 @@ le_antisymm
   (le_infi $ take i, infi_le_of_le (u i) $ infi_le _ ⟨i, rfl⟩)
   (le_infi $ take a, le_infi $ take ⟨i, (ha : a = u i)⟩, ha.symm ▸ infi_le _ _)
 
-lemma to_topological_space_top : (⊤ : uniform_space α).to_topological_space = ⊤ :=
+lemma to_topological_space_top : @uniform_space.to_topological_space α ⊤ = ⊤ :=
 top_unique $ take s hs x hx ⟨a₁, a₂⟩ (h₁ : a₁ = a₂) (h₂ : a₁ = x),
   h₁ ▸ h₂.symm ▸ hx
 
-lemma to_topological_space_bot : (⊥ : uniform_space α).to_topological_space = ⊥ :=
+lemma to_topological_space_bot : @uniform_space.to_topological_space α ⊥ = ⊥ :=
 bot_unique $ take s hs, classical.by_cases
   (suppose s = ∅, this.symm ▸ @open_empty _ ⊥)
   (suppose s ≠ ∅,
@@ -1098,7 +1099,7 @@ bot_unique $ take s hs, classical.by_cases
     this.symm ▸ @open_univ _ ⊥)
 
 lemma to_topological_space_supr {ι : Sort v} {u : ι → uniform_space α} :
-  (supr u).to_topological_space = (⨆i, (u i).to_topological_space) :=
+  @uniform_space.to_topological_space α (supr u) = (⨆i, @uniform_space.to_topological_space α (u i)) :=
 classical.by_cases
   (assume h : nonempty ι,
     eq_of_nhds_eq_nhds $ take a,
@@ -1115,7 +1116,7 @@ classical.by_cases
   (suppose ¬ nonempty ι,
     le_antisymm
       (have supr u = ⊥, from bot_unique $ supr_le $ take i, (this ⟨i⟩).elim,
-        have (supr u).to_topological_space = ⊥,
+        have @uniform_space.to_topological_space _ (supr u) = ⊥,
           from this.symm ▸ to_topological_space_bot,
         this.symm ▸ bot_le)
       (supr_le $ take i, to_topological_space_mono $ le_supr _ _))
