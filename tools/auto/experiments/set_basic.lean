@@ -381,7 +381,7 @@ ext (take c, by simp)
 
 -- TODO(Jeremy): make this automatic
 theorem insert_ne_empty (a : α) (s : set α) : insert a s ≠ ∅ :=
-begin safe [set_eq_def, iff_def]; note h' := h a; finish end
+begin safe [set_eq_def, iff_def]; have h' := h a; finish end
 
 /- old proof
 theorem insert_ne_empty (a : α) (s : set α) : insert a s ≠ ∅ :=
@@ -712,7 +712,7 @@ ext (take y, iff.intro
 lemma image_comp (f : β → γ) (g : α → β) (a : set α) : image (f ∘ g) a = image f (image g a) :=
 begin
   safe [set_eq_def, iff_def, mem_image_eq, comp],
-  note h' :=  h_1 (g a_1),
+  have h' :=  h_1 (g a_1),
   finish
 end
 
@@ -777,7 +777,7 @@ theorem mem_image_compl (t : set α) (S : set (set α)) :
   t ∈ image compl S ↔ -t ∈ S :=
 begin
   safe [mem_image_eq, iff_def, fix_set_compl],
-  note h' := h_1 (- t),
+  have h' := h_1 (- t),
   safe [compl_compl]
 end
 
@@ -821,7 +821,7 @@ lemma bounded_forall_image_iff {f : α → β} {s : set α} {p : β → Prop} :
   (∀ y ∈ image f s, p y) ↔ (∀ x ∈ s, p (f x)) :=
 begin
   safe [mem_image_eq, iff_def],
-  note h' := h_1 (f a),
+  have h' := h_1 (f a),
   finish
 end
 
@@ -835,7 +835,7 @@ lemma image_insert_eq {f : α → β} {a : α} {s : set α} :
   image f (insert a s) = insert (f a) (image f s) :=
 begin
   safe [set_eq_def, iff_def, mem_image_eq],
-  note h' := h_1 a,
+  have h' := h_1 a,
   finish
 end
 

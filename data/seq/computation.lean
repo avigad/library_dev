@@ -177,7 +177,7 @@ section bisim
       and.imp id (λr, ⟨tail s, tail s',
         by cases s; refl, by cases s'; refl, r⟩) this,
       begin
-        note := bisim r, revert r this,
+        have := bisim r, revert r this,
         apply cases_on s _ _; intros; apply cases_on s' _ _; intros; intros r this,
         { constructor, dsimp at this, rw this, assumption },
         { rw [destruct_ret, destruct_think] at this,
@@ -315,7 +315,7 @@ nat.eq_zero_of_le_zero $ nat.find_min' ((terminates_def (return a)).1 h) rfl
 begin
   apply le_antisymm,
   { exact nat.find_min' _ (nat.find_spec ((terminates_def _).1 h)) },
-  { note : (option.is_some ((think s).val (length (think s))) : Prop) :=
+  { have : (option.is_some ((think s).val (length (think s))) : Prop) :=
       nat.find_spec ((terminates_def _).1 s.think_terminates),
     cases length (think s) with n,
     { contradiction },
@@ -333,11 +333,11 @@ begin
   generalize2 (length s) n e, revert s,
   induction n with n IH; intro s; apply cases_on s _ _,
   { intros a h e, apply congr_arg, exact (get_ret _).symm },
-  { intros s h e, note h' := of_think_terminates h,
+  { intros s h e, have h' := of_think_terminates h,
     change h with @computation.think_terminates α s h' at e,
     rw [length_think] at e, injection e },
   { intros a h e, rw [length_ret] at e, injection e },
-  { intros s h e, note h' := of_think_terminates h,
+  { intros s h e, have h' := of_think_terminates h,
     change h with @computation.think_terminates α s h' at e,
     rw [length_think] at e, injection e with e,
     simp [thinkN], apply congr_arg,
@@ -347,7 +347,7 @@ end
 def mem_rec_on {C : computation α → Sort v} {a s} (M : a ∈ s)
   (h1 : C (return a)) (h2 : ∀ s, C s → C (think s)) : C s :=
 begin
-  note T := terminates_of_mem M,
+  have T := terminates_of_mem M,
   rw [eq_thinkN s, get_eq_of_mem s M],
   generalize (length s) n, intro n,
   induction n with n IH, exacts [h1, h2 _ IH]
@@ -393,7 +393,7 @@ def join (c : computation (computation α)) : computation α := c >>= id
 @[simp] theorem map_id : ∀ (s : computation α), map id s = s
 | ⟨f, al⟩ := begin
   apply subtype.eq; dsimp [think, map],
-  assert e : (@option.rec α (λ_, option α) none some) = id,
+  have e : (@option.rec α (λ_, option α) none some) = id,
   { apply funext, intro, cases x; refl },
   rw [e, stream.map_id]
 end
@@ -475,9 +475,9 @@ get_eq_of_mem _ (mem_bind (get_mem s) (get_mem (f (get s))))
   [T1 : terminates s] [T2 : terminates (f (get s))] :
   length (bind s f) = length (f (get s)) + length s :=
 begin
-  note T1' := T1, revert T1 T2, apply terminates_rec_on s _ _,
+  have T1' := T1, revert T1 T2, apply terminates_rec_on s _ _,
   { intros a T1 T2, change T1 with @computation.ret_terminates _ a, simp },
-  { intros s IH T1, note T3 := of_think_terminates T1,
+  { intros s IH T1, have T3 := of_think_terminates T1,
     change T1 with @computation.think_terminates α s T3, intro,
     simp at T2,
     simp only [length_think, think_bind, get_think],
@@ -487,18 +487,18 @@ end
 theorem exists_of_mem_bind {s : computation α} {f : α → computation β} {b}
   (h : b ∈ bind s f) : ∃ a ∈ s, b ∈ f a :=
 begin
-  note T := terminates_of_mem h,
-  note e := eq_thinkN (bind s f),
+  have T := terminates_of_mem h,
+  have e := eq_thinkN (bind s f),
   rw get_eq_of_mem _ h at e, revert e,
   generalize (length (bind s f)) n, intro n,
   clear T h, revert s, induction n with n IH; intros;
   simp [thinkN] at e; revert e; apply cases_on s _ _,
   { intros a e, refine ⟨a, ret_mem _, _⟩,
     simp at e, rw e, apply ret_mem },
-  { intros s e, note := congr_arg head e, contradiction },
+  { intros s e, have := congr_arg head e, contradiction },
   { intros a e, refine ⟨a, ret_mem _, _⟩,
     simp at e, rw e, apply (thinkN_mem (n+1)).2, apply ret_mem },
-  { intros s e, note e := congr_arg tail e, simp at e,
+  { intros s e, have e := congr_arg tail e, simp at e,
     cases IH e with a h, cases h with h1 h2,
     exact ⟨a, think_mem h1, h2⟩ }
 end

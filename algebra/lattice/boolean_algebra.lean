@@ -116,7 +116,7 @@ le_of_inf_eq $
            ... = -x        : congr_arg has_neg.neg $ sup_of_le_left h
 
 lemma neg_le_neg_iff_le : - y ≤ - x ↔ x ≤ y :=
-⟨take h, by note h := neg_le_neg h; simp at h; assumption, 
+⟨take h, by have h := neg_le_neg h; simp at h; assumption, 
   neg_le_neg⟩
 
 lemma le_neg_of_le_neg (h : y ≤ - x) : x ≤ - y :=

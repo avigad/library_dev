@@ -113,7 +113,7 @@ lemma Inf_le_iff : a ≤ Inf s ↔ (∀b ∈ s, a ≤ b) :=
 
 -- how to state this? instead a parameter `a`, use `∃a, a ∈ s` or `s ≠ ∅`?
 lemma Inf_le_Sup (h : a ∈ s) : Inf s ≤ Sup s :=
-by note := le_Sup h; finish
+by have := le_Sup h; finish
 --Inf_le_of_le h (le_Sup h)
 
 -- TODO: it is weird that we have to add union_def
@@ -320,7 +320,7 @@ begin
   apply @le_antisymm,
     simp, intros,
     begin [smt]
-      ematch, ematch, ematch, trace_state, note := le_refl (f i_1 i),
+      ematch, ematch, ematch, trace_state, have := le_refl (f i_1 i),
       trace_state, close
     end
 end

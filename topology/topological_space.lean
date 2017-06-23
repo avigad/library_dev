@@ -25,7 +25,7 @@ variables {α : Type u} {β : Type v} {ι : Sort w} {a a₁ a₂ : α} {s s₁ s
 lemma topological_space_eq {f g : topological_space α} (h' : f^.open' = g^.open') : f = g :=
 begin
   cases f with a, cases g with b,
-  assert h : a = b, assumption,
+  have h : a = b, assumption,
   clear h',
   subst h
 end

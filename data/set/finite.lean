@@ -44,11 +44,11 @@ begin
   induction hs with a t' ha ht' ih,
   { intros t ht, simp [(subset_empty_iff t)^.mp ht, finite.empty] },
   { intros t ht,
-    note tm : finite (t \ {a}) :=
+    have tm : finite (t \ {a}) :=
       (ih $ show t \ {a} ⊆ t',
         from take x ⟨hxt, hna⟩, or.resolve_left (ht hxt) (by simp at hna; assumption)),
     cases (classical.em $ a ∈ t) with ha hna,
-    { have finite (insert a (t \ {a})), from finite_insert tm,
+    { exact have finite (insert a (t \ {a})), from finite_insert tm,
       show finite t,
         by simp [ha] at this; assumption },
     { simp [sdiff_singleton_eq_same, hna] at tm, exact tm } }

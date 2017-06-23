@@ -139,8 +139,8 @@ section foldl_eq_foldr
       change foldl f (f (f a b) c) l = f b (foldl f (f a c) l),
       rw -foldl_eq_of_comm_of_assoc,
       change foldl f (f (f a b) c) l = foldl f (f (f a c) b) l,
-      have h₁ : f (f a b) c = f (f a c) b, by rw [hassoc, hassoc, hcomm b c],
-      by rw h₁
+      have h₁ : f (f a b) c = f (f a c) b, { rw [hassoc, hassoc, hcomm b c] },
+      rw h₁
     end
 
   theorem foldl_eq_foldr : ∀ a l, foldl f a l = foldr f a l
@@ -485,7 +485,7 @@ lemma exists_of_mem_dmap : ∀ {l : list α} {b : β}, b ∈ dmap p f l → ∃ 
       rw [dmap_cons_of_pos Pa, mem_cons_iff],
       intro Pb, cases Pb with Peq Pin,
       exact exists.intro a (exists.intro Pa (and.intro (mem_cons_self _ _) Peq)),
-      assert Pex : ∃ (a : α) (P : p a), a ∈ l ∧ b = f a P, exact exists_of_mem_dmap Pin,
+      have Pex : ∃ (a : α) (P : p a), a ∈ l ∧ b = f a P, exact exists_of_mem_dmap Pin,
       cases Pex with a' Pex', cases Pex' with Pa' P',
       exact exists.intro a' (exists.intro Pa' (and.intro (mem_cons_of_mem a (and.left P'))
          (and.right P')))
@@ -494,7 +494,7 @@ lemma exists_of_mem_dmap : ∀ {l : list α} {b : β}, b ∈ dmap p f l → ∃ 
     begin
       rw [dmap_cons_of_neg Pa],
       intro Pin,
-      assert Pex : ∃ (a : α) (P : p a), a ∈ l ∧ b = f a P, exact exists_of_mem_dmap Pin,
+      have Pex : ∃ (a : α) (P : p a), a ∈ l ∧ b = f a P, exact exists_of_mem_dmap Pin,
       cases Pex with a' Pex', cases Pex' with Pa' P',
       exact exists.intro a' (exists.intro Pa' (and.intro (mem_cons_of_mem a (and.left P'))
           (and.right P')))

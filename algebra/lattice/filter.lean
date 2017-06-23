@@ -669,7 +669,7 @@ le_antisymm
     rw [Inf_sets_eq_finite] at h₂,
     simp at h₂,
     cases h₂ with s' hs', cases hs' with hs' hs'', cases hs'' with hs's ht',
-    assert ht : t ∈ (⨅ a ∈ s', f ⊔ a)^.sets,
+    have ht : t ∈ (⨅ a ∈ s', f ⊔ a)^.sets,
     { rw [infi_finite_distrib], exact ⟨h₁, ht'⟩, exact hs' },
     clear h₁ ht',
     revert ht t,
@@ -1362,7 +1362,7 @@ lemma infi_sets_induct {f : ι → filter α} {s : set α} (hs : s ∈ (infi f).
   (ins : ∀{i s₁ s₂}, s₁ ∈ (f i).sets → p s₂ → p (s₁ ∩ s₂))
   (upw : ∀{s₁ s₂}, s₁ ⊆ s₂ → p s₁ → p s₂) : p s :=
 begin
-  note hs' : s ∈ (complete_lattice.Inf {a : filter α | ∃ (i : ι), a = f i}).sets := hs,
+  have hs' : s ∈ (complete_lattice.Inf {a : filter α | ∃ (i : ι), a = f i}).sets := hs,
   rw [Inf_sets_eq_finite] at hs',
   simp at hs',
   cases hs' with is hs, cases hs with fin_is hs, cases hs with hs his,
@@ -1372,9 +1372,9 @@ begin
   case finite.insert fi is fi_ne_is fin_is ih fi_sub s hs' hs {
     simp at hs,
     cases hs with s₁ hs, cases hs with hs₁ hs, cases hs with s₂ hs, cases hs with hs hs₂,
-    note hi : ∃i, fi = f i := fi_sub (mem_insert _ _),
+    have hi : ∃i, fi = f i := fi_sub (mem_insert _ _),
     cases hi with i hi,
-    have hs₁ : s₁ ∈ (f i).sets, from hi ▸ hs₁,
+    exact have hs₁ : s₁ ∈ (f i).sets, from hi ▸ hs₁,
     have hs₂ : p s₂, from
       have his : is ⊆ {x | ∃i, x = f i}, from take i hi, fi_sub $  mem_insert_of_mem _ hi,
       have infi f ≤ Inf is, from Inf_le_Inf his,
@@ -1530,7 +1530,7 @@ if h : f = ⊥ then ⊥ else epsilon (λu, u ≤ f ∧ ultrafilter u)
 
 lemma ultrafilter_of_spec (h : f ≠ ⊥) : ultrafilter_of f ≤ f ∧ ultrafilter (ultrafilter_of f) :=
 begin
-  note h' := epsilon_spec (exists_ultrafilter h),
+  have h' := epsilon_spec (exists_ultrafilter h),
   simp [ultrafilter_of, dif_neg, h],
   simp at h',
   assumption

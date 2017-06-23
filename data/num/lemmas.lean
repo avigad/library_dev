@@ -142,12 +142,12 @@ namespace pos_num
     by rw [add_of_nat, of_to_nat]; exact congr_arg (num.pos ∘ succ) p.bit0_of_bit0
 
   theorem to_nat_inj {m n : pos_num} (h : (m : ℕ) = n) : m = n :=
-  by note := congr_arg (coe : ℕ → num) h; simp at this; injection this
+  by have := congr_arg (coe : ℕ → num) h; simp at this; injection this
 
   theorem pred_to_nat {n : pos_num} (h : n > 1) : (pred n : ℕ) = nat.pred n :=
   begin
     unfold pred,
-    note := pred'_to_nat n, revert this,
+    have := pred'_to_nat n, revert this,
     cases pred' n; dsimp [option.get_or_else],
     { intro this, rw @to_nat_inj n 1 this at h,
       exact absurd h dec_trivial },
@@ -169,25 +169,25 @@ namespace pos_num
   | 1        (bit0 b) := let h : (1:ℕ) ≤ b := to_nat_pos b in add_le_add h h
   | 1        (bit1 b) := nat.succ_lt_succ $ to_nat_pos $ bit0 b
   | (bit0 a) (bit0 b) := begin
-      note := cmp_dec a b, revert this, cases cmp a b; dsimp; intro,
+      have := cmp_dec a b, revert this, cases cmp a b; dsimp; intro,
       { exact @add_lt_add nat _ _ _ _ _ this this },
       { rw this },
       { exact @add_lt_add nat _ _ _ _ _ this this }
     end
   | (bit0 a) (bit1 b) := begin dsimp [cmp],
-      note := cmp_dec a b, revert this, cases cmp a b; dsimp; intro,
+      have := cmp_dec a b, revert this, cases cmp a b; dsimp; intro,
       { exact nat.le_succ_of_le (@add_lt_add nat _ _ _ _ _ this this) },
       { rw this, apply nat.lt_succ_self },
       { exact cmp_dec_lemma this }
     end
   | (bit1 a) (bit0 b) := begin dsimp [cmp],
-      note := cmp_dec a b, revert this, cases cmp a b; dsimp; intro,
+      have := cmp_dec a b, revert this, cases cmp a b; dsimp; intro,
       { exact cmp_dec_lemma this },
       { rw this, apply nat.lt_succ_self },
       { exact nat.le_succ_of_le (@add_lt_add nat _ _ _ _ _ this this) },
     end
   | (bit1 a) (bit1 b) := begin
-      note := cmp_dec a b, revert this, cases cmp a b; dsimp; intro,
+      have := cmp_dec a b, revert this, cases cmp a b; dsimp; intro,
       { exact nat.succ_lt_succ (add_lt_add this this) },
       { rw this },
       { exact nat.succ_lt_succ (add_lt_add this this) }
@@ -277,7 +277,7 @@ namespace num
   | 0       (pos b) := to_nat_pos _
   | (pos a) 0       := to_nat_pos _
   | (pos a) (pos b) :=
-    by { note := pos_num.cmp_dec a b; revert this; dsimp [cmp];
+    by { have := pos_num.cmp_dec a b; revert this; dsimp [cmp];
          cases pos_num.cmp a b, exacts [id, congr_arg pos, id] }
 
   theorem lt_iff_cmp {m n} : m < n ↔ cmp m n = ordering.lt :=
@@ -325,10 +325,10 @@ namespace num
   instance : decidable_linear_ordered_semiring num :=
   { num.comm_semiring with
     add_left_cancel            := λ a b c h, by { apply to_nat_inj,
-      note := congr_arg (coe : num → nat) h, revert this,
+      have := congr_arg (coe : num → nat) h, revert this,
       transfer_rw, apply add_left_cancel },
     add_right_cancel           := λ a b c h, by { apply to_nat_inj,
-      note := congr_arg (coe : num → nat) h, revert this,
+      have := congr_arg (coe : num → nat) h, revert this,
       transfer_rw, apply add_right_cancel },
     lt                         := (<),
     le                         := (≤),

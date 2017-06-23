@@ -141,7 +141,7 @@ theorem exists_least_of_bdd {P : ℤ → Prop} [HP : decidable_pred P]
     have Hzbk : z = b + coe_nat (nat_abs (z - b)),
       by rewrite [coe_nat_nat_abs_of_nonneg (int.le_of_lt Hpos), int.add_comm, sub_add_cancel],
     have Hk : nat_abs (z - b) < least (λ n, P (b + ↑n)) (nat.succ (nat_abs (elt - b))), begin
-     note Hz' := iff.mp !lt_add_iff_sub_lt_left Hz,
+     have Hz' := iff.mp !lt_add_iff_sub_lt_left Hz,
      rewrite [-coe_nat_nat_abs_of_nonneg (int.le_of_lt Hpos) at Hz'],
      apply lt_of_coe_nat_lt_coe_nat Hz'
     end,
@@ -179,7 +179,7 @@ theorem exists_greatest_of_bdd {P : ℤ → Prop} [HP : decidable_pred P]
     have Hzbk : z = b - coe_nat (nat_abs (b - z)),
       by rewrite [coe_nat_nat_abs_of_nonneg (int.le_of_lt Hpos), sub_sub_self],
     have Hk : nat_abs (b - z) < least (λ n, P (b - ↑n)) (nat.succ (nat_abs (b - elt))), begin
-      note Hz' := iff.mp !lt_add_iff_sub_lt_left (iff.mpr !lt_add_iff_sub_lt_right Hz),
+      have Hz' := iff.mp !lt_add_iff_sub_lt_left (iff.mpr !lt_add_iff_sub_lt_right Hz),
       rewrite [-coe_nat_nat_abs_of_nonneg (int.le_of_lt Hpos) at Hz'],
       apply lt_of_coe_nat_lt_coe_nat Hz'
     end,

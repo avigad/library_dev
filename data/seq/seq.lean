@@ -175,7 +175,7 @@ section bisim
       and.imp id (λr, ⟨tail s, tail s',
         by cases s; refl, by cases s'; refl, r⟩) this,
       begin
-        note := bisim r, revert r this,
+        have := bisim r, revert r this,
         apply cases_on s _ _; intros; apply cases_on s' _ _; intros; intros r this,
         { constructor, refl, assumption },
         { rw [destruct_nil, destruct_cons] at this,
@@ -353,7 +353,7 @@ end
 @[simp] lemma map_id : ∀ (s : seq α), map id s = s
 | ⟨s, al⟩ := begin
   apply subtype.eq; dsimp [cons, map],
-  assert e : (@option.rec α (λ_, option α) none some) = id,
+  have e : (@option.rec α (λ_, option α) none some) = id,
   { apply funext, intro, cases x; refl },
   rw [e, stream.map_id]
 end

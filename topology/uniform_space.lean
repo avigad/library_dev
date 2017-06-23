@@ -47,7 +47,7 @@ class uniform_space (α : Type u) :=
 lemma uniform_space_eq {u₁ u₂ : uniform_space α} (h : u₁.uniformity = u₂.uniformity) : u₁ = u₂ :=
 begin
   cases u₁ with a, cases u₂ with b,
-  assert h' : a = b, assumption,
+  have h' : a = b, assumption,
   clear h,
   subst h'
 end
@@ -655,8 +655,8 @@ instance : uniform_space (quotient (separation_setoid α)) :=
       begin
         simp at a_eq,
         simp at b_eq,
-        assert h : ⟦a₂⟧ = ⟦b₁⟧, { rw [a_eq.right, b_eq.left] },
-        note h : (a₂, b₁) ∈ separation_rel α := quotient.exact h,
+        have h : ⟦a₂⟧ = ⟦b₁⟧, { rw [a_eq.right, b_eq.left] },
+        have h : (a₂, b₁) ∈ separation_rel α := quotient.exact h,
         simp [function.comp, set.image, comp_rel],
         exact ⟨a₁, a_eq.left, b₂, b_eq.right, a₂, ha, b₁, h s hs, hb⟩
       end
@@ -847,7 +847,7 @@ calc map prod.swap (uniformity^.lift' gen) =
       (monotone_comp (monotone_set_of $ take p,
         @monotone_mem_sets (α×α) ((filter.prod ((p.2).val) ((p.1).val)))) monotone_principal)
       begin
-        note h := λ(p:Cauchy α×Cauchy α), @filter.prod_comm _ _ (p.2.val) (p.1.val),
+        have h := λ(p:Cauchy α×Cauchy α), @filter.prod_comm _ _ (p.2.val) (p.1.val),
         simp [function.comp, h],
         exact le_refl _
       end

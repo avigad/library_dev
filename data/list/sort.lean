@@ -138,7 +138,7 @@ theorem sorted_ordered_insert (a : α) : ∀ l, sorted r l → sorted r (ordered
   if h' : a ≼ b then
     begin
       simp [ordered_insert, if_pos, h'],
-      have ∀ c ∈ b :: l, a ≼ c, from
+      exact have ∀ c ∈ b :: l, a ≼ c, from
         take c, suppose c ∈ b :: l,
         or.elim (eq_or_mem_of_mem_cons this)
           (suppose c = b, this^.symm ▸ ‹a ≼ b›)
@@ -149,7 +149,7 @@ theorem sorted_ordered_insert (a : α) : ∀ l, sorted r l → sorted r (ordered
     have b ≼ a, from or.resolve_left (totr a b) h',
     begin
       simp [ordered_insert, if_neg, ‹¬ a ≼ b›],
-      have h₁ : sorted r (ordered_insert r a l), from sorted_ordered_insert l ‹sorted r l›,
+      exact have h₁ : sorted r (ordered_insert r a l), from sorted_ordered_insert l ‹sorted r l›,
       have h₂ : ∀ c ∈ ordered_insert r a l, b ≼ c, from
         take c,
         suppose c ∈ ordered_insert r a l,
@@ -306,12 +306,12 @@ private def count_merge.F (c : α) :
 | (a :: l, [])       f := by simp
 | (a :: l, b :: l')  f := if h : a ≼ b then
                             begin
-                              note hrec := f (l, b :: l') begin simp without add_comm, apply nat.le_refl end,
+                              have hrec := f (l, b :: l') begin simp without add_comm, apply nat.le_refl end,
                               simp [if_pos, h, count_cons', hrec]
                             end
                           else
                             begin
-                              note hrec := f (a :: l, l') begin apply nat.le_refl end,
+                              have hrec := f (a :: l, l') begin apply nat.le_refl end,
                               simp [if_neg, h, count_cons', hrec]
                             end
 
@@ -331,8 +331,8 @@ private def perm_merge_sort.F :
   perm.perm_of_forall_count_eq
   begin
     intro c,
-    pose hrec₁ := perm.count_eq_count_of_perm (f _ (length_split_cons_cons_fst_lt a b l)) c,
-    pose hrec₂ := perm.count_eq_count_of_perm (f _ (length_split_cons_cons_snd_lt a b l)) c,
+    let hrec₁ := perm.count_eq_count_of_perm (f _ (length_split_cons_cons_fst_lt a b l)) c,
+    let hrec₂ := perm.count_eq_count_of_perm (f _ (length_split_cons_cons_snd_lt a b l)) c,
     simp at hrec₁,
     simp at hrec₂,
     simp [hrec₁, hrec₂, count_merge, count_split, count_cons']
@@ -359,9 +359,9 @@ private def sorted_merge.F :
   have h₂₀ : ∀ c ∈ l', b ≼ c, from forall_mem_rel_of_sorted_cons r h₂,
   if h : a ≼ b then
     begin
-      note hrec := f (l, b :: l') begin simp without add_comm, apply nat.le_refl end,
+      have hrec := f (l, b :: l') begin simp without add_comm, apply nat.le_refl end,
       simp [if_pos, h],
-      have h₃ : sorted r (merge r (l, b :: l')), from hrec ‹sorted r l› h₂,
+      exact have h₃ : sorted r (merge r (l, b :: l')), from hrec ‹sorted r l› h₂,
       have h₄ : ∀ c ∈ merge r (l, b :: l'), a ≼ c,
       begin
         intros c hc,
@@ -378,9 +378,9 @@ private def sorted_merge.F :
   else
     have h' : b ≼ a, from or.resolve_left (totr a b) h,
     begin
-      note hrec := f (a :: l, l') begin apply nat.le_refl end,
+      have hrec := f (a :: l, l') begin apply nat.le_refl end,
       simp [if_neg, h],
-      have h₃ : sorted r (merge r (a :: l, l')), from hrec h₁ ‹sorted r l'›,
+      exact have h₃ : sorted r (merge r (a :: l, l')), from hrec h₁ ‹sorted r l'›,
       have h₄ : ∀ c ∈ merge r (a :: l, l'), b ≼ c,
       begin
         intros c hc,
@@ -410,10 +410,12 @@ private def sorted_merge_sort.F :
     simp,
     apply sorted_merge r totr transr,
     -- this should be handled by the simplifier, i.e. cancel out +1 and rewrite _ < _ + 1 to _ <= _
-    { apply f,
+    { dsimp,
+      apply f,
       show length (split l)^.fst + (1 + 0) < length l + (1 + 1),
         exact add_lt_add_of_le_of_lt (length_split_fst_le l) (add_lt_add_of_le_of_lt (le_refl 1) zero_lt_one) },
-    { apply f,
+    { dsimp,
+      apply f,
       show length (split l)^.snd + (1 + 0) < length l + (1 + 1),
         exact add_lt_add_of_le_of_lt (length_split_snd_le l) (add_lt_add_of_le_of_lt (le_refl 1) zero_lt_one) }
   end

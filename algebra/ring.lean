@@ -163,7 +163,7 @@ section
   dvd_add h₁ (dvd_neg_of_dvd h₂)
 
   theorem dvd_add_iff_left {a b c : A} (h : a ∣ c) : a ∣ b ↔ a ∣ b + c :=
-  ⟨λh₂, dvd_add h₂ h, λH, by note t := dvd_sub H h; rwa add_sub_cancel at t⟩
+  ⟨λh₂, dvd_add h₂ h, λH, by have t := dvd_sub H h; rwa add_sub_cancel at t⟩
 
   theorem dvd_add_iff_right {a b c : A} (h : a ∣ b) : a ∣ c ↔ a ∣ b + c :=
   by rw add_comm; exact dvd_add_iff_left h

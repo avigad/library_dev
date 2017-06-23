@@ -110,7 +110,7 @@ theorem eq_nil_of_perm_nil {l₁ : list α} (p : ([] : list α) ~ l₁) : l₁ =
 eq_nil_of_length_eq_zero (length_eq_length_of_perm p).symm
 
 theorem not_perm_nil_cons (x : α) (l : list α) : ¬ [] ~ (x::l) :=
-assume p, by note h := eq_nil_of_perm_nil p; contradiction
+assume p, by have h := eq_nil_of_perm_nil p; contradiction
 
 theorem eq_singleton_of_perm {a b : α} (p : [a] ~ [b]) : a = b :=
 have a ∈ [b], from mem_of_perm p (by simp),
@@ -208,7 +208,7 @@ def decidable_perm_aux :
       have len_t₁ : length t₁ = n,
         begin
          simp at H₁,
-         assert H₁' : nat.succ (length t₁) = nat.succ n, exact H₁,
+         have H₁' : nat.succ (length t₁) = nat.succ n, exact H₁,
          injection H₁' with e, exact e
        end,
       have length (erase x l₂) = nat.pred (length l₂), from length_erase_of_mem xinl₂,

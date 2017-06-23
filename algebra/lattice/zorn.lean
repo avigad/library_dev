@@ -53,7 +53,7 @@ lemma super_of_not_max {c : set α} (hc₁ : chain c) (hc₂ : ¬ is_max_chain c
   super_chain c (succ_chain c) :=
 begin
   simp [is_max_chain, not_and_iff, not_not_iff] at hc₂,
-  have ∃c', super_chain c c', from hc₂.neg_resolve_left hc₁,
+  exact have ∃c', super_chain c c', from hc₂.neg_resolve_left hc₁,
   let ⟨c', hc'⟩ := this in
   show super_chain c (succ_chain c),
     from succ_spec ⟨c', hc₁, hc'⟩
@@ -86,7 +86,7 @@ begin
   induction hc₁,
   case _root_.zorn.chain_closure.succ c₃ hc₃ ih {
     cases ih with ih ih,
-    { note h := h hc₃ ih,
+    { have h := h hc₃ ih,
       cases h with h h,
       { exact (or.inr $ h ▸ subset.refl _) },
       { exact (or.inl h) } },
@@ -102,10 +102,10 @@ private lemma chain_closure_succ_total (hc₁ : chain_closure c₁) (hc₂ : cha
 begin
   induction hc₂ generalizing c₁ hc₁ h,
   case _root_.zorn.chain_closure.succ c₂ hc₂ ih {
-    note h₁ : c₁ ⊆ c₂ ∨ @succ_chain α r c₂ ⊆ c₁ :=
+    have h₁ : c₁ ⊆ c₂ ∨ @succ_chain α r c₂ ⊆ c₁ :=
       (chain_closure_succ_total_aux hc₁ hc₂ $ take c₁, ih),
     cases h₁ with h₁ h₁,
-    { note h₂ := ih hc₁ h₁,
+    { have h₂ := ih hc₁ h₁,
       cases h₂ with h₂ h₂,
       { exact (or.inr $ h₂ ▸ subset.refl _) },
       { exact (or.inr $ subset.trans h₂ succ_increasing) } },
@@ -115,9 +115,9 @@ begin
     apply classical.by_contradiction,
     simp [not_or_iff, sUnion_subset_iff, not_forall_iff_exists_not, not_implies_iff_and_not],
     intro h, cases h with h₁ h₂, cases h₂ with c₃ h₂, cases h₂ with h₂ hc₃,
-    note h := chain_closure_succ_total_aux hc₁ (hs c₃ hc₃) (take c₄, ih _ hc₃),
+    have h := chain_closure_succ_total_aux hc₁ (hs c₃ hc₃) (take c₄, ih _ hc₃),
     cases h with h h,
-    { note h' := ih c₃ hc₃ hc₁ h,
+    { have h' := ih c₃ hc₃ hc₁ h,
       cases h' with h' h',
       { exact (h₂ $ h' ▸ subset.refl _) },
       { exact (h₁ $ subset.trans h' $ subset_sUnion_of_mem hc₃) } },
@@ -158,7 +158,7 @@ begin
   case _root_.zorn.chain_closure.succ c hc h {
     exact chain_succ h },
   case _root_.zorn.chain_closure.union s hs h {
-    note h : ∀c∈s, zorn.chain c := h,
+    have h : ∀c∈s, zorn.chain c := h,
     exact take c₁ ⟨t₁, ht₁, (hc₁ : c₁ ∈ t₁)⟩ c₂ ⟨t₂, ht₂, (hc₂ : c₂ ∈ t₂)⟩ hneq,
       have t₁ ⊆ t₂ ∨ t₂ ⊆ t₁, from chain_closure_total (hs _ ht₁) (hs _ ht₂),
       or.elim this

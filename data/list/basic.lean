@@ -146,7 +146,7 @@ lemma not_mem_of_index_of_eq_length : ∀ {a : α} {l : list α}, index_of a l =
 | a []        := by simp
 | a (b::l)    :=
   begin
-    note h := decidable.em (a = b),
+    have h := decidable.em (a = b),
     cases h with aeqb aneb,
     { rw [index_of_cons_of_eq l aeqb, length_cons], intros, contradiction },
     rw [index_of_cons_of_ne l aneb, length_cons, mem_cons_iff, not_or_iff],
