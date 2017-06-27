@@ -426,7 +426,7 @@ namespace Set
   def pair_inj {x y x' y' : Set.{u}} (H : pair x y = pair x' y') : x = x' ∧ y = y' := begin
     have ae := ext_iff.2 H,
     simp[pair] at ae,
-    have this : x = x',
+    have : x = x',
     { have xx'y' := (ae (@insert Set.{u} _ _ x ∅)).1 (by simp),
       cases xx'y' with h h,
       exact singleton_inj h,

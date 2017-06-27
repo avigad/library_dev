@@ -399,7 +399,7 @@ theorem sorted_merge : Π {p : list α × list α},
   sorted r p.1 → sorted r p.2 → sorted r (merge p) :=
 well_founded.fix (inv_image.wf _ nat.lt_wf) (sorted_merge.F totr transr)
 
-
+/- elaboration of sorted_merge_sort.F takes forever
 private def sorted_merge_sort.F :
   Π l : list α, (Π l₁ : list α, length l₁ < length l → sorted r (merge_sort l₁)) →
     sorted r (merge_sort l)
@@ -422,6 +422,7 @@ private def sorted_merge_sort.F :
 
 theorem sorted_merge_sort : ∀ l : list α, sorted r (merge_sort l) :=
 well_founded.fix (inv_image.wf _ nat.lt_wf) (sorted_merge_sort.F totr transr)
+-/
 
 end total_and_transitive
 end correctness

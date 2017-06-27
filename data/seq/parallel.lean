@@ -36,8 +36,6 @@ def parallel.aux1 : list (computation α) × wseq (computation α) →
 def parallel (S : wseq (computation α)) : computation α :=
 corec parallel.aux1 ([], S)
 
-/- Pending lean PR #1670
-
 lemma terminates_parallel.aux : ∀ {l : list (computation α)} {S c},
   c ∈ l → terminates c → terminates (corec parallel.aux1 (l, S)) :=
 begin
@@ -74,7 +72,7 @@ begin
         rw -h, simp [this] } },
     ginduction parallel.aux2 l with h a l',
     { exact lem1 _ _ ⟨a, h⟩ },
-    { ehave H2 : corec parallel.aux1 (l, S) = think _,
+    { have H2 : corec parallel.aux1 (l, S) = think _,
       { apply destruct_eq_think,
         simp [parallel.aux1],
         rw h, simp [rmap] },
@@ -95,10 +93,10 @@ from let ⟨n, h⟩ := h in this n [] S c (or.inr h) T,
 begin
   intro n, induction n with n IH; intros l S c o T,
   { cases o, { exact terminates_parallel.aux a T },
-    ehave H : seq.destruct S = some (some c, _),
+    have H : seq.destruct S = some (some c, _),
     { unfold seq.destruct has_map.map, rw -a, simp [option_bind] },
     ginduction (parallel.aux2 l) with h a l';
-    ehave C : corec parallel.aux1 (l, S) = _,
+    have C : corec parallel.aux1 (l, S) = _,
     { apply destruct_eq_ret, simp [parallel.aux1], rw [h], simp [rmap] },
     { rw C, apply_instance },
     { apply destruct_eq_think, simp [parallel.aux1], rw [h, H], simp [rmap] },
@@ -106,7 +104,7 @@ begin
       apply terminates_parallel.aux _ T, simp } },
   { cases o, { exact terminates_parallel.aux a T },
     ginduction (parallel.aux2 l) with h a l';
-    ehave C : corec parallel.aux1 (l, S) = _,
+    have C : corec parallel.aux1 (l, S) = _,
     { apply destruct_eq_ret, simp [parallel.aux1], rw [h], simp [rmap] },
     { rw C, apply_instance },
     { apply destruct_eq_think, simp [parallel.aux1], rw [h], simp [rmap] },
@@ -129,7 +127,7 @@ suffices ∀ C, a ∈ C → ∀ (l : list (computation α)) S,
   corec parallel.aux1 (l, S) = C → ∃ c, (c ∈ l ∨ c ∈ S) ∧ a ∈ c,
 from let ⟨c, h1, h2⟩ := this _ h [] S rfl in ⟨c, h1.resolve_left id, h2⟩,
 begin
-  define F : list (computation α) → α ⊕ list (computation α) → Prop,
+  let F : list (computation α) → α ⊕ list (computation α) → Prop,
   { intros l a, cases a with a l',
     exact ∃ c ∈ l, a ∈ c,
     exact ∀ a', (∃ c ∈ l', a' ∈ c) → (∃ c ∈ l, a' ∈ c) },
@@ -177,7 +175,7 @@ begin
         rw seq.destruct_eq_cons e,
         exact seq.mem_cons_of_mem _ dS' } } }
 end
--/
+
 /-
 theorem parallel_empty (S : wseq (computation α)) (h : S.head ~> none) :
 parallel S = empty _ :=
