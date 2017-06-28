@@ -18,13 +18,6 @@ or.elim (le_total n m)
 protected theorem sub_eq_of_eq_add {n m k : ℕ} (h : k = n + m) : k - n = m :=
 begin rw [h, nat.add_sub_cancel_left] end
 
-protected theorem sub_le_sub_left {n m : ℕ} (h : n ≤ m) (k : ℕ) : k - m ≤ k - n :=
-begin
-  cases le.dest h with l hl,
-  rw [-hl, -nat.sub_sub],
-  apply sub_le
-end
-
 protected theorem lt_of_sub_pos {m n : ℕ} (h : n - m > 0) : m < n :=
 lt_of_not_ge
   (suppose m ≥ n,
@@ -40,7 +33,7 @@ lt_of_not_ge
 protected theorem lt_of_sub_lt_sub_left {n m k : ℕ} (h : n - m < n - k) : k < m :=
 lt_of_not_ge
   (suppose m ≤ k,
-    have n - k ≤ n - m, from nat.sub_le_sub_left this _,
+    have n - k ≤ n - m, from nat.sub_le_sub_left _ this,
     not_le_of_gt h this)
 
 protected theorem sub_lt_self {m n : ℕ} (h₁ : m > 0) (h₂ : n > 0) : m - n < m :=

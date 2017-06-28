@@ -5,7 +5,6 @@ Authors: Jeremy Avigad, Leonardo de Moura
 
 Definitions and properties of gcd, lcm, and coprime.
 -/
-import .dvd
 
 open well_founded decidable prod
 
@@ -13,66 +12,26 @@ namespace nat
 
 /- gcd -/
 
-def gcd.F : Π (y : ℕ), (Π (y' : ℕ), y' < y → nat → nat) → nat → nat
-| 0        f x := x
-| (succ y) f x := f (x % succ y) (mod_lt _ $ succ_pos _) (succ y)
-
-def gcd (x y : nat) := fix lt_wf gcd.F y x
-
-@[simp] theorem gcd_zero_right (x : nat) : gcd x 0 = x := congr_fun (fix_eq lt_wf gcd.F 0) x
-
-@[simp] theorem gcd_succ (x y : nat) : gcd x (succ y) = gcd (succ y) (x % succ y) :=
-congr_fun (fix_eq lt_wf gcd.F (succ y)) x
-
-theorem gcd_one_right (n : ℕ) : gcd n 1 = 1 :=
-eq.trans (gcd_succ n 0) (by rw [mod_one, gcd_zero_right])
-
-theorem gcd_def (x : ℕ) : Π (y : ℕ), gcd x y = if y = 0 then x else gcd y (x % y)
-| 0        := gcd_zero_right _
-| (succ y) := (gcd_succ x y).trans (if_neg (succ_ne_zero y)).symm
-
-theorem gcd_self : Π (n : ℕ), gcd n n = n
-| 0         := gcd_zero_right _
-| (succ n₁) := (gcd_succ (succ n₁) n₁).trans (by rw [mod_self, gcd_zero_right])
-
-theorem gcd_zero_left : Π (n : ℕ), gcd 0 n = n
-| 0         := gcd_zero_right _
-| (succ n₁) := (gcd_succ 0 n₁).trans (by rw [zero_mod, gcd_zero_right])
-
-theorem gcd_rec (m : ℕ) : Π (n : ℕ), gcd m n = gcd n (m % n)
-| 0         := by rw [mod_zero, gcd_zero_left, gcd_zero_right]
-| (succ n₁) := gcd_succ _ _
-
-@[elab_as_eliminator]
-theorem gcd.induction {P : ℕ → ℕ → Prop}
-                   (m n : ℕ)
-                   (H0 : ∀m, P m 0)
-                   (H1 : ∀m n, 0 < n → P n (m % n) → P m n) :
-                 P m n :=
-@induction _ _ lt_wf (λn, ∀m, P m n) n (λk IH,
-  by {induction k with k ih, exact H0,
-      exact λm, H1 _ _ (succ_pos _) (IH _ (mod_lt _ (succ_pos _)) _)}) m
-
 theorem gcd_dvd (m n : ℕ) : (gcd m n ∣ m) ∧ (gcd m n ∣ n) :=
-gcd.induction m n
-  (λm, by rw gcd_zero_right; exact ⟨dvd_refl m, dvd_zero m⟩)
-  (λm n npos, by rw -gcd_rec; exact λ ⟨IH₁, IH₂⟩, ⟨(dvd_mod_iff IH₁).1 IH₂, IH₁⟩)
+gcd.induction n m
+  (λn, by rw gcd_zero_left; exact ⟨dvd_zero n, dvd_refl n⟩)
+  (λm n npos, by rw -gcd_rec; exact λ ⟨IH₁, IH₂⟩, ⟨IH₂, (dvd_mod_iff IH₂).1 IH₁⟩)
 
 theorem gcd_dvd_left (m n : ℕ) : gcd m n ∣ m := (gcd_dvd m n).left
 
 theorem gcd_dvd_right (m n : ℕ) : gcd m n ∣ n := (gcd_dvd m n).right
 
 theorem dvd_gcd {m n k : ℕ} : k ∣ m → k ∣ n → k ∣ gcd m n :=
-gcd.induction m n (λm km _, by rw gcd_zero_right; exact km)
-  (λm n npos IH H1 H2, by rw gcd_rec; exact IH H2 ((dvd_mod_iff H2).2 H1))
+gcd.induction n m (λn _ kn, by rw gcd_zero_left; exact kn)
+  (λn m mpos IH H1 H2, by rw gcd_rec; exact IH ((dvd_mod_iff H1).2 H2) H1)
 
 theorem gcd_comm (m n : ℕ) : gcd m n = gcd n m :=
-dvd.antisymm
+dvd_antisymm
   (dvd_gcd (gcd_dvd_right m n) (gcd_dvd_left m n))
   (dvd_gcd (gcd_dvd_right n m) (gcd_dvd_left n m))
 
 theorem gcd_assoc (m n k : ℕ) : gcd (gcd m n) k = gcd m (gcd n k) :=
-dvd.antisymm
+dvd_antisymm
   (dvd_gcd
     (dvd.trans (gcd_dvd_left (gcd m n) k) (gcd_dvd_left m n))
     (dvd_gcd (dvd.trans (gcd_dvd_left (gcd m n) k) (gcd_dvd_right m n)) (gcd_dvd_right (gcd m n) k)))
@@ -80,13 +39,13 @@ dvd.antisymm
     (dvd_gcd (gcd_dvd_left m (gcd n k)) (dvd.trans (gcd_dvd_right m (gcd n k)) (gcd_dvd_left n k)))
     (dvd.trans (gcd_dvd_right m (gcd n k)) (gcd_dvd_right n k)))
 
-theorem gcd_one_left (m : ℕ) : gcd 1 m = 1 :=
-eq.trans (gcd_comm 1 m) $ gcd_one_right m
+@[simp] theorem gcd_one_right (n : ℕ) : gcd n 1 = 1 :=
+eq.trans (gcd_comm n 1) $ gcd_one_left n
 
 theorem gcd_mul_left (m n k : ℕ) : gcd (m * n) (m * k) = m * gcd n k :=
-gcd.induction n k
-  (λn, by repeat {rw mul_zero <|> rw gcd_zero_right})
-  (λn k H IH, by rwa [-mul_mod_mul_left, -gcd_rec, -gcd_rec] at IH)
+gcd.induction k n
+  (λk, by repeat {rw mul_zero <|> rw gcd_zero_left})
+  (λk n H IH, by rwa [-mul_mod_mul_left, -gcd_rec, -gcd_rec] at IH)
 
 theorem gcd_mul_right (m n k : ℕ) : gcd (m * n) (k * n) = gcd m k * n :=
 by rw [mul_comm m n, mul_comm k n, mul_comm (gcd m k) n, gcd_mul_left]
@@ -132,8 +91,6 @@ gcd_dvd_gcd_of_dvd_right _ (dvd_mul_right _ _)
 
 /- lcm -/
 
-def lcm (m n : ℕ) : ℕ := m * n / (gcd m n)
-
 theorem lcm_comm (m n : ℕ) : lcm m n = lcm n m :=
 by delta lcm; rw [mul_comm, gcd_comm]
 
@@ -168,8 +125,8 @@ or.elim (eq_zero_or_pos k)
     by rw [gcd_mul_lcm, -gcd_mul_right, mul_comm n k];
        exact dvd_gcd (mul_dvd_mul_left _ H2) (mul_dvd_mul_right H1 _))
 
-theorem lcm.assoc (m n k : ℕ) : lcm (lcm m n) k = lcm m (lcm n k) :=
-dvd.antisymm
+theorem lcm_assoc (m n k : ℕ) : lcm (lcm m n) k = lcm m (lcm n k) :=
+dvd_antisymm
   (lcm_dvd
     (lcm_dvd (dvd_lcm_left m (lcm n k)) (dvd.trans (dvd_lcm_left n k) (dvd_lcm_right m (lcm n k))))
     (dvd.trans (dvd_lcm_right n k) (dvd_lcm_right m (lcm n k))))
@@ -178,8 +135,6 @@ dvd.antisymm
     (lcm_dvd (dvd.trans (dvd_lcm_right m n) (dvd_lcm_left (lcm m n) k)) (dvd_lcm_right (lcm m n) k)))
 
 /- coprime -/
-
-@[reducible] def coprime (m n : ℕ) : Prop := gcd m n = 1
 
 lemma gcd_eq_one_of_coprime {m n : ℕ} : coprime m n → gcd m n = 1 :=
 λ h, h
@@ -208,7 +163,7 @@ theorem gcd_mul_left_cancel_of_coprime {k : ℕ} (m : ℕ) {n : ℕ} (H : coprim
    gcd (k * m) n = gcd m n :=
 have H1 : gcd (gcd (k * m) n) k = 1,
 by rw [gcd_assoc, gcd_eq_one_of_coprime (coprime_swap H), gcd_one_right],
-dvd.antisymm
+dvd_antisymm
   (dvd_gcd (dvd_of_coprime_of_dvd_mul_left H1 (gcd_dvd_left _ _)) (gcd_dvd_right _ _))
   (gcd_dvd_gcd_mul_left _ _ _)
 
