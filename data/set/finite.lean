@@ -29,7 +29,7 @@ attribute [simp] finite.empty
 @[simp]
 lemma finite_insert {a : α} {s : set α} (h : finite s) : finite (insert a s) :=
 classical.by_cases
-  (suppose a ∈ s, by simph)
+  (suppose a ∈ s, by simp [*])
   (suppose a ∉ s, finite.insert a s this h)
 
 @[simp]

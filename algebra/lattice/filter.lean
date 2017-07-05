@@ -709,7 +709,7 @@ rfl
 
 @[simp]
 lemma principal_eq_bot_iff {s : set α} : principal s = ⊥ ↔ s = ∅ :=
-⟨take h, principal_eq_iff_eq.mp $ by simp [principal_empty, h], take h, by simph [principal_empty]⟩
+⟨take h, principal_eq_iff_eq.mp $ by simp [principal_empty, h], take h, by simp [*, principal_empty]⟩
 
 @[simp]
 lemma mem_pure {a : α} {s : set α} : a ∈ s → s ∈ (pure a : filter α).sets :=
@@ -750,7 +750,7 @@ filter_eq $ set.ext $ take x, by simp
 @[simp]
 lemma map_eq_bot_iff {f : filter α} {m : α → β} : map m f = ⊥ ↔ f = ⊥ :=
 ⟨by rw [-empty_in_sets_eq_bot, -empty_in_sets_eq_bot]; exact id,
-  take h, by simph⟩
+  take h, by simp [*]⟩
 
 lemma map_mono {f g : filter α} {m : α → β} (h : f ≤ g) : map m f ≤ map m g :=
 le_of_sup_eq $ calc
@@ -1485,7 +1485,7 @@ lemma mem_or_compl_mem_of_ultrafilter (hf : ultrafilter f) (s : set α) :
   s ∈ f.sets ∨ - s ∈ f.sets :=
 or_of_not_implies $ suppose - s ∉ f.sets,
   have f ≤ principal s,
-    from le_of_ultrafilter hf $ take h, this $ mem_sets_of_neq_bot $ by simph,
+    from le_of_ultrafilter hf $ take h, this $ mem_sets_of_neq_bot $ by simp [*],
   by simp at this; assumption
 
 lemma mem_or_mem_of_ultrafilter {s t : set α} (hf : ultrafilter f) (h : s ∪ t ∈ f.sets) :

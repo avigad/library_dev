@@ -8,6 +8,8 @@ Binder elimination
 import standard
 import ..algebra.lattice
 
+#exit -- conv was essentially killed
+
 namespace conv
 open tactic monad
 

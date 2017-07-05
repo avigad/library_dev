@@ -432,7 +432,7 @@ namespace Set
       exact singleton_inj h,
       { have m : x' ∈ insert x (∅:Set.{u}),
         { rw h, simp },
-        simp at m, simph } },
+        simp at m, simp [*] } },
     refine ⟨this, _⟩,
     cases this,
     have he : y = x → y = y',
@@ -441,7 +441,7 @@ namespace Set
       have xy'x := (ae (@insert Set.{u} _ _ y' {x})).2 (by simp),
       cases xy'x with xy'x xy'xx,
       { have y'x : y' ∈ @insert Set.{u} Set.{u} _ x ∅ := by rw -xy'x; simp,
-        simp at y'x, simph },
+        simp at y'x, simp [*] },
       { have yxx := (ext_iff.2 xy'xx y').1 (by simp),
         simp at yxx, cases yxx; simp } },
     have xyxy' := (ae (@insert Set.{u} _ _ y {x})).1 (by simp),
@@ -530,7 +530,7 @@ namespace Class
   notation `⋃` := Union
 
   theorem of_Set.inj {x y : Set.{u}} (h : (x : Class.{u}) = y) : x = y :=
-  Set.ext $ λz, by change z ∈ (x : Class.{u}) ↔ z ∈ (y : Class.{u}); simph
+  Set.ext $ λz, by change z ∈ (x : Class.{u}) ↔ z ∈ (y : Class.{u}); simp [*]
 
   @[simp] theorem to_Set_of_Set (p : Set.{u} → Prop) (x : Set.{u}) : to_Set p x ↔ p x :=
   ⟨λ⟨y, yx, py⟩, by rwa of_Set.inj yx at py, λpx, ⟨x, rfl, px⟩⟩

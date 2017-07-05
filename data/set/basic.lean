@@ -323,7 +323,7 @@ by finish
 
 @[simp]
 theorem singleton_eq_singleton_iff {x y : α} : {x} = ({y} : set α) ↔ x = y :=
-⟨take eq, eq_of_mem_singleton $ eq ▸ mem_singleton x, by intro; simph⟩
+⟨take eq, eq_of_mem_singleton $ eq ▸ mem_singleton x, by intro; simp [*]⟩
 
 theorem mem_singleton_of_eq {x y : α} (H : x = y) : x ∈ ({y} : set α) :=
 by finish
@@ -343,7 +343,7 @@ theorem singleton_ne_empty (a : α) : ({a} : set α) ≠ ∅ := insert_ne_empty 
 
 @[simp]
 lemma singleton_subset_iff {a : α} {s : set α} : {a} ⊆ s ↔ a ∈ s :=
-⟨λh, h (by simp), λh b e, by simp at e; simph⟩ 
+⟨λh, h (by simp), λh b e, by simp at e; simp [*]⟩ 
 
 /- separation -/
 

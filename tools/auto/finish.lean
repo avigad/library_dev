@@ -27,7 +27,7 @@ The variants ifinish, iclarify, and isafe restrict to intuitionistic logic. They
 well with the current heuristic instantiation method used by ematch, so they should be revisited
 when the API changes.
 -/
-import ..tactic.simp_tactic ...logic.basic
+import ..tactic.tactic ...logic.basic
 open tactic expr
 
 declare_trace auto.done
@@ -135,7 +135,7 @@ common_normalize_lemma_names ++
 meta def normalize_hyp (simps : simp_lemmas) (h : expr) : tactic expr :=
 do htype ← infer_type h,
    mcond (is_prop htype)
-     ((do (new_htype, heq) ← simplify simps htype,
+     ((do (new_htype, heq) ← simplify simps [] htype,
            newh ← assert (expr.local_pp_name h) new_htype,
            mk_eq_mp heq h >>= exact,
            try $ clear h,
@@ -218,9 +218,7 @@ meta def split_hyps_aux : list expr → tactic bool
                   return (b₁ || b₂)
 
 -- fail if no progress is made
-meta def split_hyps : tactic unit :=
-do ctx ← local_context,
-   mcond (split_hyps_aux ctx) skip failed
+meta def split_hyps : tactic unit := local_context >>= split_hyps_aux >>= guardb
 
 /-
   Use each hypothesis to simplify the others. For example, given a and a → b, we get b, and given
@@ -228,13 +226,15 @@ do ctx ← local_context,
 
   TODO(Jeremy): use a version of simp_at_using_hs that takes simp lemmas
 -/
-
 meta def self_simplify_hyps_aux : tactic unit :=
 do ctx ← local_context,
-   extra_simps ← mmap mk_const logic_eval_simps,
+   extra_simps ← mmap mk_const logic_eval_simps >>= simp_lemmas.mk.append,
    first $ ctx.for $ λ h,
-     do t ← infer_type h,
-        mcond (is_prop t) (simp_at_using_hs h extra_simps >> skip) failed
+     do infer_type h >>= is_prop >>= guardb,
+        hs ← collect_ctx_simps,
+        es ← extra_simps.append $ (hs.filter (≠ h)),
+        simp_hyp extra_simps [] h,
+        skip
 
 meta def self_simplify_hyps : tactic unit :=
 self_simplify_hyps_aux >> repeat self_simplify_hyps_aux
@@ -275,7 +275,7 @@ meta def mk_hinst_lemmas : list expr → smt_tactic hinst_lemmas
                   | _ := return his
                   end
 
-meta def done (s : simp_lemmas) (cfg : auto_config := {}) : tactic unit :=
+meta def done (cfg : auto_config := {}) : tactic unit :=
 do when_tracing `auto.done (trace "entering done" >> trace_state),
    /- if cfg^.use_simp then simp_all s else skip, -/
    contradiction <|>
@@ -331,28 +331,28 @@ local_context >>= case_some_hyp_aux s cont
   The main tactics.
 -/
 
-meta def safe_core (s : simp_lemmas) (cfg : auto_config) : case_option → tactic unit :=
+meta def safe_core (s : simp_lemmas × list name) (cfg : auto_config) : case_option → tactic unit :=
 λ co, focus1 $
 do when_tracing `auto.finish (trace "entering safe_core"),
-   if cfg^.use_simp then simp_all s else skip,
+   if cfg^.use_simp then simp_all s.1 s.2 { fail_if_unchanged := ff } else skip,
    when_tracing `auto.finish (trace "preprocessing hypotheses"),
    preprocess_hyps cfg,
-   done s cfg <|>
+   done cfg <|>
      (mcond (case_some_hyp co safe_core)
        skip
        (match co with
-         | case_option.force       := done s cfg
-         | case_option.at_most_one := try (done s cfg)
-         | case_option.accept      := try (done s cfg)
+         | case_option.force       := done cfg
+         | case_option.at_most_one := try (done cfg)
+         | case_option.accept      := try (done cfg)
          end))
 
-meta def clarify (s : simp_lemmas) (cfg : auto_config := {}) : tactic unit := safe_core s cfg case_option.at_most_one
-meta def safe (s : simp_lemmas) (cfg : auto_config := {}) : tactic unit := safe_core s cfg case_option.accept
-meta def finish (s : simp_lemmas) (cfg : auto_config := {}) : tactic unit := safe_core s cfg case_option.force
+meta def clarify (s : simp_lemmas × list name) (cfg : auto_config := {}) : tactic unit := safe_core s cfg case_option.at_most_one
+meta def safe (s : simp_lemmas × list name) (cfg : auto_config := {}) : tactic unit := safe_core s cfg case_option.accept
+meta def finish (s : simp_lemmas × list name) (cfg : auto_config := {}) : tactic unit := safe_core s cfg case_option.force
 
-meta def iclarify (s : simp_lemmas) (cfg : auto_config := {}) : tactic unit := clarify s {cfg with classical := false}
-meta def isafe (s : simp_lemmas) (cfg : auto_config := {}) : tactic unit := safe s {cfg with classical := false}
-meta def ifinish (s : simp_lemmas) (cfg : auto_config := {}) : tactic unit := finish s {cfg with classical := false}
+meta def iclarify (s : simp_lemmas × list name) (cfg : auto_config := {}) : tactic unit := clarify s {cfg with classical := false}
+meta def isafe (s : simp_lemmas × list name) (cfg : auto_config := {}) : tactic unit := safe s {cfg with classical := false}
+meta def ifinish (s : simp_lemmas × list name) (cfg : auto_config := {}) : tactic unit := finish s {cfg with classical := false}
 
 end auto
 
@@ -366,28 +366,28 @@ open lean lean.parser interactive interactive.types
 local postfix `?`:9001 := optional
 local postfix *:9001 := many
 
-meta def clarify (hs : parse opt_qexpr_list) (cfg : auto_config := {}) : tactic unit :=
-do s ← mk_simp_set ff [] hs [],
+meta def clarify (hs : parse simp_arg_list) (cfg : auto_config := {}) : tactic unit :=
+do s ← mk_simp_set ff [] hs,
    auto.clarify s cfg
 
-meta def safe (hs : parse opt_qexpr_list) (cfg : auto_config := {}) : tactic unit :=
-do s ← mk_simp_set ff [] hs [],
+meta def safe (hs : parse simp_arg_list) (cfg : auto_config := {}) : tactic unit :=
+do s ← mk_simp_set ff [] hs,
    auto.safe s cfg
 
-meta def finish (hs : parse opt_qexpr_list) (cfg : auto_config := {}) : tactic unit :=
-do s ← mk_simp_set ff [] hs [],
+meta def finish (hs : parse simp_arg_list) (cfg : auto_config := {}) : tactic unit :=
+do s ← mk_simp_set ff [] hs,
    auto.finish s cfg
 
-meta def iclarify (hs : parse opt_qexpr_list) (cfg : auto_config := {}) : tactic unit :=
-do s ← mk_simp_set ff [] hs [],
+meta def iclarify (hs : parse simp_arg_list) (cfg : auto_config := {}) : tactic unit :=
+do s ← mk_simp_set ff [] hs,
    auto.iclarify s cfg
 
-meta def isafe (hs : parse opt_qexpr_list) (cfg : auto_config := {}) : tactic unit :=
-do s ← mk_simp_set ff [] hs [],
+meta def isafe (hs : parse simp_arg_list) (cfg : auto_config := {}) : tactic unit :=
+do s ← mk_simp_set ff [] hs,
    auto.isafe s cfg
 
-meta def ifinish (hs : parse opt_qexpr_list) (cfg : auto_config := {}) : tactic unit :=
-do s ← mk_simp_set ff [] hs [],
+meta def ifinish (hs : parse simp_arg_list) (cfg : auto_config := {}) : tactic unit :=
+do s ← mk_simp_set ff [] hs,
    auto.ifinish s cfg
 
 end interactive

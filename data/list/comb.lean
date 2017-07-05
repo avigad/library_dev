@@ -175,7 +175,7 @@ theorem forall_mem_eq_tt_of_all_eq_tt {p : α → bool} :
               begin
                 simp [bool.band_eq_tt] at h, cases h with h₁ h₂,
                 simp at this, cases this with h' h',
-                simp_using_hs,
+                simp [*],
                 exact forall_mem_eq_tt_of_all_eq_tt h₂ _ h'
               end
 

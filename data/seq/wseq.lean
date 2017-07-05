@@ -446,11 +446,11 @@ terminates_map_iff _ (destruct s)
 @[simp] theorem tail_think (s : wseq α) : tail (think s) = (tail s).think := by simp [tail]
 
 @[simp] theorem dropn_nil (n) :
-  dropn (nil : wseq α) n = nil := by induction n; simph [dropn]
+  dropn (nil : wseq α) n = nil := by induction n; simp [*, dropn]
 @[simp] theorem dropn_cons (a : α) (s) (n) :
-  dropn (cons a s) (n+1) = dropn s n := by induction n; simph [dropn]
+  dropn (cons a s) (n+1) = dropn s n := by induction n; simp [*, dropn]
 @[simp] theorem dropn_think (s : wseq α) (n) :
-  dropn (think s) n = (dropn s n).think := by induction n; simph [dropn]
+  dropn (think s) n = (dropn s n).think := by induction n; simp [*, dropn]
 
 theorem dropn_add (s : wseq α) (m) : ∀ n, dropn s (m + n) = dropn (dropn s m) n
 | 0     := rfl
@@ -791,7 +791,7 @@ begin
 end
 
 theorem dropn_congr {s t : wseq α} (h : s ~ t) (n) : dropn s n ~ dropn t n :=
-by induction n; simph [tail_congr]
+by induction n; simp [*, tail_congr]
 
 theorem nth_congr {s t : wseq α} (h : s ~ t) (n) : nth s n ~ nth t n :=
 head_congr (dropn_congr h _)

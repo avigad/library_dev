@@ -114,7 +114,7 @@ assume p, by have h := eq_nil_of_perm_nil p; contradiction
 
 theorem eq_singleton_of_perm {a b : α} (p : [a] ~ [b]) : a = b :=
 have a ∈ [b], from mem_of_perm p (by simp),
-by simp at this; simph
+by simp at this; simp [*]
 
 theorem eq_singleton_of_perm_inv {a : α} {l : list α} (p : [a] ~ l) : l = [a] :=
 match l, length_eq_length_of_perm p, p with
@@ -391,7 +391,7 @@ theorem mem_cons_of_qeq {a : α} : ∀ {l₁ l₂ : list α}, l₁≈a|l₂ → 
 theorem length_eq_of_qeq {a : α} {l₁ l₂ : list α} :
   l₁ ≈ a | l₂ → length l₁ = nat.succ (length l₂) :=
 begin
-  intro q, induction q with l b l l' q ih, simp[nat.one_add], simph
+  intro q, induction q with l b l l' q ih, simp[nat.one_add], simp [*]
 end
 
 theorem qeq_of_mem {a : α} {l : list α} : a ∈ l → (∃ l', l ≈ a | l') :=

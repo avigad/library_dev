@@ -473,11 +473,11 @@ by apply subtype.eq; simp [of_stream, cons]; rw stream.map_cons
 
 @[simp] def of_list_append (l l' : list α) :
   of_list (l ++ l') = append (of_list l) (of_list l') :=
-by induction l; simph
+by induction l; simp [*]
 
 @[simp] def of_stream_append (l : list α) (s : stream α) :
   of_stream (l ++ₛ s) = append (of_list l) (of_stream s) :=
-by induction l; simph [stream.nil_append_stream, stream.cons_append_stream]
+by induction l; simp [*, stream.nil_append_stream, stream.cons_append_stream]
 
 def to_list' {α} (s : seq α) : computation (list α) :=
 @computation.corec (list α) (list α × seq α) (λ⟨l, s⟩,
@@ -526,7 +526,7 @@ begin
 end
 
 def mem_append_left {s₁ s₂ : seq α} {a : α} (h : a ∈ s₁) : a ∈ append s₁ s₂ :=
-by apply mem_rec_on h; intros; simph
+by apply mem_rec_on h; intros; simp [*]
 
 end seq
 

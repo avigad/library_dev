@@ -258,7 +258,7 @@ set.ext $ by simp [interior, nhds_sets]
 
 lemma open_iff_nhds {s : set α} : open' s ↔ (∀a∈s, nhds a ≤ principal s) :=
 calc open' s ↔ interior s = s : by rw [interior_eq_iff_open]
-  ... ↔ s ⊆ interior s : ⟨take h, by simph [subset.refl], subset.antisymm interior_subset⟩
+  ... ↔ s ⊆ interior s : ⟨take h, by simp [*, subset.refl], subset.antisymm interior_subset⟩
   ... ↔ (∀a∈s, nhds a ≤ principal s) : by rw [interior_eq_nhds]; refl
 
 lemma closure_eq_nhds {s : set α} : closure s = {a | nhds a ⊓ principal s ≠ ⊥} :=
@@ -271,7 +271,7 @@ calc closure s = - interior (- s) : closure_eq_compl_interior_compl
 
 lemma closed_iff_nhds {s : set α} : closed s ↔ (∀a, nhds a ⊓ principal s ≠ ⊥ → a ∈ s) :=
 calc closed s ↔ closure s = s : by rw [closure_eq_iff_closed]
-  ... ↔ closure s ⊆ s : ⟨take h, by simph [subset.refl], take h, subset.antisymm h subset_closure⟩
+  ... ↔ closure s ⊆ s : ⟨take h, by simp [*, subset.refl], take h, subset.antisymm h subset_closure⟩
   ... ↔ (∀a, nhds a ⊓ principal s ≠ ⊥ → a ∈ s) : by rw [closure_eq_nhds]; refl
 
 /- locally finite family [General Topology (Bourbaki, 1995)] -/

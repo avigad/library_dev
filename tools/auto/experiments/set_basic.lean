@@ -8,7 +8,7 @@ Test examples for "finish".
 import data.set
 import ....logic.basic
 import ....algebra.lattice
-import ...tactic.simp_tactic ..finish
+import ..finish
 
 open function lattice auto
 

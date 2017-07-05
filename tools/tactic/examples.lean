@@ -1,4 +1,3 @@
-import .simp_tactic
 open tactic
 
 universe u
@@ -29,7 +28,7 @@ example (x y z : ℕ) (h'' : true) (h : 0 + y = x) (h' : 0 + y = z) : x = z + 0 
 begin
   simp at *, 
   simp [h] at h',
-  simph
+  simp [*]
 end
 
 def my_id (x : α) := x
@@ -38,7 +37,7 @@ def my_id_def (x : α) : my_id x = x := rfl
 
 example (x y z : ℕ) (h'' : true) (h : 0 + my_id y = x) (h' : 0 + y = z) : x = z + 0 :=
 begin
-  simp [my_id_def] at *, simp [h] at h', simph
+  simp [my_id_def] at *, simp [h] at h', simp [*]
 end
 
 @[simp]

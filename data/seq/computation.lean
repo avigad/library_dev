@@ -188,7 +188,7 @@ section bisim
           exact false.elim this },
         { rw [destruct_ret, destruct_think] at this,
           exact false.elim this },
-        { simp at this, simph }          
+        { simp at this, simp [*] }          
       end
     end,
     exact ⟨s₁, s₂, rfl, rfl, r⟩

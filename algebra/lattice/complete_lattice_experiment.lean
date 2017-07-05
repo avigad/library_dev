@@ -50,7 +50,7 @@ theorem singleton_def (a : α) : ({a} : set α) = insert a ∅ := rfl
 @[simp] theorem singleton_eq_singleton_iff {x y : α} : {x} = ({y} : set α) ↔ x = y :=
   by finish [set_eq_def, iff_def]
 -- TODO: old proof in basic.lean:
---  ⟨take eq, eq_of_mem_singleton $ eq ▸ mem_singleton x, by intro; simph⟩
+--  ⟨take eq, eq_of_mem_singleton $ eq ▸ mem_singleton x, by intro; simp [*]⟩
 end
 
 
