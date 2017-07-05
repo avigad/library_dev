@@ -4,4 +4,4 @@ version = "0.1"
 timeout = 20000
 
 [dependencies]
-super = {git = "https://github.com/leanprover/super.git", rev = "85649de2c6ee42f84fdd147a00d15a094410ab58"}
+super = {git = "https://github.com/leanprover/super.git", rev = "56b379d022a091efb8fec8c760cf759aab411580"}
