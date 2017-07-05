@@ -58,7 +58,7 @@ le_antisymm le_top h
 
 -- TODO: delete in favor of the next?
 lemma eq_top_iff : a = ⊤ ↔ ⊤ ≤ a :=
-⟨take eq, eq^.symm ▸ le_refl ⊤, top_unique⟩
+⟨assume eq, eq^.symm ▸ le_refl ⊤, top_unique⟩
 
 @[simp]
 lemma top_le_iff : ⊤ ≤ a ↔ a = ⊤ :=
@@ -80,14 +80,14 @@ le_antisymm h bot_le
 
 -- TODO: delete?
 lemma eq_bot_iff : a = ⊥ ↔ a ≤ ⊥ :=
-⟨take eq, eq^.symm ▸ le_refl ⊥, bot_unique⟩
+⟨assume eq, eq^.symm ▸ le_refl ⊥, bot_unique⟩
 
 @[simp]
 lemma le_bot_iff : a ≤ ⊥ ↔ a = ⊥ :=
-⟨bot_unique, take h, h.symm ▸ le_refl ⊥⟩
+⟨bot_unique, assume h, h.symm ▸ le_refl ⊥⟩
 
 lemma neq_bot_of_le_neq_bot {a b : α} (hb : b ≠ ⊥) (hab : b ≤ a) : a ≠ ⊥ :=
-take ha, hb $ bot_unique $ ha ▸ hab
+assume ha, hb $ bot_unique $ ha ▸ hab
 
 end order_bot
 
@@ -125,7 +125,7 @@ semilattice_sup.sup_le a b c
 @[simp]
 lemma sup_le_iff : a ⊔ b ≤ c ↔ a ≤ c ∧ b ≤ c :=
 ⟨assume h : a ⊔ b ≤ c, ⟨le_trans le_sup_left h, le_trans le_sup_right h⟩,
-  take ⟨h₁, h₂⟩, sup_le h₁ h₂⟩
+  assume ⟨h₁, h₂⟩, sup_le h₁ h₂⟩
 
 -- TODO: if we just write le_antisymm, Lean doesn't know which ≤ we want to use
 -- Can we do anything about that?
@@ -199,7 +199,7 @@ le_trans inf_le_right h
 @[simp]
 lemma le_inf_iff : a ≤ b ⊓ c ↔ a ≤ b ∧ a ≤ c :=
 ⟨assume h : a ≤ b ⊓ c, ⟨le_trans h inf_le_left, le_trans h inf_le_right⟩,
-  take ⟨h₁, h₂⟩, le_inf h₁ h₂⟩
+  assume ⟨h₁, h₂⟩, le_inf h₁ h₂⟩
 
 lemma inf_of_le_left (h : a ≤ b) : a ⊓ b = a :=
 by apply @le_antisymm; finish
@@ -355,11 +355,11 @@ instance lattice_of_decidable_linear_order {α : Type u} [o : decidable_linear_o
   sup          := max,
   le_sup_left  := le_max_left,
   le_sup_right := le_max_right,
-  sup_le       := take a b c, max_le,
+  sup_le       := assume a b c, max_le,
 
   inf          := min,
   inf_le_left  := min_le_left,
   inf_le_right := min_le_right,
-  le_inf       := take a b c, le_min }
+  le_inf       := assume a b c, le_min }
 
 end lattice

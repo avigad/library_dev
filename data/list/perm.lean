@@ -148,7 +148,7 @@ theorem perm_erase [decidable_eq α] {a : α} : ∀ {l : list α}, a ∈ l → l
 | []     h := false.elim h
 | (x::t) h := if ax : x = a then by rw [ax, erase_cons_head] else
   by rw [erase_cons_tail _ ax]; exact
-  have aint : a ∈ t, from mem_of_ne_of_mem (take h, ax h.symm) h,
+  have aint : a ∈ t, from mem_of_ne_of_mem (assume h, ax h.symm) h,
   trans (skip _ $ perm_erase aint) (swap _ _ _)
 
 @[elab_as_eliminator]
@@ -159,7 +159,7 @@ theorem perm_induction_on {P : list α → list α → Prop} {l₁ l₂ : list �
     (h₄ : ∀ l₁ l₂ l₃, l₁ ~ l₂ → l₂ ~ l₃ → P l₁ l₂ → P l₂ l₃ → P l₁ l₃) :
   P l₁ l₂ :=
 have P_refl : ∀ l, P l l, from
-  take l,
+  assume l,
   list.rec_on l h₁ (λ x xs ih, h₂ x xs xs (perm.refl xs) ih),
 perm.rec_on p h₁ h₂ (λ x y l, h₃ x y l l (perm.refl l) (P_refl l)) h₄
 
@@ -241,7 +241,7 @@ variable [decα : decidable_eq α]
 include decα
 
 theorem count_eq_count_of_perm {l₁ l₂ : list α} : l₁ ~ l₂ → ∀ a, count a l₁ = count a l₂ :=
-suppose l₁ ~ l₂, perm.rec_on this
+assume : l₁ ~ l₂, perm.rec_on this
   (λ a, rfl)
   (λ x l₁ l₂ p h a, begin simp [count_cons', h a] end)
   (λ x y l a, begin simp [count_cons'] end)
@@ -249,18 +249,18 @@ suppose l₁ ~ l₂, perm.rec_on this
 
 theorem perm_of_forall_count_eq : ∀ {l₁ l₂ : list α}, (∀ a, count a l₁ = count a l₂) → l₁ ~ l₂
 | [] :=
-    take l₂,
+    assume l₂,
     assume h : ∀ a, count a [] = count a l₂,
-    have ∀ a, a ∉ l₂, from take a, not_mem_of_count_eq_zero (by simp [(h a).symm]),
+    have ∀ a, a ∉ l₂, from assume a, not_mem_of_count_eq_zero (by simp [(h a).symm]),
     have l₂ = [], from eq_nil_of_forall_not_mem this,
     show [] ~ l₂, by rw this
 | (b :: l) :=
-    take l₂,
+    assume l₂,
     assume h : ∀ a, count a (b :: l) = count a l₂,
-    have b ∈ l₂, from mem_of_count_pos (begin rw [-(h b)], simp, apply nat.succ_pos end),
+    have b ∈ l₂, from mem_of_count_pos (begin rw [←(h b)], simp, apply nat.succ_pos end),
     have l₂ ~ b :: l₂.erase b, from perm_erase this,
     have ∀ a, count a l = count a (l₂.erase b), from
-      take a,
+      assume a,
       if h' : a = b then
         nat.succ_inj (calc
           count a l + 1 = count a (b :: l)         : begin simp [h'], rw add_comm end
@@ -287,10 +287,10 @@ iff.intro count_eq_count_of_perm perm_of_forall_count_eq
 theorem perm_iff_forall_mem_count_eq_count (l₁ l₂ : list α) :
   l₁ ~ l₂ ↔ ∀ a ∈ erase_dup (l₁ ∪ l₂), count a l₁ = count a l₂ :=
 iff.intro
-  (assume h : l₁ ~ l₂, take a, assume ha, count_eq_count_of_perm h a)
+  (assume h : l₁ ~ l₂, assume a, assume ha, count_eq_count_of_perm h a)
   (assume h,
      have ∀ a, count a l₁ = count a l₂, from
-       take a,
+       assume a,
        if hl₁ : a ∈ l₁ then
          have a ∈ erase_dup (l₁ ∪ l₂), from mem_erase_dup (mem_union_left hl₁ l₂),
          h a this
@@ -302,7 +302,7 @@ iff.intro
      perm_of_forall_count_eq this)
 
 instance : ∀ (l₁ l₂ : list α), decidable (l₁ ~ l₂) :=
-take l₁ l₂,
+assume l₁ l₂,
 decidable_of_decidable_of_iff (decidable_forall_mem _)
                               (perm_iff_forall_mem_count_eq_count l₁ l₂).symm
 
@@ -367,9 +367,9 @@ theorem mem_tail_of_qeq {a : α} : ∀ {l₁ l₂ : list α}, l₁ ≈ a | l₂ 
 | ._ ._ (qhead .(a) l)            b bl  := mem_cons_of_mem a bl
 | ._ ._ (@qcons .(α) .(a) c l l' q) b bcl :=
   or.elim (eq_or_mem_of_mem_cons bcl)
-    (take bc : b = c,
+    (assume bc : b = c,
       begin rw bc, apply mem_cons_self end)
-    (take bl : b ∈ l,
+    (assume bl : b ∈ l,
       have bl' : b ∈ l', from mem_tail_of_qeq q bl,
       mem_cons_of_mem c bl')
 
@@ -378,14 +378,14 @@ theorem mem_cons_of_qeq {a : α} : ∀ {l₁ l₂ : list α}, l₁≈a|l₂ → 
 | ._ ._ (@qcons ._ ._ c l l' q) b (bcl' : b ∈ c :: l') :=
   show b ∈ a :: c :: l, from
     or.elim (eq_or_mem_of_mem_cons bcl')
-      (take bc : b = c,
+      (assume bc : b = c,
         begin rw bc, apply mem_cons_of_mem, apply mem_cons_self end)
-      (take bl' : b ∈ l',
+      (assume bl' : b ∈ l',
         have b ∈ a :: l, from mem_cons_of_qeq q bl',
         or.elim (eq_or_mem_of_mem_cons this)
-          (take ba : b = a,
+          (assume ba : b = a,
             begin rw ba, apply mem_cons_self end)
-          (take bl : b ∈ l,
+          (assume bl : b ∈ l,
             mem_cons_of_mem a (mem_cons_of_mem c bl)))
 
 theorem length_eq_of_qeq {a : α} {l₁ l₂ : list α} :
@@ -404,7 +404,7 @@ list.rec_on l
        begin rw aeqb, exact this end)
     (λ ainbs : a ∈ bs,
        have ∃ l', bs ≈ a|l', from r ainbs,
-       exists.elim this (take (l' : list α) (q : bs ≈ a|l'),
+       exists.elim this (assume (l' : list α) (q : bs ≈ a|l'),
          have b::bs ≈ a | b::l', from qcons b q,
          exists.intro (b::l') this)))
 
@@ -421,8 +421,8 @@ theorem qeq_split {a : α} : ∀ {l l' : list α}, l'≈a|l → ∃ l₁ l₂, l
 --  have b ∈ v,    from s (or.inr binl),
 --  have b ∈ a::u, from mem_cons_of_qeq q this,
 --  or.elim (eq_or_mem_of_mem_cons this)
---    (suppose b = a, begin subst b, contradiction end)
---    (suppose b ∈ u, this)
+--    (assume : b = a, begin subst b, contradiction end)
+--    (assume : b ∈ u, this)
 --end qeq
 
 theorem perm_inv_core {l₁ l₂ : list α} (p' : l₁ ~ l₂) : ∀ {a s₁ s₂}, l₁≈a|s₁ → l₂≈a|s₂ → s₁ ~ s₂ :=
@@ -541,7 +541,7 @@ assume p, perm_induction_on p
         have yinxt₂ : y ∈ x::t₂, from or.inr (yint₂),
         or.elim (eq_or_mem_of_mem_cons xinyt₁)
           (λ xeqy  : x = y,
-            have xint₂ : x ∈ t₂, begin rw [-xeqy] at yint₂, exact yint₂ end,
+            have xint₂ : x ∈ t₂, begin rw [←xeqy] at yint₂, exact yint₂ end,
             begin
               rw [erase_dup_cons_of_mem xinyt₁, erase_dup_cons_of_mem yinxt₂,
                        erase_dup_cons_of_mem yint₁, erase_dup_cons_of_mem xint₂],
@@ -560,7 +560,7 @@ assume p, perm_induction_on p
             absurd (mem_of_mem_erase_dup (mem_of_perm (perm.symm r) (mem_erase_dup yint₂))) nyint₁,
         by_cases
           (λ xeqy  : x = y,
-            have nxint₂ : x ∉ t₂, begin rw [-xeqy] at nyint₂, exact nyint₂ end,
+            have nxint₂ : x ∉ t₂, begin rw [←xeqy] at nyint₂, exact nyint₂ end,
             have yinxt₂ : y ∈ x::t₂, begin rw [xeqy], apply mem_cons_self end,
             begin
               rw [erase_dup_cons_of_mem xinyt₁, erase_dup_cons_of_mem yinxt₂,
@@ -571,7 +571,7 @@ assume p, perm_induction_on p
             have x ∈ t₁, from or_resolve_right xinyt₁ xney,
             have x ∈ t₂, from mem_of_mem_erase_dup (mem_of_perm r (mem_erase_dup this)),
             have y ∉ x::t₂, from
-              suppose y ∈ x::t₂, or.elim (eq_or_mem_of_mem_cons this)
+              assume : y ∈ x::t₂, or.elim (eq_or_mem_of_mem_cons this)
                 (λ h, absurd h (ne.symm xney))
                 (λ h, absurd h nyint₂),
             begin
@@ -616,7 +616,7 @@ begin
   induction t₁ with a t ih,
   { intros l₁ l₂ h, exact h },
   exact
-    take l₁ l₂,
+    assume l₁ l₂,
     assume h : l₁ ~ l₂,
     if ha₁ : a ∈ l₁ then
       have ha₂ : a ∈ l₂, from mem_of_perm h ha₁,
@@ -647,12 +647,12 @@ begin
   exact
     perm.rec_on h
       (λ l, perm.refl l)
-      (take x t₁ t₂,
+      (assume x t₁ t₂,
         assume ht : t₁ ~ t₂,
         assume ih,
-        take l,
+        assume l,
         ih _)
-      (take x y t l,
+      (assume x y t l,
         begin simp, apply perm_union_left, apply perm_insert_insert end)
       (λ l₁ l₂ l₃ p₁ p₂ h₁ h₂ l, perm.trans (h₁ l) (h₂ l))
 end
@@ -738,37 +738,37 @@ theorem perm_ext : ∀ {l₁ l₂ : list α}, nodup l₁ → nodup l₂ → (∀
   | ⟨ s₁, s₂, (t₂_eq : a₂::t₂ = s₁++(a₁::s₂)) ⟩ :=
   have dt₂'     : nodup (a₁::(s₁++s₂)), from nodup_head (begin rw [t₂_eq] at d₂, exact d₂ end),
   have eqv      : ∀a, a ∈ t₁ ↔ a ∈ s₁++s₂, from
-    take a, iff.intro
-      (suppose  a ∈ t₁,
+    assume a, iff.intro
+      (assume :  a ∈ t₁,
          have a ∈ a₂::t₂,       from iff.mp (e a) (mem_cons_of_mem _ this),
          have a ∈ s₁++(a₁::s₂), begin rw [t₂_eq] at this, exact this end,
          or.elim (mem_or_mem_of_mem_append this)
-           (suppose a ∈ s₁, mem_append_left s₂ this)
-           (suppose a ∈ a₁::s₂, or.elim (eq_or_mem_of_mem_cons this)
-             (suppose a = a₁,
+           (assume : a ∈ s₁, mem_append_left s₂ this)
+           (assume : a ∈ a₁::s₂, or.elim (eq_or_mem_of_mem_cons this)
+             (assume : a = a₁,
                have a₁ ∉ t₁, from not_mem_of_nodup_cons d₁,
                begin subst a, contradiction end)
-             (suppose a ∈ s₂, mem_append_right s₁ this)))
-      (suppose a ∈ s₁ ++ s₂, or.elim (mem_or_mem_of_mem_append this)
-        (suppose a ∈ s₁,
+             (assume : a ∈ s₂, mem_append_right s₁ this)))
+      (assume : a ∈ s₁ ++ s₂, or.elim (mem_or_mem_of_mem_append this)
+        (assume : a ∈ s₁,
            have a ∈ a₂::t₂, from begin rw [t₂_eq], exact (mem_append_left _ this) end,
            have a ∈ a₁::t₁, from iff.mpr (e a) this,
            or.elim (eq_or_mem_of_mem_cons this)
-             (suppose a = a₁,
+             (assume : a = a₁,
                 have a₁ ∉ s₁++s₂, from not_mem_of_nodup_cons dt₂',
                 have a₁ ∉ s₁,     from not_mem_of_not_mem_append_left this,
                 begin subst a, contradiction end)
-             (suppose a ∈ t₁, this))
-        (suppose a ∈ s₂,
+             (assume : a ∈ t₁, this))
+        (assume : a ∈ s₂,
            have a ∈ a₂::t₂, from begin rw [t₂_eq],
                                        exact (mem_append_right _ (mem_cons_of_mem _ this)) end,
            have a ∈ a₁::t₁, from iff.mpr (e a) this,
            or.elim (eq_or_mem_of_mem_cons this)
-             (suppose a = a₁,
+             (assume : a = a₁,
                have a₁ ∉ s₁++s₂, from not_mem_of_nodup_cons dt₂',
                have a₁ ∉ s₂, from not_mem_of_not_mem_append_right this,
                begin subst a, contradiction end)
-             (suppose a ∈ t₁, this))),
+             (assume : a ∈ t₁, this))),
   have ds₁s₂ : nodup (s₁++s₂), from nodup_of_nodup_cons dt₂',
   have nodup t₁, from nodup_of_nodup_cons d₁,
   calc a₁::t₁ ~ a₁::(s₁++s₂) : skip a₁ (perm_ext this ds₁s₂ eqv)
@@ -784,14 +784,14 @@ assume h, perm.rec_on h
     have nodup l₁, from nodup_of_nodup_cons nd,
     have nodup l₂, from ih this,
     have a ∉ l₁,   from not_mem_of_nodup_cons nd,
-    have a ∉ l₂,   from suppose a ∈ l₂, absurd (mem_of_perm (perm.symm p) this) ‹a ∉ l₁›,
+    have a ∉ l₂,   from assume : a ∈ l₂, absurd (mem_of_perm (perm.symm p) this) ‹a ∉ l₁›,
     nodup_cons ‹a ∉ l₂› ‹nodup l₂›)
   (λ x y l₁ nd,
     have nodup (x::l₁),    from nodup_of_nodup_cons nd,
     have nodup l₁,         from nodup_of_nodup_cons this,
     have x ∉ l₁,           from not_mem_of_nodup_cons ‹nodup (x::l₁)›,
     have y ∉ x::l₁,        from not_mem_of_nodup_cons nd,
-    have x ≠ y,            from suppose x = y,
+    have x ≠ y,            from assume : x = y,
                                 begin subst x, apply absurd (mem_cons_self _ _), apply ‹y ∉ y::l₁› end, -- this line used to be "exact absurd (mem_cons_self _ _) ‹y ∉ y::l₁›, but it's now a syntax error
     have y ∉ l₁,           from not_mem_of_not_mem_cons ‹y ∉ x::l₁›,
     have x ∉ y::l₁,        from not_mem_cons_of_ne_of_not_mem ‹x ≠ y› ‹x ∉ l₁›,
@@ -834,15 +834,15 @@ theorem perm_filter {l₁ l₂ : list α} {p : α → Prop} [decidable_pred p] :
   l₁ ~ l₂ → (filter p l₁) ~ (filter p l₂) :=
 assume u, perm.rec_on u
   perm.nil
-  (take x l₁' l₂',
+  (assume x l₁' l₂',
     assume u' : l₁' ~ l₂',
     assume u'' : filter p l₁' ~ filter p l₂',
     decidable.by_cases
-      (suppose p x, begin rw [filter_cons_of_pos _ this, filter_cons_of_pos _ this],
+      (assume : p x, begin rw [filter_cons_of_pos _ this, filter_cons_of_pos _ this],
                           apply perm.skip, apply u'' end)
-      (suppose ¬ p x, begin rw [filter_cons_of_neg _ this, filter_cons_of_neg _ this],
+      (assume : ¬ p x, begin rw [filter_cons_of_neg _ this, filter_cons_of_neg _ this],
                             apply u'' end))
-  (take x y l,
+  (assume x y l,
     decidable.by_cases
       (assume H1 : p x,
         decidable.by_cases

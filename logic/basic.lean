@@ -22,7 +22,7 @@ universes u v
 variables {α : Type u} {β : Type v}
 
 lemma eq_iff_le_and_le {α : Type u} [weak_order α] {a b : α} : a = b ↔ (a ≤ b ∧ b ≤ a) :=
-⟨take eq, eq ▸ ⟨le_refl a, le_refl a⟩, take ⟨ab, ba⟩, le_antisymm ab ba⟩
+⟨assume eq, eq ▸ ⟨le_refl a, le_refl a⟩, assume ⟨ab, ba⟩, le_antisymm ab ba⟩
 
 @[simp]
 lemma prod.mk.inj_iff {α : Type u} {β : Type v} {a₁ a₂ : α} {b₁ b₂ : β} :
@@ -32,12 +32,12 @@ lemma prod.mk.inj_iff {α : Type u} {β : Type v} {a₁ a₂ : α} {b₁ b₂ : 
 @[simp]
 lemma prod.forall {α : Type u} {β : Type v} {p : α × β → Prop} :
   (∀x, p x) ↔ (∀a b, p (a, b)) :=
-⟨take h a b, h (a, b), take h ⟨a, b⟩, h a b⟩
+⟨assume h a b, h (a, b), assume h ⟨a, b⟩, h a b⟩
 
 @[simp]
 lemma prod.exists {α : Type u} {β : Type v} {p : α × β → Prop} :
   (∃x, p x) ↔ (∃a b, p (a, b)) :=
-⟨take ⟨⟨a, b⟩, h⟩, ⟨a, b, h⟩, take ⟨a, b, h⟩, ⟨⟨a, b⟩, h⟩⟩
+⟨assume ⟨⟨a, b⟩, h⟩, ⟨a, b, h⟩, assume ⟨a, b, h⟩, ⟨⟨a, b⟩, h⟩⟩
 
 @[simp]
 lemma set_of_subset_set_of {p q : α → Prop} : {a | p a} ⊆ {a | q a} = (∀a, p a → q a) :=
@@ -154,7 +154,7 @@ decidable.by_cases or.inr (or.inl ∘ h)
 
 lemma not_imp_iff_not_imp {a b : Prop} [decidable a] :
   (¬ a → ¬ b) ↔ (b → a) :=
-⟨take h hb, decidable.by_contradiction $ take na, h na hb, mt⟩
+⟨assume h hb, decidable.by_contradiction $ assume na, h na hb, mt⟩
 
 /- distributivity -/
 
@@ -234,17 +234,17 @@ iff.intro not_and_not_of_not_or not_or_of_not_and_not
 
 theorem decidable.or_iff_not_and_not (a b : Prop) [decidable a] [decidable b] :
   a ∨ b ↔ ¬ (¬a ∧ ¬b) :=
-by rewrite [-not_or_iff, decidable.not_not_iff]
+by rewrite [←not_or_iff, decidable.not_not_iff]
 
 theorem decidable.and_iff_not_or_not (a b : Prop) [decidable a] [decidable b] :
   a ∧ b ↔ ¬ (¬ a ∨ ¬ b) :=
-by rewrite [-decidable.not_and_iff, decidable.not_not_iff]
+by rewrite [←decidable.not_and_iff, decidable.not_not_iff]
 
 /- other identities -/
 
 lemma or_imp_iff_and_imp {a b c : Prop} : ((a ∨ b) → c) ↔ ((a → c) ∧ (b → c)) :=
-⟨take h, ⟨take ha, h (or.inl ha), take hb, h (or.inr hb)⟩,
-  take ⟨ha, hb⟩, or.rec ha hb⟩
+⟨assume h, ⟨assume ha, h (or.inl ha), assume hb, h (or.inr hb)⟩,
+  assume ⟨ha, hb⟩, or.rec ha hb⟩
 
 end propositional
 
@@ -312,16 +312,16 @@ variables {α : Type u} {p q : α → Prop} {b : Prop}
 
 @[simp]
 lemma forall_const_iff_of_inhabited [h : inhabited α] {p : Prop} : (α → p) ↔ p :=
-⟨take h, h (arbitrary α), take h _, h⟩
+⟨assume h, h (arbitrary α), assume h _, h⟩
 
 theorem forall_of_forall (h : ∀ x, (p x → q x)) (h₁ : ∀ x, p x) : ∀ x, q x :=
-take x, h x (h₁ x)
+assume x, h x (h₁ x)
 
 theorem exists_of_exists (h : ∀ x, (p x → q x)) (h₁ : ∃ x, p x) : ∃ x, q x :=
 match h₁ with ⟨x, hpx⟩ := ⟨x, h x hpx⟩ end
 
 theorem forall_implies_of_exists_implies (h : (∃ x, p x) → b) : ∀ x, p x → b :=
-take x, assume hpx, h ⟨x, hpx⟩
+assume x, assume hpx, h ⟨x, hpx⟩
 
 theorem exists_implies_of_forall_implies (h : ∀ x, p x → b) : (∃ x, p x) → b :=
 Exists.rec h
@@ -341,7 +341,7 @@ exists_implies_distrib p false
 theorem decidable.exists_not_of_not_forall [decidable (∃ x, ¬ p x)] [∀ x, decidable (p x)]
   (h : ¬ ∀ x, p x) : ∃ x, ¬ p x :=
 decidable.by_contradiction
-  (assume h₁, h (take x, decidable.by_contradiction (assume hnpx, h₁ ⟨x, hnpx⟩)))
+  (assume h₁, h (assume x, decidable.by_contradiction (assume hnpx, h₁ ⟨x, hnpx⟩)))
 
 theorem not_forall_of_exists_not (h : ∃ x, ¬ p x) : ¬ ∀ x, p x :=
 assume h₁, match h with ⟨x, hnpx⟩ := hnpx (h₁ x) end
@@ -362,7 +362,7 @@ iff.intro (Exists.rec (λ x (hpx : p), hpx)) (λ hp, ⟨default α, hp⟩)
 
 theorem forall_and_distrib (p q : α → Prop) : (∀ x, p x ∧ q x) ↔ (∀ x, p x) ∧ (∀ x, q x) :=
 iff.intro
-  (assume h, ⟨(take x, (h x)^.left), (take x, (h x)^.right)⟩)
+  (assume h, ⟨(assume x, (h x)^.left), (assume x, (h x)^.right)⟩)
   (assume h x, ⟨h^.left x, h^.right x⟩)
 
 theorem exists_or_distrib (p q : α → Prop) : (∃ x, p x ∨ q x) ↔ (∃ x, p x) ∨ (∃ x, q x) :=
@@ -378,16 +378,16 @@ iff.intro
 @[simp]
 theorem exists_and_iff_and_exists {q : Prop} {p : α → Prop} :
   (∃x, q ∧ p x) ↔ q ∧ (∃x, p x) :=
-⟨take ⟨x, hq, hp⟩, ⟨hq, x, hp⟩, take ⟨hq, x, hp⟩, ⟨x, hq, hp⟩⟩
+⟨assume ⟨x, hq, hp⟩, ⟨hq, x, hp⟩, assume ⟨hq, x, hp⟩, ⟨x, hq, hp⟩⟩
 
 /- other identities -/
 
 lemma forall_and_comm {α : Sort u} {p q : α → Prop} : (∀a, p a ∧ q a) ↔ ((∀a, p a) ∧ (∀a, q a)) :=
-⟨take h, ⟨take a, (h a)^.left, take a, (h a)^.right⟩,
-  take ⟨ha, hb⟩ a, ⟨ha a, hb a⟩⟩
+⟨assume h, ⟨assume a, (h a)^.left, assume a, (h a)^.right⟩,
+  assume ⟨ha, hb⟩ a, ⟨ha a, hb a⟩⟩
 
 lemma forall_eq_elim {α : Type u} {p : α → Prop} {a' : α} : (∀a, a = a' → p a) ↔ p a' :=
-⟨take h, h a' rfl, take h a eq, eq^.symm ▸ h⟩
+⟨assume h, h a' rfl, assume h a eq, eq^.symm ▸ h⟩
 
 
 end quantifiers
@@ -408,8 +408,8 @@ decidable.not_forall_iff_exists_not p
 
 theorem forall_or_iff_or_forall {q : Prop} {p : α → Prop} :
   (∀x, q ∨ p x) ↔ q ∨ (∀x, p x) :=
-⟨take h, if hq : q then or.inl hq else or.inr $ take x, or.resolve_left (h x) hq, 
-  take h x, or.imp_right (suppose ∀x, p x, this x) h⟩
+⟨assume h, if hq : q then or.inl hq else or.inr $ assume x, or.resolve_left (h x) hq, 
+  assume h x, or.imp_right (assume : ∀x, p x, this x) h⟩
 
 end classical
 
@@ -441,7 +441,7 @@ end
 
 theorem bforall_of_bforall (h : ∀ x (hrx : r x), (p x → q x)) (h₁ : ∀ x (hrx : r x), p x) :
   ∀ x (hrx : r x) , q x :=
-take x, assume hrx, h x hrx (h₁ x hrx)
+assume x, assume hrx, h x hrx (h₁ x hrx)
 
 theorem bexists_of_bexists {α : Type} {p q : α → Prop}
     (h : ∀ x, (p x → q x)) (h₁ : ∃ x, p x) : ∃ x, q x :=
@@ -485,7 +485,7 @@ theorem decidable.bexists_not_of_not_bforall
     [decidable (∃ x (hrx : r x), ¬ p x)] [∀ x, decidable (p x)]
   (h : ¬ ∀ x (hrx : r x), p x) : ∃ x (hr : r x), ¬ p x :=
 decidable.by_contradiction
-  (assume h₁, h (take x, assume hrx, decidable.by_contradiction (assume hnpx, h₁ ⟨x, hrx, hnpx⟩)))
+  (assume h₁, h (assume x, assume hrx, decidable.by_contradiction (assume hnpx, h₁ ⟨x, hrx, hnpx⟩)))
 
 theorem not_bforall_of_bexists_not (h : ∃ x (hrx : r x), ¬ p x) : ¬ ∀ x (hrx : r x), p x :=
 assume h₁, match h with ⟨x, hrx, hnpx⟩ := hnpx (h₁ x hrx) end
@@ -500,7 +500,7 @@ iff_true_intro (λ h hrx, trivial)
 
 theorem bforall_and_distrib : (∀ x, p x ∧ q x) ↔ (∀ x, p x) ∧ (∀ x, q x) :=
 iff.intro
-  (assume h, ⟨(take x, (h x)^.left), (take x, (h x)^.right)⟩)
+  (assume h, ⟨(assume x, (h x)^.left), (assume x, (h x)^.right)⟩)
   (assume h x, ⟨h^.left x, h^.right x⟩)
 
 theorem bexists_or_distrib (r p q : α → Prop) :

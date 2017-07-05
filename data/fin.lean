@@ -19,7 +19,7 @@ instance fin_dec : Π (n : ℕ) (P : fin n → Prop) [hd : decidable_pred P], de
   | decidable.is_true h :=
     let lP := (λ l : fin k, P (raise_fin l)) in
     have lPd : decidable_pred lP, from
-      take l, decidable.rec_on (hd (raise_fin l)) decidable.is_false decidable.is_true,
+      assume l, decidable.rec_on (hd (raise_fin l)) decidable.is_false decidable.is_true,
     match @fin_dec k lP lPd with
     | decidable.is_false h1 := decidable.is_false (λ h2, h1 (λ l, h2 _))
     | decidable.is_true h1 := decidable.is_true (λ l, fin.rec_on l

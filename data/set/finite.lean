@@ -29,15 +29,15 @@ attribute [simp] finite.empty
 @[simp]
 lemma finite_insert {a : α} {s : set α} (h : finite s) : finite (insert a s) :=
 classical.by_cases
-  (suppose a ∈ s, by simp [*])
-  (suppose a ∉ s, finite.insert a s this h)
+  (assume : a ∈ s, by simp [*])
+  (assume : a ∉ s, finite.insert a s this h)
 
 @[simp]
 lemma finite_singleton {a : α} : finite ({a} : set α) :=
 finite_insert finite.empty
 
 lemma finite_union {s t : set α} (hs : finite s) (ht : finite t) : finite (s ∪ t) :=
-finite.drec_on ht (by simp [hs]) $ take a t _ _, by simp; exact finite_insert
+finite.drec_on ht (by simp [hs]) $ assume a t _ _, by simp; exact finite_insert
 
 lemma finite_subset {s : set α} (hs : finite s) : ∀{t}, t ⊆ s → finite t :=
 begin
@@ -46,7 +46,7 @@ begin
   { intros t ht,
     have tm : finite (t \ {a}) :=
       (ih $ show t \ {a} ⊆ t',
-        from take x ⟨hxt, hna⟩, or.resolve_left (ht hxt) (by simp at hna; assumption)),
+        from assume x ⟨hxt, hna⟩, or.resolve_left (ht hxt) (by simp at hna; assumption)),
     cases (classical.em $ a ∈ t) with ha hna,
     { exact have finite (insert a (t \ {a})), from finite_insert tm,
       show finite t,
@@ -69,7 +69,7 @@ begin
     simp,
     apply finite_union,
     { apply h, simp },
-    { exact (hi $ take t ht, h _ $ mem_insert_of_mem _ ht) } }
+    { exact (hi $ assume t ht, h _ $ mem_insert_of_mem _ ht) } }
 end
 
 end set

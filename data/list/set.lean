@@ -107,7 +107,7 @@ lemma erase_append_left {a : α} : ∀ {l₁:list α} (l₂), a ∈ l₁ → (l�
 | []      l₂  h := absurd h (not_mem_nil a)
 | (x::xs) l₂  h := if h' : x = a then by simp [h']
                    else
-                     have a ∈ xs, from mem_of_ne_of_mem (take h, h' h.symm) h,
+                     have a ∈ xs, from mem_of_ne_of_mem (assume h, h' h.symm) h,
                      by simp [erase_append_left l₂ this, h']
 
 lemma erase_append_right {a : α} : ∀{l₁ : list α} (l₂), a ∉ l₁ → (l₁++l₂).erase a = l₁ ++ l₂.erase a
@@ -224,7 +224,7 @@ theorem length_upto : ∀ n, length (upto n) = n
 | (succ n) := begin rw [upto_succ, length_cons, length_upto] end
 
 theorem upto_ne_nil_of_ne_zero {n : ℕ} (h : n ≠ 0) : upto n ≠ nil :=
-suppose upto n = nil,
+assume : upto n = nil,
 have upto n = upto 0, from upto_nil ▸ this,
 have n = 0, from calc
      n = length (upto n) : by rw length_upto
@@ -233,8 +233,8 @@ have n = 0, from calc
 h this
 
 theorem lt_of_mem_upto : ∀ ⦃n i⦄, i ∈ upto n → i < n
-| 0        := take i imem, absurd imem (not_mem_nil _)
-| (succ n) := take i imem,
+| 0        := assume i imem, absurd imem (not_mem_nil _)
+| (succ n) := assume i imem,
               or.elim (eq_or_mem_of_mem_cons imem)
                 (λ h, begin rw h, apply lt_succ_self end)
                 (λ h, lt.trans (lt_of_mem_upto h) (lt_succ_self n))
@@ -460,10 +460,10 @@ theorem disjoint_of_nodup_append : ∀ {l₁ l₂ : list α}, nodup (l₁++l₂)
   have nodup (x::(xs++l₂)),    from d,
   have x ∉ xs++l₂,             from not_mem_of_nodup_cons this,
   have nxinl₂ : x ∉ l₂,        from not_mem_of_not_mem_append_right this,
-  take a, suppose a ∈ x::xs,
+  assume a, assume : a ∈ x::xs,
     or.elim (eq_or_mem_of_mem_cons this)
-      (suppose a = x, eq.symm this ▸ nxinl₂)
-      (suppose ainxs : a ∈ xs,
+      (assume : a = x, eq.symm this ▸ nxinl₂)
+      (assume ainxs : a ∈ xs,
         have nodup (x::(xs++l₂)), from d,
         have nodup (xs++l₂),      from nodup_of_nodup_cons this,
         have disjoint xs l₂,      from disjoint_of_nodup_append this,
@@ -574,7 +574,7 @@ theorem mem_erase_dup [decidable_eq α] {a : α} : ∀ {l : list α}, a ∈ l �
 | (b::l) h  := by_cases
   (λ binl  : b ∈ l, or.elim (eq_or_mem_of_mem_cons h)
     (λ aeqb : a = b,
-      begin rw [erase_dup_cons_of_mem binl], rw -aeqb at binl, exact (mem_erase_dup binl) end)
+      begin rw [erase_dup_cons_of_mem binl], rw ←aeqb at binl, exact (mem_erase_dup binl) end)
     (λ ainl : a ∈ l,
       begin rw [erase_dup_cons_of_mem binl], exact (mem_erase_dup ainl) end))
   (λ nbinl : b ∉ l, or.elim (eq_or_mem_of_mem_cons h)
@@ -666,7 +666,7 @@ theorem nodup_product : ∀ {l₁ : list α} {l₂ : list β}, nodup l₁ → no
             λ (i₁ : (a₁, b₁) ∈ map (λ b, (a, b)) l₂) (i₂ : (a₁, b₁) ∈ product l₁ l₂),
               have a₁inl₁ : a₁ ∈ l₁, from mem_of_mem_product_left i₂,
               have a₁ = a, from eq_of_mem_map_pair₁ i₁,
-              have a ∈ l₁, begin rw -this, assumption end,
+              have a ∈ l₁, begin rw ←this, assumption end,
               absurd this nainl₁
          end,
   nodup_append_of_nodup_of_nodup_of_disjoint dm n₄ dsj
@@ -686,8 +686,8 @@ theorem nodup_filter (p : α → Prop) [decidable_pred p] :
 
 lemma dmap_nodup_of_dinj {p : α → Prop} [h : decidable_pred p] {f : Π a, p a → β} (pdi : dinj p f) :
     ∀ {l : list α}, nodup l → nodup (dmap p f l)
-| []     := take P, nodup.ndnil
-| (a::l) := take Pnodup,
+| []     := assume P, nodup.ndnil
+| (a::l) := assume Pnodup,
             if pa : p a then
               begin
                 rw [dmap_cons_of_pos pa],

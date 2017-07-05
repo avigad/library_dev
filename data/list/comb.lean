@@ -80,8 +80,8 @@ theorem of_mem_filter {p : α → Prop} [h : decidable_pred p] {a : α} : ∀ {l
   if pb : p b then
     have a ∈ b :: filter p l, begin simp [pb] at ain, assumption end,
     or.elim (eq_or_mem_of_mem_cons this)
-      (suppose a = b, begin rw -this at pb, exact pb end)
-      (suppose a ∈ filter p l, of_mem_filter this)
+      (assume : a = b, begin rw ←this at pb, exact pb end)
+      (assume : a ∈ filter p l, of_mem_filter this)
   else
     begin simp [pb] at ain, exact (of_mem_filter ain) end
 
@@ -92,8 +92,8 @@ theorem mem_of_mem_filter {p : α → Prop} [h : decidable_pred p] {a : α} :
   if pb : p b then
     have a ∈ b :: filter p l, begin simp [pb] at ain, assumption end,
     or.elim (eq_or_mem_of_mem_cons this)
-      (suppose a = b, by simp [this])
-      (suppose a ∈ filter p l, by simp [mem_of_mem_filter this])
+      (assume : a = b, by simp [this])
+      (assume : a ∈ filter p l, by simp [mem_of_mem_filter this])
   else
     begin simp [pb] at ain, simp [mem_of_mem_filter ain] end
 
@@ -103,12 +103,12 @@ theorem mem_filter_of_mem {p : α → Prop} [h : decidable_pred p] {a : α} :
 | (b::l) ain pa :=
   if pb : p b then
     or.elim (eq_or_mem_of_mem_cons ain)
-      (suppose a = b, by simp [pb, this])
-      (suppose a ∈ l, begin simp [pb], exact (mem_cons_of_mem _ (mem_filter_of_mem this pa)) end)
+      (assume : a = b, by simp [pb, this])
+      (assume : a ∈ l, begin simp [pb], exact (mem_cons_of_mem _ (mem_filter_of_mem this pa)) end)
   else
     or.elim (eq_or_mem_of_mem_cons ain)
-      (suppose a = b, begin simp [this] at pa, contradiction end) --absurd (this ▸ pa) pb)
-      (suppose a ∈ l, by simp [pa, pb, mem_filter_of_mem this])
+      (assume : a = b, begin simp [this] at pa, contradiction end) --absurd (this ▸ pa) pb)
+      (assume : a ∈ l, by simp [pa, pb, mem_filter_of_mem this])
 
 @[simp]
 theorem filter_sublist {p : α → Prop} [h : decidable_pred p] : Π (l : list α), filter p l <+ l
@@ -137,7 +137,7 @@ section foldl_eq_foldr
   | a b  (c::l) :=
     begin
       change foldl f (f (f a b) c) l = f b (foldl f (f a c) l),
-      rw -foldl_eq_of_comm_of_assoc,
+      rw ←foldl_eq_of_comm_of_assoc,
       change foldl f (f (f a b) c) l = foldl f (f (f a c) b) l,
       have h₁ : f (f a b) c = f (f a c) b, { rw [hassoc, hassoc, hcomm b c] },
       rw h₁
@@ -170,8 +170,8 @@ theorem all_eq_tt_of_forall {p : α → bool} : ∀ {l : list α}, (∀ a ∈ l,
 
 theorem forall_mem_eq_tt_of_all_eq_tt {p : α → bool} :
   ∀ {l : list α}, all l p = tt → ∀ a ∈ l, p a = tt
-| []     h := take a h, absurd h (not_mem_nil a)
-| (b::l) h := take a, suppose a ∈ b::l,
+| []     h := assume a h, absurd h (not_mem_nil a)
+| (b::l) h := assume a, assume : a ∈ b::l,
               begin
                 simp [bool.band_eq_tt] at h, cases h with h₁ h₂,
                 simp at this, cases this with h' h',
@@ -192,8 +192,8 @@ theorem any_of_mem {p : α → bool} {a : α} : ∀ {l : list α}, a ∈ l → p
 | []     i h := absurd i (not_mem_nil a)
 | (b::l) i h :=
   or.elim (eq_or_mem_of_mem_cons i)
-    (suppose a = b, begin simp [this^.symm, bool.bor_eq_tt], exact (or.inl h) end)
-    (suppose a ∈ l, begin
+    (assume : a = b, begin simp [this^.symm, bool.bor_eq_tt], exact (or.inl h) end)
+    (assume : a ∈ l, begin
                       cases (eq_or_mem_of_mem_cons i) with h' h',
                       { simp [h'^.symm, h] },
                       simp [bool.bor_eq_tt, any_of_mem h', h]
@@ -214,13 +214,13 @@ iff.intro exists_of_any_eq_tt (begin intro h, cases h with a ha, apply any_of_me
 /- bounded quantifiers over lists -/
 
 theorem forall_mem_nil (p : α → Prop) : ∀ x ∈ @nil α, p x :=
-take x xnil, absurd xnil (not_mem_nil x)
+assume x xnil, absurd xnil (not_mem_nil x)
 
 theorem forall_mem_cons {p : α → Prop} {a : α} {l : list α} (pa : p a) (h : ∀ x ∈ l, p x) :
   ∀ x ∈ a :: l, p x :=
-take x xal, or.elim (eq_or_mem_of_mem_cons xal)
-  (suppose x = a, by simp [this, pa])
-  (suppose x ∈ l, by simp [this, h])
+assume x xal, or.elim (eq_or_mem_of_mem_cons xal)
+  (assume : x = a, by simp [this, pa])
+  (assume : x ∈ l, by simp [this, h])
 
 theorem of_forall_mem_cons {p : α → Prop} {a : α} {l : list α} (h : ∀ x ∈ a :: l, p x) : p a :=
 h a (by simp)
@@ -228,7 +228,7 @@ h a (by simp)
 theorem forall_mem_of_forall_mem_cons {p : α → Prop} {a : α} {l : list α}
     (h : ∀ x ∈ a :: l, p x) :
   ∀ x ∈ l, p x :=
-take x xl, h x (by simp [xl])
+assume x xl, h x (by simp [xl])
 
 @[simp]
 theorem forall_mem_cons_iff (p : α → Prop) (a : α) (l : list α) :
@@ -252,8 +252,8 @@ theorem or_exists_of_exists_mem_cons {p : α → Prop} {a : α} {l : list α} (h
   p a ∨ ∃ x ∈ l, p x :=
 bexists.elim h (λ x xal px,
   or.elim (eq_or_mem_of_mem_cons xal)
-    (suppose x = a, begin rw -this, simp [px] end)
-    (suppose x ∈ l, or.inr (bexists.intro x this px)))
+    (assume : x = a, begin rw ←this, simp [px] end)
+    (assume : x ∈ l, or.inr (bexists.intro x this px)))
 
 @[simp]
 theorem exists_mem_cons_iff (p : α → Prop) (a : α) (l : list α) :
@@ -326,7 +326,7 @@ theorem length_mapAccumR :
     length (mapAccumR f x s).2 = length x
 | f (a::x) s := calc
   length (snd (mapAccumR f (a::x) s))
-                = length x + 1              : begin rw -(length_mapAccumR f x s), reflexivity end
+                = length x + 1              : begin rw ←(length_mapAccumR f x s), reflexivity end
             ... = length (a::x)             : rfl
 | f [] s := calc  length (snd (mapAccumR f [] s)) = 0 : by reflexivity
 
@@ -401,7 +401,7 @@ theorem mem_product {a : α} {b : β} : ∀ {l₁ l₂}, a ∈ l₁ → b ∈ l�
   or.elim (eq_or_mem_of_mem_cons h₁)
     (assume aeqx  : a = x,
       have (a, b) ∈ map (λ b, (a, b)) l₂, from mem_map _ h₂,
-      begin rw [-aeqx, product_cons], exact mem_append_left _ this end)
+      begin rw [←aeqx, product_cons], exact mem_append_left _ this end)
     (assume ainl₁ : a ∈ l₁,
       have (a, b) ∈ product l₁ l₂, from mem_product ainl₁ h₂,
       begin rw [product_cons], exact mem_append_right _ this end)
@@ -410,10 +410,10 @@ theorem mem_of_mem_product_left {a : α} {b : β} : ∀ {l₁ l₂}, (a, b) ∈ 
 | []      l₂ h := absurd h (not_mem_nil _)
 | (x::l₁) l₂ h :=
   or.elim (mem_or_mem_of_mem_append h)
-    (suppose (a, b) ∈ map (λ b, (x, b)) l₂,
+    (assume : (a, b) ∈ map (λ b, (x, b)) l₂,
        have a = x, from eq_of_mem_map_pair₁ this,
        begin rw this, apply mem_cons_self end)
-    (suppose (a, b) ∈ product l₁ l₂,
+    (assume : (a, b) ∈ product l₁ l₂,
       have a ∈ l₁, from mem_of_mem_product_left this,
       mem_cons_of_mem _ this)
 
@@ -421,9 +421,9 @@ theorem mem_of_mem_product_right {a : α} {b : β} : ∀ {l₁ l₂}, (a, b) ∈
 | []      l₂ h := absurd h (not_mem_nil ((a, b)))
 | (x::l₁) l₂ h :=
   or.elim (mem_or_mem_of_mem_append h)
-    (suppose (a, b) ∈ map (λ b, (x, b)) l₂,
+    (assume : (a, b) ∈ map (λ b, (x, b)) l₂,
       mem_of_mem_map_pair₁ this)
-    (suppose (a, b) ∈ product l₁ l₂,
+    (assume : (a, b) ∈ product l₁ l₂,
       mem_of_mem_product_right this)
 
 theorem length_product :
@@ -458,8 +458,8 @@ lemma dmap_cons_of_neg {a : α} (P : ¬ p a) : ∀ l, dmap p f (a::l) = dmap p f
       λ l, dif_neg P
 
 lemma mem_dmap : ∀ {l : list α} {a} (Pa : p a), a ∈ l → (f a Pa) ∈ dmap p f l
-| []     := take a Pa Pinnil, absurd Pinnil (not_mem_nil _)
-| (a::l) := take b Pb Pbin, or.elim (eq_or_mem_of_mem_cons Pbin)
+| []     := assume a Pa Pinnil, absurd Pinnil (not_mem_nil _)
+| (a::l) := assume b Pb Pbin, or.elim (eq_or_mem_of_mem_cons Pbin)
               (assume Pbeqa, begin
                 rw [eq.symm Pbeqa, dmap_cons_of_pos Pb],
                 apply mem_cons_self
@@ -478,8 +478,8 @@ lemma mem_dmap : ∀ {l : list α} {a} (Pa : p a), a ∈ l → (f a Pa) ∈ dmap
                    end)
 
 lemma exists_of_mem_dmap : ∀ {l : list α} {b : β}, b ∈ dmap p f l → ∃ a P, a ∈ l ∧ b = f a P
-| []     := take b, begin rw dmap_nil, intro h, exact absurd h (not_mem_nil _) end
-| (a::l) := take b,
+| []     := assume b, begin rw dmap_nil, intro h, exact absurd h (not_mem_nil _) end
+| (a::l) := assume b,
   if Pa : p a then
     begin
       rw [dmap_cons_of_pos Pa, mem_cons_iff],
@@ -506,13 +506,13 @@ lemma map_dmap_of_inv_of_pos {g : β → α} (Pinv : ∀ a (Pa : p a), g (f a Pa
 | (a::l) := assume Pal,
             have Pa : p a, from Pal (mem_cons_self _ _),
             have Pl : ∀ a, a ∈ l → p a,
-              from take x Pxin, Pal (mem_cons_of_mem a Pxin),
+              from assume x Pxin, Pal (mem_cons_of_mem a Pxin),
             by rw [dmap_cons_of_pos Pa, map_cons, Pinv, map_dmap_of_inv_of_pos Pl]
 
 lemma mem_of_dinj_of_mem_dmap (Pdi : dinj p f) :
       ∀ {l : list α} {a} (Pa : p a), (f a Pa) ∈ dmap p f l → a ∈ l
-| []     := take a Pa Pinnil, absurd Pinnil (not_mem_nil _)
-| (b::l) := take a Pa Pmap,
+| []     := assume a Pa Pinnil, absurd Pinnil (not_mem_nil _)
+| (b::l) := assume a Pa Pmap,
               if Pb : p b then
                 begin
                   rw (dmap_cons_of_pos Pb) at Pmap,
@@ -582,7 +582,7 @@ def list_nat_equiv_nat : list nat ≃ nat :=
 mk to_nat of_nat of_nat_to_nat to_nat_of_nat
 
 def list_equiv_self_of_equiv_nat {α : Type} : α ≃ nat → list α ≃ α :=
-suppose α ≃ nat, calc
+assume : α ≃ nat, calc
   list α ≃ list nat : list_equiv_of_equiv this
      ... ≃ nat      : list_nat_equiv_nat
      ... ≃ α        : this

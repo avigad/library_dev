@@ -12,7 +12,7 @@ universes u v w x
 variables {α : Type u} {β : Type v} {γ : Type w} {ι : Sort x}
 
 theorem classical.cases {p : Prop → Prop} (h1 : p true) (h2 : p false) : ∀a, p a :=
-take a, classical.cases_on a h1 h2
+assume a, classical.cases_on a h1 h2
 
 lemma univ_eq_true_false : univ = ({true, false} : set Prop) :=
 eq.symm $ top_unique $ classical.cases (by simp) (by simp)
@@ -23,9 +23,9 @@ begin intro h, rw [h], trivial end
 
 lemma subtype.val_image {p : α → Prop} {s : set (subtype p)} :
   subtype.val '' s = {x | ∃h : p x, (⟨x, h⟩ : subtype p) ∈ s} :=
-set.ext $ take a,
-⟨take ⟨⟨a', ha'⟩, in_s, (h_eq : a' = a)⟩, h_eq ▸ ⟨ha', in_s⟩,
-  take ⟨ha, in_s⟩, ⟨⟨a, ha⟩, in_s, rfl⟩⟩
+set.ext $ assume a,
+⟨assume ⟨⟨a', ha'⟩, in_s, (h_eq : a' = a)⟩, h_eq ▸ ⟨ha', in_s⟩,
+  assume ⟨ha, in_s⟩, ⟨⟨a, ha⟩, in_s, rfl⟩⟩
 
 section
 variables [topological_space α] [topological_space β] [topological_space γ]
@@ -33,25 +33,25 @@ variables [topological_space α] [topological_space β] [topological_space γ]
 def continuous (f : α → β) := ∀s, open' s → open' (vimage f s)
 
 lemma continuous_id : continuous (id : α → α) :=
-take s h, h
+assume s h, h
 
 lemma continuous_compose {f : α → β} {g : β → γ} (hf : continuous f) (hg : continuous g):
   continuous (g ∘ f) :=
-take s h, hf _ (hg s h)
+assume s h, hf _ (hg s h)
 
 lemma continuous_iff_towards {f : α → β} :
   continuous f ↔ (∀x, towards f (nhds x) (nhds (f x))) :=
-⟨assume hf : continuous f, take x s,
+⟨assume hf : continuous f, assume x s,
   show s ∈ (nhds (f x))^.sets → s ∈ (map f (nhds x))^.sets,
     by simp [nhds_sets];
-      exact take ⟨t, t_open, t_subset, fx_in_t⟩,
+      exact assume ⟨t, t_open, t_subset, fx_in_t⟩,
         ⟨vimage f t, hf t t_open, fx_in_t, vimage_mono t_subset⟩,
   assume hf : ∀x, towards f (nhds x) (nhds (f x)),
-  take s, assume hs : open' s,
+  assume s, assume hs : open' s,
   have ∀a, f a ∈ s → s ∈ (nhds (f a))^.sets,
-    by simp [nhds_sets]; exact take a ha, ⟨s, hs, subset.refl s, ha⟩,
+    by simp [nhds_sets]; exact assume a ha, ⟨s, hs, subset.refl s, ha⟩,
   show open' (vimage f s),
-    by simp [open_iff_nhds]; exact take a ha, hf a (this a ha)⟩
+    by simp [open_iff_nhds]; exact assume a ha, hf a (this a ha)⟩
 
 end
 
@@ -64,8 +64,8 @@ variable {f : α → β}
 
 lemma continuous_iff_induced_le {t₁ : tspace α} {t₂ : tspace β} :
   cont t₁ t₂ f ↔ (induced f t₂ ≤ t₁) :=
-⟨take hc s ⟨t, ht, s_eq⟩, s_eq^.symm ▸ hc t ht,
-  take hle s h, hle _ ⟨_, h, rfl⟩⟩
+⟨assume hc s ⟨t, ht, s_eq⟩, s_eq^.symm ▸ hc t ht,
+  assume hle s h, hle _ ⟨_, h, rfl⟩⟩
 
 lemma continuous_eq_le_coinduced {t₁ : tspace α} {t₂ : tspace β} :
   cont t₁ t₂ f = (t₂ ≤ coinduced f t₁) :=
@@ -73,55 +73,55 @@ rfl
 
 lemma continuous_generated_from {t : tspace α} {b : set (set β)}
   (h : ∀s∈b, open' (vimage f s)) : cont t (generate_from b) f :=
-take s hs, generate_open.rec_on hs h
+assume s hs, generate_open.rec_on hs h
   open_univ
-  (take s t _ _, open_inter)
-  (take t _ h, by rw [vimage_sUnion]; exact (open_Union $ take s, open_Union $ take hs, h s hs))
+  (assume s t _ _, open_inter)
+  (assume t _ h, by rw [vimage_sUnion]; exact (open_Union $ assume s, open_Union $ assume hs, h s hs))
 
 lemma continuous_induced_dom {t : tspace β} : cont (induced f t) t f :=
-take s h, ⟨_, h, rfl⟩
+assume s h, ⟨_, h, rfl⟩
 
 lemma continuous_induced_rng {g : γ → α} {t₂ : tspace β} {t₁ : tspace γ}
   (h : cont t₁ t₂ (f ∘ g)) : cont t₁ (induced f t₂) g :=
-take s ⟨t, ht, s_eq⟩, s_eq^.symm ▸ h t ht
+assume s ⟨t, ht, s_eq⟩, s_eq^.symm ▸ h t ht
 
 lemma continuous_coinduced_rng {t : tspace α} : cont t (coinduced f t) f :=
-take s h, h
+assume s h, h
 
 lemma continuous_coinduced_dom {g : β → γ} {t₁ : tspace α} {t₂ : tspace γ}
   (h : cont t₁ t₂ (g ∘ f)) : cont (coinduced f t₁) t₂ g :=
-take s hs, h s hs
+assume s hs, h s hs
 
 lemma continuous_inf_dom {t₁ t₂ : tspace α} {t₃ : tspace β}
   (h₁ : cont t₁ t₃ f) (h₂ : cont t₂ t₃ f) : cont (t₁ ⊓ t₂) t₃ f :=
-take s h, ⟨h₁ s h, h₂ s h⟩
+assume s h, ⟨h₁ s h, h₂ s h⟩
 
 lemma continuous_inf_rng_left {t₁ : tspace α} {t₃ t₂ : tspace β}
   (h : cont t₁ t₂ f) : cont t₁ (t₂ ⊓ t₃) f :=
-take s hs, h s hs^.left
+assume s hs, h s hs^.left
 
 lemma continuous_inf_rng_right {t₁ : tspace α} {t₃ t₂ : tspace β}
   (h : cont t₁ t₃ f) : cont t₁ (t₂ ⊓ t₃) f :=
-take s hs, h s hs^.right
+assume s hs, h s hs^.right
 
 lemma continuous_Inf_dom {t₁ : set (tspace α)} {t₂ : tspace β}
   (h : ∀t∈t₁, cont t t₂ f) : cont (Inf t₁) t₂ f :=
-take s hs t ht, h t ht s hs
+assume s hs t ht, h t ht s hs
 
 lemma continuous_Inf_rng {t₁ : tspace α} {t₂ : set (tspace β)}
   {t : tspace β} (h₁ : t ∈ t₂) (hf : cont t₁ t f) : cont t₁ (Inf t₂) f :=
-take s hs, hf s $ hs t h₁
+assume s hs, hf s $ hs t h₁
 
 lemma continuous_infi_dom {t₁ : ι → tspace α} {t₂ : tspace β}
   (h : ∀i, cont (t₁ i) t₂ f) : cont (infi t₁) t₂ f :=
-continuous_Inf_dom $ take t ⟨i, (t_eq : t = t₁ i)⟩, t_eq^.symm ▸ h i
+continuous_Inf_dom $ assume t ⟨i, (t_eq : t = t₁ i)⟩, t_eq^.symm ▸ h i
 
 lemma continuous_infi_rng {t₁ : tspace α} {t₂ : ι → tspace β}
   {i : ι} (h : cont t₁ (t₂ i) f) : cont t₁ (infi t₂) f :=
 continuous_Inf_rng ⟨i, rfl⟩ h
 
 lemma continuous_top {t : tspace β} : cont ⊤ t f :=
-take s h, trivial
+assume s h, trivial
 
 lemma continuous_bot {t : tspace α} : cont t ⊥ f :=
 continuous_Inf_rng (mem_univ $ coinduced f t) continuous_coinduced_rng
@@ -134,11 +134,11 @@ continuous_Inf_rng
 
 lemma continuous_sup_dom_left {t₁ t₂ : tspace α} {t₃ : tspace β}
   (h : cont t₁ t₃ f) : cont (t₁ ⊔ t₂) t₃ f :=
-continuous_Inf_dom $ take t ⟨h₁, h₂⟩ s hs, h₁ _ $ h s hs
+continuous_Inf_dom $ assume t ⟨h₁, h₂⟩ s hs, h₁ _ $ h s hs
 
 lemma continuous_sup_dom_right {t₁ t₂ : tspace α} {t₃ : tspace β}
   (h : cont t₂ t₃ f) : cont (t₁ ⊔ t₂) t₃ f :=
-continuous_Inf_dom $ take t ⟨h₁, h₂⟩ s hs, h₂ _ $ h s hs
+continuous_Inf_dom $ assume t ⟨h₁, h₂⟩ s hs, h₂ _ $ h s hs
 
 end constructions
 
@@ -155,7 +155,7 @@ lemma continuous_Prop {p : α → Prop} : continuous p ↔ open' {x | p x} :=
     from h _ open_singleton_true,
   by simp [vimage, eq_true] at this; assumption,
   assume h : open' {x | p x},
-  continuous_generated_from $ take s (hs : s ∈ {{true}}),
+  continuous_generated_from $ assume s (hs : s ∈ {{true}}),
     by simp at hs; simp [hs, vimage, eq_true, h]⟩
 
 end sierpinski
@@ -169,7 +169,7 @@ lemma open_induced {s : set β} (h : open' s) : (induced f t).open' (vimage f s)
 
 lemma nhds_induced_eq_vmap {a : α} : @nhds α (induced f t) a = vmap f (nhds (f a)) :=
 le_antisymm
-  (take s ⟨s', hs', (h_s : vimage f s' ⊆ s)⟩,
+  (assume s ⟨s', hs', (h_s : vimage f s' ⊆ s)⟩,
     have ∃t':set β, open' t' ∧ t' ⊆ s' ∧ f a ∈ t',
       by simp [mem_nhds_sets_iff] at hs'; assumption,
     let ⟨t', ht', hsub, hin⟩ := this in
@@ -179,7 +179,7 @@ le_antisymm
         exact ⟨vimage f t', open_induced ht', hin, vimage_mono hsub⟩
       end
       h_s)
-  (le_infi $ take s, le_infi $ take ⟨as, ⟨s', open_s', s_eq⟩⟩,
+  (le_infi $ assume s, le_infi $ assume ⟨as, ⟨s', open_s', s_eq⟩⟩,
     begin
       simp [vmap, mem_nhds_sets_iff, s_eq],
       exact ⟨s', subset.refl _, s', open_s', subset.refl _, by rw [s_eq] at as; assumption⟩
@@ -189,12 +189,12 @@ lemma map_nhds_induced_eq {a : α} (h : image f univ ∈ (nhds (f a))^.sets) :
   map f (@nhds α (induced f t) a) = nhds (f a) :=
 le_antisymm
   ((@continuous_iff_towards α β (induced f t) _ _)^.mp continuous_induced_dom a)
-  (take s, assume hs : vimage f s ∈ (@nhds α (induced f t) a)^.sets,
+  (assume s, assume hs : vimage f s ∈ (@nhds α (induced f t) a)^.sets,
     let ⟨t', t_subset, open_t, a_in_t⟩ := mem_nhds_sets_iff^.mp h in
     let ⟨s', s'_subset, ⟨s'', open_s'', s'_eq⟩, a_in_s'⟩ := (@mem_nhds_sets_iff _ (induced f t) _ _)^.mp hs in
     by subst s'_eq; exact (mem_nhds_sets_iff^.mpr $
       ⟨t' ∩ s'',
-        take x ⟨h₁, h₂⟩, match x, h₂, t_subset h₁ with
+        assume x ⟨h₁, h₂⟩, match x, h₂, t_subset h₁ with
         | x, h₂, ⟨y, _, y_eq⟩ := begin subst y_eq, exact s'_subset h₂ end
         end,
         open_inter open_t open_s'',
@@ -225,41 +225,41 @@ lemma prod_eq_generate_from [tα : topological_space α] [tβ : topological_spac
   generate_from {g | ∃(s:set α) (t:set β), open' s ∧ open' t ∧ g = set.prod s t} :=
 le_antisymm
   (sup_le
-    (take s ⟨t, ht, s_eq⟩,
+    (assume s ⟨t, ht, s_eq⟩,
       have set.prod t univ = s, by simp [s_eq, vimage, set.prod],
       this ▸ (generate_open.basic _ ⟨t, univ, ht, open_univ, rfl⟩))
-    (take s ⟨t, ht, s_eq⟩,
+    (assume s ⟨t, ht, s_eq⟩,
       have set.prod univ t = s, by simp [s_eq, vimage, set.prod],
       this ▸ (generate_open.basic _ ⟨univ, t, open_univ, ht, rfl⟩)))
-  (generate_from_le $ take g ⟨s, t, hs, ht, g_eq⟩, g_eq.symm ▸ open_set_prod hs ht)
+  (generate_from_le $ assume g ⟨s, t, hs, ht, g_eq⟩, g_eq.symm ▸ open_set_prod hs ht)
 
 lemma nhds_prod_eq {a : α} {b : β} : nhds (a, b) = filter.prod (nhds a) (nhds b) :=
 by rw [prod_eq_generate_from, nhds_generate_from];
   exact le_antisymm
-    (le_infi $ take s, le_infi $ take hs, le_infi $ take t, le_infi $ take ht,
+    (le_infi $ assume s, le_infi $ assume hs, le_infi $ assume t, le_infi $ assume ht,
       begin
         simp [mem_nhds_sets_iff] at hs, simp [mem_nhds_sets_iff] at ht,
         revert hs ht,
-        exact (take ⟨s', hs', hs_sub, as'⟩ ⟨t', ht', ht_sub, at'⟩,
+        exact (assume ⟨s', hs', hs_sub, as'⟩ ⟨t', ht', ht_sub, at'⟩,
           infi_le_of_le (set.prod s' t') $
           infi_le_of_le ⟨⟨as', at'⟩, s', t', hs', ht', rfl⟩ $
           principal_mono.mpr $ set.prod_mono hs_sub ht_sub)
       end)
-    (le_infi $ take s, le_infi $ take ⟨hab, s', t', hs', ht', s_eq⟩,
+    (le_infi $ assume s, le_infi $ assume ⟨hab, s', t', hs', ht', s_eq⟩,
       begin
         revert hab,
         simp [s_eq],
-        exact take ⟨ha, hb⟩, @prod_mem_prod α β s' t' (nhds a) (nhds b)
+        exact assume ⟨ha, hb⟩, @prod_mem_prod α β s' t' (nhds a) (nhds b)
           (mem_nhds_sets_iff.mpr ⟨s', subset.refl s', hs', ha⟩)
           (mem_nhds_sets_iff.mpr ⟨t', subset.refl t', ht', hb⟩)
       end)
 
 lemma closure_prod_eq {s : set α} {t : set β} :
   closure (set.prod s t) = set.prod (closure s) (closure t) :=
-set.ext $ take ⟨a, b⟩,
+set.ext $ assume ⟨a, b⟩,
 have filter.prod (nhds a) (nhds b) ⊓ principal (set.prod s t) =
   filter.prod (nhds a ⊓ principal s) (nhds b ⊓ principal t),
-  by rw [-prod_inf_prod, prod_principal_principal],
+  by rw [←prod_inf_prod, prod_principal_principal],
 by simp [closure_eq_nhds, nhds_prod_eq, this]; exact prod_neq_bot
 
 end prod
@@ -297,7 +297,7 @@ lemma continuous_subtype_nhds_cover {f : α → β} {c : ι → α → Prop}
   (c_cover : ∀x, ∃i, c i x ∧ {x | c i x} ∈ (nhds x)^.sets)
   (f_cont  : ∀i, continuous (λ(x : subtype (c i)), f x.val)) :
   continuous f :=
-continuous_iff_towards^.mpr $ take x,
+continuous_iff_towards^.mpr $ assume x,
   let ⟨i, (hi : c i x), (c_sets : {x | c i x} ∈ (nhds x)^.sets)⟩ := c_cover x in
   calc map f (nhds x) = map f (map (@subtype.val α (c i)) (nhds ⟨x, hi⟩)) :
       congr_arg (map f) (map_nhds_subtype_val_eq $ c_sets)^.symm
@@ -318,14 +318,14 @@ lemma compact_pi_infinite {ι : Type v} {α : ι → Type u} [∀i:ι, topologic
   {s : Πi:ι, set (α i)} : (∀i, compact (s i)) → compact {x : Πi:ι, α i | ∀i, x i ∈ s i} :=
 begin
   simp [compact_iff_ultrafilter_le_nhds, nhds_pi],
-  exact take h f hf hfs,
+  exact assume h f hf hfs,
     let p : Πi:ι, filter (α i) := λi, map (λx:Πi:ι, α i, x i) f in
     have ∀i:ι, ∃a, a∈s i ∧ p i ≤ nhds a,
-      from take i, h i (p i) (ultrafilter_map hf) $
+      from assume i, h i (p i) (ultrafilter_map hf) $
       show vimage (λx:Πi:ι, α i, x i) (s i) ∈ f.sets,
-        from f.upwards_sets hfs $ take x (hx : ∀i, x i ∈ s i), hx i,
+        from f.upwards_sets hfs $ assume x (hx : ∀i, x i ∈ s i), hx i,
     let ⟨a, ha⟩ := classical.axiom_of_choice this in
-    ⟨a, take i, (ha i).left, le_infi $ take i, le_vmap_iff_map_le.mpr $ (ha i).right⟩
+    ⟨a, assume i, (ha i).left, le_infi $ assume i, le_vmap_iff_map_le.mpr $ (ha i).right⟩
 end
 
 end pi

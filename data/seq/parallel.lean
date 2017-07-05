@@ -50,7 +50,7 @@ begin
   { intros a l S m, apply lem1,
     revert m, induction l with c l IH; intro; simp at m, { contradiction },
     cases m with e m,
-    { rw -e, simp [parallel.aux2],
+    { rw ←e, simp [parallel.aux2],
       cases list.foldr parallel.aux2._match_1 (sum.inr list.nil) l with a' ls,
       exacts [⟨a', rfl⟩, ⟨a, rfl⟩] },
     { cases IH m with a' e,
@@ -61,15 +61,15 @@ begin
     { revert m, induction l with c l IH';
       intros m l' e'; simp at m, { contradiction },
       cases m with e m; simp [parallel.aux2] at e',
-      { rw -e at e',
+      { rw ←e at e',
         cases list.foldr parallel.aux2._match_1 (sum.inr list.nil) l with a' ls;
-        injection e' with e', rw -e', simp },
+        injection e' with e', rw ←e', simp },
       { ginduction list.foldr parallel.aux2._match_1 (sum.inr list.nil) l with e a' ls;
         rw e at e', { contradiction },
         have := IH' m _ e,
         simp [parallel.aux2] at e',
         cases destruct c; injection e',
-        rw -h, simp [this] } },
+        rw ←h, simp [this] } },
     ginduction parallel.aux2 l with h a l',
     { exact lem1 _ _ ⟨a, h⟩ },
     { have H2 : corec parallel.aux1 (l, S) = think _,
@@ -94,7 +94,7 @@ begin
   intro n, induction n with n IH; intros l S c o T,
   { cases o, { exact terminates_parallel.aux a T },
     have H : seq.destruct S = some (some c, _),
-    { unfold seq.destruct has_map.map, rw -a, simp [option_bind] },
+    { unfold seq.destruct has_map.map, rw ←a, simp [option_bind] },
     ginduction (parallel.aux2 l) with h a l';
     have C : corec parallel.aux1 (l, S) = _,
     { apply destruct_eq_ret, simp [parallel.aux1], rw [h], simp [rmap] },
@@ -207,9 +207,9 @@ begin
   let T : wseq (computation (α × computation α)) :=
     S.map (λc, c.map (λ a, (a, c))),
   have : S = T.map (map (λ c, c.1)),
-  { rw [-wseq.map_comp], refine (wseq.map_id _).symm.trans (congr_arg (λ f, wseq.map f S) _),
-    apply funext, intro c, dsimp [id], rw [-map_comp], exact (map_id _).symm },
-  have pe := congr_arg parallel this, rw -map_parallel at pe,
+  { rw [←wseq.map_comp], refine (wseq.map_id _).symm.trans (congr_arg (λ f, wseq.map f S) _),
+    apply funext, intro c, dsimp [id], rw [←map_comp], exact (map_id _).symm },
+  have pe := congr_arg parallel this, rw ←map_parallel at pe,
   have h' := h, rw pe at h',
   have : terminates (parallel T) := (terminates_map_iff _ _).1 ⟨_, h'⟩,
   ginduction get (parallel T) with e a' c,
@@ -244,11 +244,11 @@ lemma parallel_congr_lem {S T : wseq (computation α)} {a}
 theorem parallel_congr_left {S T : wseq (computation α)} {a}
   (h1 : ∀ s ∈ S, s ~> a) (H : S.lift_rel equiv T) : parallel S ~ parallel T :=
 let h2 := (parallel_congr_lem H).1 h1 in
-λ a', ⟨λh, by have aa := parallel_promises h1 h; rw -aa; rw -aa at h; exact
+λ a', ⟨λh, by have aa := parallel_promises h1 h; rw ←aa; rw ←aa at h; exact
   let ⟨s, sS, as⟩ := exists_of_mem_parallel h,
       ⟨t, tT, st⟩ := wseq.exists_of_lift_rel_left H sS,
       aT := (st _).1 as in mem_parallel h2 tT aT,
-λh, by have aa := parallel_promises h2 h; rw -aa; rw -aa at h; exact
+λh, by have aa := parallel_promises h2 h; rw ←aa; rw ←aa at h; exact
   let ⟨s, sS, as⟩ := exists_of_mem_parallel h,
       ⟨t, tT, st⟩ := wseq.exists_of_lift_rel_right H sS,
       aT := (st _).2 as in mem_parallel h1 tT aT⟩

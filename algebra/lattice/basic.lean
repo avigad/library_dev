@@ -42,7 +42,7 @@ lemma top_unique (h : ⊤ ≤ a) : a = ⊤ :=
 le_antisymm le_top h
 
 lemma eq_top_iff : a = ⊤ ↔ ⊤ ≤ a :=
-⟨take eq, eq^.symm ▸ le_refl ⊤, top_unique⟩
+⟨assume eq, eq^.symm ▸ le_refl ⊤, top_unique⟩
 
 end order_top
 
@@ -58,10 +58,10 @@ lemma bot_unique (h : a ≤ ⊥) : a = ⊥ :=
 le_antisymm h bot_le
 
 lemma eq_bot_iff : a = ⊥ ↔ a ≤ ⊥ :=
-⟨take eq, eq^.symm ▸ le_refl ⊥, bot_unique⟩
+⟨assume eq, eq^.symm ▸ le_refl ⊥, bot_unique⟩
 
 lemma neq_bot_of_le_neq_bot {a b : α} (hb : b ≠ ⊥) (hab : b ≤ a) : a ≠ ⊥ :=
-take ha, hb $ bot_unique $ ha ▸ hab
+assume ha, hb $ bot_unique $ ha ▸ hab
 
 end order_bot
 
@@ -90,7 +90,7 @@ le_trans h le_sup_right
 
 lemma sup_le_iff : a ⊔ b ≤ c ↔ a ≤ c ∧ b ≤ c :=
 ⟨assume h : a ⊔ b ≤ c, ⟨le_trans le_sup_left h, le_trans le_sup_right h⟩,
-  take ⟨h₁, h₂⟩, sup_le h₁ h₂⟩
+  assume ⟨h₁, h₂⟩, sup_le h₁ h₂⟩
 
 lemma sup_of_le_left (h : b ≤ a) : a ⊔ b = a :=
 le_antisymm (sup_le (le_refl _) h) le_sup_left
@@ -110,7 +110,7 @@ sup_of_le_left (le_refl _)
 
 lemma sup_comm : a ⊔ b = b ⊔ a :=
 have ∀{a b : α}, a ⊔ b ≤ b ⊔ a, 
-  from take a b, sup_le le_sup_right le_sup_left,
+  from assume a b, sup_le le_sup_right le_sup_left,
 le_antisymm this this
 
 instance semilattice_sup_to_is_commutative [semilattice_sup α] : is_commutative α (⊔) :=
@@ -151,7 +151,7 @@ le_trans inf_le_right h
 
 lemma le_inf_iff : a ≤ b ⊓ c ↔ a ≤ b ∧ a ≤ c :=
 ⟨assume h : a ≤ b ⊓ c, ⟨le_trans h inf_le_left, le_trans h inf_le_right⟩,
-  take ⟨h₁, h₂⟩, le_inf h₁ h₂⟩
+  assume ⟨h₁, h₂⟩, le_inf h₁ h₂⟩
 
 lemma inf_of_le_left (h : a ≤ b) : a ⊓ b = a :=
 le_antisymm inf_le_left (le_inf (le_refl _) h)
@@ -171,7 +171,7 @@ inf_of_le_left (le_refl _)
 
 lemma inf_comm : a ⊓ b = b ⊓ a :=
 have ∀{a b : α}, a ⊓ b ≤ b ⊓ a, 
-  from take a b, le_inf inf_le_right inf_le_left,
+  from assume a b, le_inf inf_le_right inf_le_left,
 le_antisymm this this
 
 instance semilattice_inf_to_is_commutative [semilattice_inf α] : is_commutative α (⊓) :=
@@ -287,11 +287,11 @@ instance lattice_of_decidable_linear_order {α : Type u} [o : decidable_linear_o
   sup          := max,
   le_sup_left  := le_max_left,
   le_sup_right := le_max_right,
-  sup_le       := take a b c, max_le,
+  sup_le       := assume a b c, max_le,
 
   inf          := min,
   inf_le_left  := min_le_left,
   inf_le_right := min_le_right,
-  le_inf       := take a b c, le_min }
+  le_inf       := assume a b c, le_min }
 
 end lattice

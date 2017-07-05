@@ -20,7 +20,7 @@ We provide the following tactics:
   clarify -- makes as much progress as possible while not leaving more than one goal
   safe    -- splits freely, finishes off whatever subgoals it can, and leaves the rest
 
-All can take a list of simplifier rules, typically definitions that should be expanded.
+All can assume a list of simplifier rules, typically definitions that should be expanded.
 (The equations and identities should not refer to the local context.)
 
 The variants ifinish, iclarify, and isafe restrict to intuitionistic logic. They do not work

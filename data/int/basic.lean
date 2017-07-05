@@ -71,7 +71,7 @@ have m - n + n = m,     from nat.sub_add_cancel H,
 begin
   symmetry,
   apply sub_eq_of_eq_add,
-  rewrite [-of_nat_add, this]
+  rewrite [←of_nat_add, this]
 end
 
 theorem neg_succ_of_nat_eq' (m : ℕ) : -[1+ m] = -m - 1 :=

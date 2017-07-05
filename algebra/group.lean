@@ -14,7 +14,7 @@ section group
 
   variable (A)
   theorem left_inverse_inv : function.left_inverse (λ a : A, a⁻¹) (λ a, a⁻¹) :=
-  take a, inv_inv a
+  assume a, inv_inv a
   variable {A}
 
   theorem inv_eq_inv_iff_eq (a b : A) : a⁻¹ = b⁻¹ ↔ a = b :=
@@ -96,18 +96,18 @@ section add_group
       ... ↔ c = d       : iff.symm (eq_iff_sub_eq_zero c d)
 
   theorem left_inverse_sub_add_left (c : A) : function.left_inverse (λ x, x - c) (λ x, x + c) :=
-  take x, add_sub_cancel x c
+  assume x, add_sub_cancel x c
 
   theorem left_inverse_add_left_sub (c : A) : function.left_inverse (λ x, x + c) (λ x, x - c) :=
-  take x, sub_add_cancel x c
+  assume x, sub_add_cancel x c
 
   theorem left_inverse_add_right_neg_add (c : A) :
       function.left_inverse (λ x, c + x) (λ x, - c + x) :=
-  take x, add_neg_cancel_left c x
+  assume x, add_neg_cancel_left c x
 
   theorem left_inverse_neg_add_add_right (c : A) :
       function.left_inverse (λ x, - c + x) (λ x, c + x) :=
-  take x, neg_add_cancel_left c x
+  assume x, neg_add_cancel_left c x
 end add_group
 
 

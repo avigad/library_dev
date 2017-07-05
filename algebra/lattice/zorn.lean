@@ -26,8 +26,8 @@ def chain (c : set α) := pairwise_on c (λx y, x ≺ y ∨ y ≺ x)
 lemma chain_insert {c : set α} {a : α} (hc : chain c) (ha : ∀b∈c, b ≠ a → a ≺ b ∨ b ≺ a) :
   chain (insert a c) :=
 forall_insert_of_forall
-  (take x hx, forall_insert_of_forall (hc x hx) (take hneq, (ha x hx hneq).symm))
-  (forall_insert_of_forall (take x hx hneq, ha x hx $ take h', hneq h'.symm) (take h, (h rfl).rec _))
+  (assume x hx, forall_insert_of_forall (hc x hx) (assume hneq, (ha x hx hneq).symm))
+  (forall_insert_of_forall (assume x hx hneq, ha x hx $ assume h', hneq h'.symm) (assume h, (h rfl).rec _))
 
 def super_chain (c₁ c₂ : set α) := chain c₂ ∧ c₁ ⊂ c₂
 
@@ -71,11 +71,11 @@ inductive chain_closure : set α → Prop
 
 lemma chain_closure_empty : chain_closure ∅ :=
 have chain_closure (⋃₀ ∅),
-  from chain_closure.union $ take a h, h.rec _,
+  from chain_closure.union $ assume a h, h.rec _,
 by simp at this; assumption
 
 lemma chain_closure_closure : chain_closure (⋃₀ {s | chain_closure s}) :=
-chain_closure.union $ take s hs, hs
+chain_closure.union $ assume s hs, hs
 
 variables {c c₁ c₂ c₃ : set α}
 
@@ -92,9 +92,9 @@ begin
       { exact (or.inl h) } },
     { exact (or.inr $ subset.trans ih succ_increasing) } },
   case _root_.zorn.chain_closure.union s hs ih {
-    exact (or_of_not_implies $ take hn, sUnion_subset $ take a ha,
+    exact (or_of_not_implies $ assume hn, sUnion_subset $ assume a ha,
       have a ⊆ c₂ ∨ succ_chain c₂ ⊆ a, from ih a ha,
-      this.resolve_right $ take h, hn $ subset.trans h $ subset_sUnion_of_mem ha) }
+      this.resolve_right $ assume h, hn $ subset.trans h $ subset_sUnion_of_mem ha) }
 end
 
 private lemma chain_closure_succ_total (hc₁ : chain_closure c₁) (hc₂ : chain_closure c₂) (h : c₁ ⊆ c₂) :
@@ -103,7 +103,7 @@ begin
   induction hc₂ generalizing c₁ hc₁ h,
   case _root_.zorn.chain_closure.succ c₂ hc₂ ih {
     have h₁ : c₁ ⊆ c₂ ∨ @succ_chain α r c₂ ⊆ c₁ :=
-      (chain_closure_succ_total_aux hc₁ hc₂ $ take c₁, ih),
+      (chain_closure_succ_total_aux hc₁ hc₂ $ assume c₁, ih),
     cases h₁ with h₁ h₁,
     { have h₂ := ih hc₁ h₁,
       cases h₂ with h₂ h₂,
@@ -111,11 +111,11 @@ begin
       { exact (or.inr $ subset.trans h₂ succ_increasing) } },
     { exact (or.inl $ subset.antisymm h₁ h) } },
   case _root_.zorn.chain_closure.union s hs ih {
-    apply or.imp (take h', subset.antisymm h' h) id,
+    apply or.imp (assume h', subset.antisymm h' h) id,
     apply classical.by_contradiction,
     simp [not_or_iff, sUnion_subset_iff, not_forall_iff_exists_not, not_implies_iff_and_not],
     intro h, cases h with h₁ h₂, cases h₂ with c₃ h₂, cases h₂ with h₂ hc₃,
-    have h := chain_closure_succ_total_aux hc₁ (hs c₃ hc₃) (take c₄, ih _ hc₃),
+    have h := chain_closure_succ_total_aux hc₁ (hs c₃ hc₃) (assume c₄, ih _ hc₃),
     cases h with h h,
     { have h' := ih c₃ hc₃ hc₁ h,
       cases h' with h' h',
@@ -126,8 +126,8 @@ end
 
 lemma chain_closure_total (hc₁ : chain_closure c₁) (hc₂ : chain_closure c₂) : c₁ ⊆ c₂ ∨ c₂ ⊆ c₁ :=
 have c₁ ⊆ c₂ ∨ succ_chain c₂ ⊆ c₁,
-  from chain_closure_succ_total_aux hc₁ hc₂ $ take c₃ hc₃, chain_closure_succ_total hc₃ hc₂,
-or.imp_right (suppose succ_chain c₂ ⊆ c₁, subset.trans succ_increasing this) this
+  from chain_closure_succ_total_aux hc₁ hc₂ $ assume c₃ hc₃, chain_closure_succ_total hc₃ hc₂,
+or.imp_right (assume : succ_chain c₂ ⊆ c₁, subset.trans succ_increasing this) this
 
 lemma chain_closure_succ_fixpoint (hc₁ : chain_closure c₁) (hc₂ : chain_closure c₂)
   (h_eq : succ_chain c₂ = c₂) : c₁ ⊆ c₂ :=
@@ -135,17 +135,17 @@ begin
   induction hc₁,
   case _root_.zorn.chain_closure.succ c₁ hc₁ h {
     exact or.elim (chain_closure_succ_total hc₁ hc₂ h)
-      (take h, h ▸ h_eq.symm ▸ subset.refl c₂) id },
+      (assume h, h ▸ h_eq.symm ▸ subset.refl c₂) id },
   case _root_.zorn.chain_closure.union s hs ih {
-    exact (sUnion_subset $ take c₁ hc₁, ih c₁ hc₁) }
+    exact (sUnion_subset $ assume c₁ hc₁, ih c₁ hc₁) }
 end
 
 lemma chain_closure_succ_fixpoint_iff (hc : chain_closure c) :
   succ_chain c = c ↔ c = ⋃₀ {c | chain_closure c} :=
-⟨take h, subset.antisymm
+⟨assume h, subset.antisymm
     (subset_sUnion_of_mem hc)
     (chain_closure_succ_fixpoint chain_closure_closure hc h),
-  suppose c = ⋃₀{c : set α | chain_closure c},
+  assume : c = ⋃₀{c : set α | chain_closure c},
   subset.antisymm
     (calc succ_chain c ⊆ ⋃₀{c : set α | chain_closure c} :
         subset_sUnion_of_mem $ chain_closure.succ hc
@@ -159,11 +159,11 @@ begin
     exact chain_succ h },
   case _root_.zorn.chain_closure.union s hs h {
     have h : ∀c∈s, zorn.chain c := h,
-    exact take c₁ ⟨t₁, ht₁, (hc₁ : c₁ ∈ t₁)⟩ c₂ ⟨t₂, ht₂, (hc₂ : c₂ ∈ t₂)⟩ hneq,
+    exact assume c₁ ⟨t₁, ht₁, (hc₁ : c₁ ∈ t₁)⟩ c₂ ⟨t₂, ht₂, (hc₂ : c₂ ∈ t₂)⟩ hneq,
       have t₁ ⊆ t₂ ∨ t₂ ⊆ t₁, from chain_closure_total (hs _ ht₁) (hs _ ht₂),
       or.elim this
-        (suppose t₁ ⊆ t₂, h t₂ ht₂ c₁ (this hc₁) c₂ hc₂ hneq)
-        (suppose t₂ ⊆ t₁, h t₁ ht₁ c₁ hc₁ c₂ (this hc₂) hneq) }
+        (assume : t₁ ⊆ t₂, h t₂ ht₂ c₁ (this hc₁) c₂ hc₂ hneq)
+        (assume : t₂ ⊆ t₁, h t₁ ht₁ c₁ hc₁ c₂ (this hc₂) hneq) }
 end
 
 def max_chain := (⋃₀ {c | chain_closure c})
@@ -174,7 +174,7 @@ There exists a maximal totally ordered subset of `α`.
 Note that we do not require `α` to be partially ordered by `r`. -/
 lemma max_chain_spec : is_max_chain max_chain :=
 classical.by_contradiction $
-suppose ¬ is_max_chain (⋃₀ {c | chain_closure c}),
+assume : ¬ is_max_chain (⋃₀ {c | chain_closure c}),
 have super_chain (⋃₀ {c | chain_closure c}) (succ_chain (⋃₀ {c | chain_closure c})),
   from super_of_not_max (chain_chain_closure chain_closure_closure) this,
 let ⟨h₁, h₂, (h₃ : (⋃₀ {c | chain_closure c}) ≠ succ_chain (⋃₀ {c | chain_closure c}))⟩ := this in
@@ -190,9 +190,9 @@ lemma zorn (h : ∀c, chain c → ∃ub, ∀a∈c, a ≺ ub) (trans : ∀{a b c}
 have ∃ub, ∀a∈max_chain, a ≺ ub,
   from h _ $ max_chain_spec.left,
 let ⟨ub, (hub : ∀a∈max_chain, a ≺ ub)⟩ := this in
-⟨ub, take a ha,
+⟨ub, assume a ha,
   have chain (insert a max_chain),
-    from chain_insert max_chain_spec.left $ take b hb _, or.inr $ trans (hub b hb) ha,
+    from chain_insert max_chain_spec.left $ assume b hb _, or.inr $ trans (hub b hb) ha,
   have a ∈ max_chain, from
     classical.by_contradiction $ assume h : a ∉ max_chain,
     max_chain_spec.right $ ⟨insert a max_chain, this, ssubset_insert h⟩,
@@ -202,7 +202,7 @@ end chain
 
 lemma zorn_weak_order {α : Type u} [weak_order α]
   (h : ∀c:set α, @chain α (≤) c → ∃ub, ∀a∈c, a ≤ ub) : ∃m:α, ∀a, m ≤ a → a = m :=
-let ⟨m, hm⟩ := @zorn α (≤) h (take a b c, le_trans) in
-⟨m, take a ha, le_antisymm (hm a ha) ha⟩
+let ⟨m, hm⟩ := @zorn α (≤) h (assume a b c, le_trans) in
+⟨m, assume a ha, le_antisymm (hm a ha) ha⟩
 
 end zorn

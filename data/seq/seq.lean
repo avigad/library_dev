@@ -78,8 +78,8 @@ begin
   { unfold has_map.map at h, dsimp [option_bind] at h,
     cases s with f al,
     injections with _ h1 h2,
-    rw -h2, apply subtype.eq, dsimp [tail, cons],
-    rw h1 at f0, rw -f0,
+    rw ←h2, apply subtype.eq, dsimp [tail, cons],
+    rw h1 at f0, rw ←f0,
     exact (stream.eta f).symm }
 end
 
@@ -119,7 +119,7 @@ begin
   revert s, induction k with k IH; intros s e,
   { have TH : s = cons a (tail s),
     { apply destruct_eq_cons,
-      unfold destruct nth has_map.map, rw -e, refl },
+      unfold destruct nth has_map.map, rw ←e, refl },
     rw TH, apply h1 _ _ (or.inl rfl) },
   revert e, apply s.cases_on _ (λ b s', _); intro e,
   { injection e },
@@ -276,16 +276,16 @@ corec (λS, match destruct S with
     end)
   end)
 
-def dropn (s : seq α) : ℕ → seq α
+def drop (s : seq α) : ℕ → seq α
 | 0     := s
-| (n+1) := tail (dropn n)
-attribute [simp] dropn
+| (n+1) := tail (drop n)
+attribute [simp] drop
 
-def taken : ℕ → seq α → list α
+def take : ℕ → seq α → list α
 | 0     s := []
 | (n+1) s := match destruct s with
   | none := []
-  | some (x, r) := list.cons x (taken n r)
+  | some (x, r) := list.cons x (take n r)
   end
 
 def split_at : ℕ → seq α → list α × seq α
@@ -314,7 +314,7 @@ def zip : seq α → seq β → seq (α × β) := zip_with prod.mk
 def unzip (s : seq (α × β)) : seq α × seq β := (map prod.fst s, map prod.snd s)
 
 def to_list (s : seq α) (h : ∃ n, ¬ (nth s n).is_some) : list α :=
-taken (nat.find h) s
+take (nat.find h) s
 
 def to_stream (s : seq α) (h : ∀ n, (nth s n).is_some) : stream α :=
 λn, option.get (h n)
@@ -486,20 +486,20 @@ def to_list' {α} (s : seq α) : computation (list α) :=
   | some (a, s') := sum.inr (a::l, s')
   end) ([], s)
 
-theorem dropn_add (s : seq α) (m) : ∀ n, dropn s (m + n) = dropn (dropn s m) n
+theorem dropn_add (s : seq α) (m) : ∀ n, drop s (m + n) = drop (drop s m) n
 | 0     := rfl
 | (n+1) := congr_arg tail (dropn_add n)
 
-theorem dropn_tail (s : seq α) (n) : dropn (tail s) n = dropn s (n + 1) :=
+theorem dropn_tail (s : seq α) (n) : drop (tail s) n = drop s (n + 1) :=
 by rw add_comm; symmetry; apply dropn_add
 
 theorem nth_tail : ∀ (s : seq α) n, nth (tail s) n = nth s (n + 1)
 | ⟨f, al⟩ n := rfl
 
-@[simp] theorem head_dropn (s : seq α) (n) : head (dropn s n) = nth s n :=
+@[simp] theorem head_dropn (s : seq α) (n) : head (drop s n) = nth s n :=
 begin
   revert s, induction n with n IH; intro, { refl },
-  rw [nat.succ_eq_add_one, -nth_tail, -dropn_tail], apply IH
+  rw [nat.succ_eq_add_one, ←nth_tail, ←dropn_tail], apply IH
 end
 
 theorem mem_map (f : α → β) {a : α} : ∀ {s : seq α}, a ∈ s → f a ∈ map f s
@@ -623,7 +623,7 @@ end
 begin
   cases s with a s,
   simp [bind, map],
-  rw [-map_comp],
+  rw [←map_comp],
   change (λ x, join (map g (f x))) with (join ∘ ((map g) ∘ f)),
   rw [map_comp _ join],
   generalize (seq.map (map g ∘ f) s) SS, intro SS,

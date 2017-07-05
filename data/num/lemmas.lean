@@ -68,7 +68,7 @@ namespace pos_num
     | none, (IH : (q : ℕ) = 1) := show 1 = nat.pred (q + q), by rw IH; refl
     | some p, (IH : ↑p = nat.pred q) :=
       show _root_.bit1 ↑p = nat.pred (q + q), begin
-        rw [-nat.succ_pred_eq_of_pos (to_nat_pos q), IH],
+        rw [←nat.succ_pred_eq_of_pos (to_nat_pos q), IH],
         generalize (nat.pred q) n, intro n,
         simp [_root_.bit1, _root_.bit0]
       end
@@ -156,7 +156,7 @@ namespace pos_num
 
   theorem cmp_swap (m) : ∀n, (cmp m n).swap = cmp n m :=
   by induction m with m IH m IH; intro n;
-     cases n with n n; unfold cmp; try {refl}; rw -IH; cases cmp m n; refl
+     cases n with n n; unfold cmp; try {refl}; rw ←IH; cases cmp m n; refl
 
   lemma cmp_dec_lemma {m n} : m < n → bit1 m < bit0 n :=
   show (m:ℕ) < n → (m + m + 1 + 1 : ℕ) ≤ n + n,
@@ -204,7 +204,7 @@ namespace pos_num
 
   theorem le_iff_cmp {m n} : m ≤ n ↔ cmp m n ≠ ordering.gt :=
   iff.trans ⟨@not_lt_of_ge nat _ _ _, le_of_not_gt⟩ $ not_congr $
-  lt_iff_cmp.trans $ by rw -cmp_swap; cases cmp m n; exact dec_trivial
+  lt_iff_cmp.trans $ by rw ←cmp_swap; cases cmp m n; exact dec_trivial
 
   instance decidable_lt : @decidable_rel pos_num (<) := λ m n,
   decidable_of_decidable_of_iff (by apply_instance) lt_iff_cmp.symm
@@ -291,7 +291,7 @@ namespace num
 
   theorem le_iff_cmp {m n} : m ≤ n ↔ cmp m n ≠ ordering.gt :=
   iff.trans ⟨@not_lt_of_ge nat _ _ _, le_of_not_gt⟩ $ not_congr $
-  lt_iff_cmp.trans $ by rw -cmp_swap; cases cmp m n; exact dec_trivial
+  lt_iff_cmp.trans $ by rw ←cmp_swap; cases cmp m n; exact dec_trivial
 
   instance decidable_lt : @decidable_rel num (<) := λ m n,
   decidable_of_decidable_of_iff (by apply_instance) lt_iff_cmp.symm

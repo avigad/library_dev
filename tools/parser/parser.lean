@@ -62,13 +62,13 @@ instance monad_parser : monad parser :=
 { map                   := @parser_fmap,
   pure                  := @parser_pure,
   bind                  := @parser_bind,
-  id_map                := take α p, funext $ take s,
+  id_map                := assume α p, funext $ assume s,
     by simp [parser_fmap]; exact list.map_id _,
-  pure_bind             := take α β a f, funext $ take s,
+  pure_bind             := assume α β a f, funext $ assume s,
     by simp [parser_bind, parser_pure],
-  bind_assoc            := take α β γ p f g, funext $ take s,
+  bind_assoc            := assume α β γ p f g, funext $ assume s,
     by simp [parser_bind, list.bind_assoc],
-  bind_pure_comp_eq_map := take α β f p, funext $ take s,
+  bind_pure_comp_eq_map := assume α β f p, funext $ assume s,
     by simp [parser_bind, parser_pure, parser_fmap, list.bind_singleton, function.comp] }
 
 def list.deterministic_or : list α → list α → list α

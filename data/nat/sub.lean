@@ -12,27 +12,27 @@ namespace nat
 
 protected theorem le_sub_add (n m : ℕ) : n ≤ n - m + m :=
 or.elim (le_total n m)
-  (suppose n ≤ m, begin rw [sub_eq_zero_of_le this, zero_add], exact this end)
-  (suppose m ≤ n, begin rw (nat.sub_add_cancel this) end)
+  (assume : n ≤ m, begin rw [sub_eq_zero_of_le this, zero_add], exact this end)
+  (assume : m ≤ n, begin rw (nat.sub_add_cancel this) end)
 
 protected theorem sub_eq_of_eq_add {n m k : ℕ} (h : k = n + m) : k - n = m :=
 begin rw [h, nat.add_sub_cancel_left] end
 
 protected theorem lt_of_sub_pos {m n : ℕ} (h : n - m > 0) : m < n :=
 lt_of_not_ge
-  (suppose m ≥ n,
+  (assume : m ≥ n,
     have n - m = 0, from sub_eq_zero_of_le this,
     begin rw this at h, exact lt_irrefl _ h end)
 
 protected theorem lt_of_sub_lt_sub_right {n m k : ℕ} (h : n - k < m - k) : n < m :=
 lt_of_not_ge
-  (suppose m ≤ n,
+  (assume : m ≤ n,
     have m - k ≤ n - k, from nat.sub_le_sub_right this _,
     not_le_of_gt h this)
 
 protected theorem lt_of_sub_lt_sub_left {n m k : ℕ} (h : n - m < n - k) : k < m :=
 lt_of_not_ge
-  (suppose m ≤ k,
+  (assume : m ≤ k,
     have n - k ≤ n - m, from nat.sub_le_sub_left _ this,
     not_le_of_gt h this)
 
@@ -119,9 +119,9 @@ calc
 
 protected theorem sub_lt_sub_add_sub (n m k : ℕ) : n - k ≤ (n - m) + (m - k) :=
 or.elim (le_total k m)
-  (suppose k ≤ m,
-    begin rw -nat.add_sub_assoc this, apply nat.sub_le_sub_right, apply nat.le_sub_add end)
-  (suppose k ≥ m,
+  (assume : k ≤ m,
+    begin rw ←nat.add_sub_assoc this, apply nat.sub_le_sub_right, apply nat.le_sub_add end)
+  (assume : k ≥ m,
     begin rw [sub_eq_zero_of_le this, add_zero], apply nat.sub_le_sub_left, exact this end)
 
 theorem dist.triangle_inequality (n m k : ℕ) : dist n k ≤ dist n m + dist m k :=
@@ -141,9 +141,9 @@ by rw [mul_comm k n, mul_comm k m, dist_mul_right, mul_comm]
 --sorry
 /-
 or.elim (lt_or_ge i j)
-  (suppose i < j,
+  (assume : i < j,
     by rw [max_eq_right_of_lt this, min_eq_left_of_lt this, dist_eq_sub_of_lt this])
-  (suppose i ≥ j,
+  (assume : i ≥ j,
     by rw [max_eq_left this , min_eq_right this, dist_eq_sub_of_ge this])
 -/
 
@@ -152,10 +152,10 @@ by simp [dist.def, succ_sub_succ]
 
 lemma dist_pos_of_ne {i j : nat} : i ≠ j → dist i j > 0 :=
 assume hne, nat.lt_by_cases
-  (suppose i < j,
+  (assume : i < j,
      begin rw [dist_eq_sub_of_le (le_of_lt this)], apply nat.sub_pos_of_lt this end)
-  (suppose i = j, by contradiction)
-  (suppose i > j,
+  (assume : i = j, by contradiction)
+  (assume : i > j,
      begin rw [dist_eq_sub_of_ge (le_of_lt this)], apply nat.sub_pos_of_lt this end)
 
 end nat

@@ -23,19 +23,19 @@ variables [complete_distrib_lattice α] {a : α} {s : set α}
 
 lemma sup_Inf_eq : a ⊔ Inf s = (⨅ b ∈ s, a ⊔ b) :=
 le_antisymm
-  (le_infi $ take i, le_infi $ take h, sup_le_sup (le_refl _) (Inf_le h))
+  (le_infi $ assume i, le_infi $ assume h, sup_le_sup (le_refl _) (Inf_le h))
   (complete_distrib_lattice.infi_sup_le_sup_Inf _ _)
 
 lemma inf_Sup_eq : a ⊓ Sup s = (⨆ b ∈ s, a ⊓ b) :=
 le_antisymm
   (complete_distrib_lattice.inf_Sup_le_supr_inf _ _)
-  (supr_le $ take i, supr_le $ take h, inf_le_inf (le_refl _) (le_Sup h))
+  (supr_le $ assume i, supr_le $ assume h, inf_le_inf (le_refl _) (le_Sup h))
 
 end complete_distrib_lattice
 
 instance [d : complete_distrib_lattice α] : bounded_distrib_lattice α :=
 { d with 
-  le_sup_inf := take x y z,
+  le_sup_inf := assume x y z,
     calc (x ⊔ y) ⊓ (x ⊔ z) ≤ (⨅ b ∈ ({z, y} : set α), x ⊔ b) : by rw insert_of_has_insert; simp
       ... = x ⊔ Inf {z, y} : sup_Inf_eq^.symm
       ... = x ⊔ y ⊓ z : by rw insert_of_has_insert; simp }
@@ -47,8 +47,8 @@ variables [complete_boolean_algebra α] {a b : α} {s : set α} {f : ι → α}
 
 lemma neg_infi : - infi f = (⨆i, - f i) :=
 le_antisymm
-  (neg_le_of_neg_le $ le_infi $ take i, neg_le_of_neg_le $ le_supr (λi, - f i) i)
-  (supr_le $ take i, neg_le_neg $ infi_le _ _)
+  (neg_le_of_neg_le $ le_infi $ assume i, neg_le_of_neg_le $ le_supr (λi, - f i) i)
+  (supr_le $ assume i, neg_le_neg $ infi_le _ _)
 
 lemma neg_supr : - supr f = (⨅i, - f i) :=
 neg_eq_neg_of_eq (by simp [neg_infi])

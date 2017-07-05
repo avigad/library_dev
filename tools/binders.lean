@@ -161,7 +161,7 @@ meta def exists_eq_elim : binder_eq_elim :=
 
 lemma {u v} forall_comm {α : Sort u} {β : Sort v} (p : α → β → Prop) :
   (∀a b, p a b) ↔ (∀b a, p a b) :=
-⟨take h b a, h a b, take h b a, h a b⟩
+⟨assume h b a, h a b, assume h b a, h a b⟩
 
 lemma {u v} forall_elim_eq_left {α : Sort u} (a : α) (p : Π(a':α), a' = a → Prop) :
   (∀(a':α)(h : a' = a), p a' h) ↔ p a rfl :=

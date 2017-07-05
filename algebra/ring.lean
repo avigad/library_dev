@@ -65,9 +65,9 @@ section
 --  sorry
   /-
   dvd.elim Hdvd
-    (take d,
-      suppose a * c = a * b * d,
-      have b * d = c, from eq_of_mul_eq_mul_left Ha begin rewrite -mul.assoc, symmetry, exact this end,
+    (assume d,
+      assume : a * c = a * b * d,
+      have b * d = c, from eq_of_mul_eq_mul_left Ha begin rewrite ←mul.assoc, symmetry, exact this end,
       dvd.intro this)
   -/
 
@@ -75,9 +75,9 @@ section
 --  sorry
   /-
   dvd.elim Hdvd
-    (take d,
-      suppose c * a = b * a * d,
-      have b * d * a = c * a, from by rewrite [mul.right_comm, -this],
+    (assume d,
+      assume : c * a = b * a * d,
+      have b * d * a = c * a, from by rewrite [mul.right_comm, ←this],
       have b * d = c, from eq_of_mul_eq_mul_right Ha this,
       dvd.intro this)
   -/

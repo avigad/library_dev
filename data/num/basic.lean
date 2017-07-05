@@ -340,7 +340,7 @@ namespace nzsnum
 
   def drec' {C : snum → Sort u} (z : Π b, C (snum.zero b))
     (s : Π b p, C p → C (b :: p)) : Π p : nzsnum, C p
-  | (one b)  := by rw -bit_one; exact s b (snum.zero (bnot b)) (z (bnot b))
+  | (one b)  := by rw ←bit_one; exact s b (snum.zero (bnot b)) (z (bnot b))
   | (bit b p) := s b p (drec' p)
 end nzsnum
 
