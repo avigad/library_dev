@@ -19,8 +19,8 @@ universes u v w
 /-
 coinductive wseq (α : Type u) : Type u
 | nil : wseq α
-| cons : α → wseq α → wseq α 
-| think : wseq α → wseq α 
+| cons : α → wseq α → wseq α
+| think : wseq α → wseq α
 -/
 def wseq (α) := seq (option α)
 
@@ -281,7 +281,7 @@ attribute [simp] bisim_o
 
 theorem bisim_o.imp {R S : wseq α → wseq α → Prop} (H : ∀ s t, R s t → S s t) {o p} :
   bisim_o R o p → bisim_o S o p :=
-lift_rel_o.imp_right _ H 
+lift_rel_o.imp_right _ H
 
 def lift_rel (R : α → β → Prop) (s : wseq α) (t : wseq β) : Prop :=
 ∃ C : wseq α → wseq β → Prop, C s t ∧
@@ -375,7 +375,7 @@ end
 
 def lift_rel.equiv (R : α → α → Prop) : equivalence R → equivalence (lift_rel R)
 | ⟨refl, symm, trans⟩ :=
-  ⟨lift_rel.refl R refl, lift_rel.symm R symm, lift_rel.trans R trans⟩ 
+  ⟨lift_rel.refl R refl, lift_rel.symm R symm, lift_rel.trans R trans⟩
 
 @[refl] theorem equiv.refl : ∀ (s : wseq α), s ~ s :=
 lift_rel.refl (=) eq.refl
@@ -1086,7 +1086,7 @@ begin
   intros n IH a S T ST ra, simp [destruct_join] at ra, exact
   let ⟨o, m, k, rs1, rs2, en⟩ := of_results_bind ra,
       ⟨p, mT, rop⟩ := computation.exists_of_lift_rel_left (lift_rel_destruct ST) rs1.mem in
-  by dsimp at rop; exact match o, p, rop, rs1, rs2, mT with
+  by exact match o, p, rop, rs1, rs2, mT with
   | none, none, _, rs1, rs2, mT := by simp [destruct_join]; exact
     ⟨none, by rw eq_of_ret_mem rs2.mem; trivial, mem_bind mT (ret_mem _)⟩
   | some (s, S'), some (t, T'), ⟨st, ST'⟩, rs1, rs2, mT :=
@@ -1094,7 +1094,7 @@ begin
     let ⟨k1, rs3, ek⟩ := of_results_think rs2,
         ⟨o', m1, n1, rs4, rs5, ek1⟩ := of_results_bind rs3,
         ⟨p', mt, rop'⟩ := computation.exists_of_lift_rel_left (lift_rel_destruct st) rs4.mem in
-    by dsimp at rop'; exact match o', p', rop', rs4, rs5, mt with
+    by exact match o', p', rop', rs4, rs5, mt with
     | none, none, _, rs4, rs5', mt :=
       have n1 < n, begin
         rw [en, ek, ek1],
@@ -1264,7 +1264,7 @@ begin
   apply join_join
 end
 
-/- 
+/-
   Unfortunately, wseq is not a monad, because it does not satisfy
   the monad laws exactly, only up to sequence equivalence.
   Furthermore, even quotienting by the equivalence is not sufficient,

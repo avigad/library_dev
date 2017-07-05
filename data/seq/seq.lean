@@ -4,7 +4,7 @@ universes u v w
 /-
 coinductive seq (α : Type u) : Type u
 | nil : seq α
-| cons : α → seq α → seq α 
+| cons : α → seq α → seq α
 -/
 
 def seq (α : Type u) : Type u := { f : stream (option α) // ∀ {n}, f n = none → f (n+1) = none }
@@ -75,7 +75,7 @@ begin
   dsimp [destruct],
   ginduction nth s 0 with f0 a'; intro h,
   { contradiction },
-  { unfold has_map.map at h, dsimp [option_bind] at h,
+  { unfold has_map.map at h, dsimp [option_map, option_bind] at h,
     cases s with f al,
     injections with _ h1 h2,
     rw ←h2, apply subtype.eq, dsimp [tail, cons],
@@ -87,7 +87,7 @@ end
 
 @[simp] theorem destruct_cons (a : α) : ∀ s, destruct (cons a s) = some (a, s)
 | ⟨f, al⟩ := begin
-  unfold cons destruct has_map.map, dsimp [option_bind],
+  unfold cons destruct has_map.map,
   apply congr_arg (λ s, some (a, s)),
   apply subtype.eq, dsimp [tail], rw [stream.tail_cons]
 end
@@ -208,7 +208,7 @@ section bisim
         { rw [destruct_cons, destruct_cons] at this,
           rw [head_cons, head_cons, tail_cons, tail_cons],
           cases this with h1 h2,
-          constructor, rw h1, exact h2 }          
+          constructor, rw h1, exact h2 }
       end
     end,
     exact ⟨s₁, s₂, rfl, rfl, r⟩
@@ -262,8 +262,8 @@ def append (s₁ s₂ : seq α) : seq α :=
 def map (f : α → β) : seq α → seq β | ⟨s, al⟩ :=
 ⟨s.map (option_map f),
 λn, begin
-  dsimp [stream.map],
-  ginduction s n with e; dsimp; intro,
+  dsimp [stream.map, stream.nth],
+  ginduction s n with e; intro,
   { rw al e, assumption }, { contradiction }
 end⟩
 
@@ -302,7 +302,7 @@ def zip_with (f : α → β → γ) : seq α → seq β → seq γ
     | _, _ := none
     end,
   λn, begin
-    ginduction f₁ n with h1; dsimp [seq.zip_with._match_1],
+    ginduction f₁ n with h1,
     { intro H, rw a₁ h1, refl },
     ginduction f₂ n with h2; dsimp [seq.zip_with._match_1]; intro H,
     { rw a₂ h2, cases f₁ (n + 1); refl },
@@ -340,7 +340,7 @@ end
 destruct_eq_cons $ begin
   dsimp [append], rw [corec_eq],
   dsimp [append], rw [destruct_cons],
-  dsimp [append], refl 
+  dsimp [append], refl
 end
 
 @[simp] lemma append_nil (s : seq α) : append s nil = s :=
@@ -463,7 +463,7 @@ end
 @[simp] def of_list_cons (a : α) (l) :
   of_list (a :: l) = cons a (of_list l) :=
 begin
-  apply subtype.eq, simp [of_list, cons], 
+  apply subtype.eq, simp [of_list, cons],
   apply funext, intro n, cases n; simp [list.nth, stream.cons]
 end
 
@@ -570,7 +570,7 @@ end
 @[simp] theorem bind_ret (f : α → β) : ∀ s, bind s (ret ∘ f) = map f s
 | ⟨a, s⟩ := begin
   dsimp [bind, map], change (λx, ret (f x)) with (ret ∘ f),
-  rw [map_comp], simp [ret]
+  rw [map_comp], simp [function.comp, ret]
 end
 
 @[simp] theorem ret_bind (a : α) (f : α → seq1 β) : bind (ret a) f = f a :=

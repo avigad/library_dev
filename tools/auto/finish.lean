@@ -335,16 +335,17 @@ meta def safe_core (s : simp_lemmas × list name) (cfg : auto_config) : case_opt
 λ co, focus1 $
 do when_tracing `auto.finish (trace "entering safe_core"),
    if cfg^.use_simp then simp_all s.1 s.2 { fail_if_unchanged := ff } else skip,
-   when_tracing `auto.finish (trace "preprocessing hypotheses"),
-   preprocess_hyps cfg,
-   done cfg <|>
-     (mcond (case_some_hyp co safe_core)
-       skip
-       (match co with
-         | case_option.force       := done cfg
-         | case_option.at_most_one := try (done cfg)
-         | case_option.accept      := try (done cfg)
-         end))
+   tactic.done <|>
+   do when_tracing `auto.finish (trace "preprocessing hypotheses"),
+      preprocess_hyps cfg,
+      done cfg <|>
+        (mcond (case_some_hyp co safe_core)
+          skip
+          (match co with
+            | case_option.force       := done cfg
+            | case_option.at_most_one := try (done cfg)
+            | case_option.accept      := try (done cfg)
+            end))
 
 meta def clarify (s : simp_lemmas × list name) (cfg : auto_config := {}) : tactic unit := safe_core s cfg case_option.at_most_one
 meta def safe (s : simp_lemmas × list name) (cfg : auto_config := {}) : tactic unit := safe_core s cfg case_option.accept

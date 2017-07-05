@@ -94,7 +94,7 @@ begin
   intro n, induction n with n IH; intros l S c o T,
   { cases o, { exact terminates_parallel.aux a T },
     have H : seq.destruct S = some (some c, _),
-    { unfold seq.destruct has_map.map, rw ←a, simp [option_bind] },
+    { unfold seq.destruct has_map.map, rw ←a, simp [option_map, option_bind] },
     ginduction (parallel.aux2 l) with h a l';
     have C : corec parallel.aux1 (l, S) = _,
     { apply destruct_eq_ret, simp [parallel.aux1], rw [h], simp [rmap] },
@@ -184,7 +184,7 @@ begin
   intros c1 c2 h, exact match c1, c2, h with ._, ._, ⟨l, S, rfl, rfl⟩ := begin
     clear _match,
     have : parallel.aux2 (l.map (map f)) = lmap f (rmap (list.map (map f)) (parallel.aux2 l)),
-    { simp [parallel.aux2], induction l with c l IH; simp, rw [IH], dsimp,
+    { simp [parallel.aux2], induction l with c l IH; simp, rw [IH], dsimp [function.comp],
       cases list.foldr parallel.aux2._match_1 (sum.inr list.nil) l; simp [parallel.aux2],
       cases destruct c; simp },
     simp [parallel.aux1], rw this, cases parallel.aux2 l with a l'; simp,
@@ -208,7 +208,7 @@ begin
     S.map (λc, c.map (λ a, (a, c))),
   have : S = T.map (map (λ c, c.1)),
   { rw [←wseq.map_comp], refine (wseq.map_id _).symm.trans (congr_arg (λ f, wseq.map f S) _),
-    apply funext, intro c, dsimp [id], rw [←map_comp], exact (map_id _).symm },
+    apply funext, intro c, dsimp [id, function.comp], rw [←map_comp], exact (map_id _).symm },
   have pe := congr_arg parallel this, rw ←map_parallel at pe,
   have h' := h, rw pe at h',
   have : terminates (parallel T) := (terminates_map_iff _ _).1 ⟨_, h'⟩,
@@ -218,7 +218,7 @@ begin
     rw get_eq_of_mem _ dT at e, cases e, dsimp at cd, cases cd,
     cases exists_of_mem_parallel dT with d' h, cases h with dT' ad',
     cases wseq.exists_of_mem_map dT' with c' h, cases h with cs' e',
-    rw -e' at ad',
+    rw ←e' at ad',
     cases exists_of_mem_map ad' with a' h, cases h with ac' e', injection e' with i1 i2,
     constructor, rwa [i1, i2] at ac', rwa i2 at cs' },
   cases this with ac cs, apply H _ cs _ ac

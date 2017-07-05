@@ -92,8 +92,6 @@ theorem set_eq_def (s t : set α) : s = t ↔ ∀ x, x ∈ s ↔ x ∈ t :=
 
 theorem empty_def : (∅ : set α) = { x | false } := rfl
 
-set_option pp.all true
-
 theorem exists_mem_of_ne_empty {s : set α} (h : s ≠ ∅) : ∃ x, x ∈ s :=
 by finish [set_eq_def]
 
@@ -381,7 +379,11 @@ ext (assume c, by simp)
 
 -- TODO(Jeremy): make this automatic
 theorem insert_ne_empty (a : α) (s : set α) : insert a s ≠ ∅ :=
-begin safe [set_eq_def, iff_def]; have h' := h a; finish end
+begin
+  safe [set_eq_def, iff_def],
+  have h' := h a, clear h, finish
+end
+--begin safe [set_eq_def, iff_def]; have h' := h a; finish end
 
 /- old proof
 theorem insert_ne_empty (a : α) (s : set α) : insert a s ≠ ∅ :=
@@ -698,7 +700,7 @@ mem_image_elim h h_y
 
 theorem image_eq_image_of_eq_on {f₁ f₂ : α → β} {s : set α} (heq : eq_on f₁ f₂ s) :
   image f₁ s = image f₂ s :=
-by finish [set_eq_def, iff_def, mem_image_eq]
+by finish [set_eq_def, iff_def, mem_image_eq, eq_on]
 
 /- old proof
 theorem image_eq_image_of_eq_on {f₁ f₂ : α → β} {s : set α} (heq : eq_on f₁ f₂ s) :

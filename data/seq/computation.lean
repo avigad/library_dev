@@ -188,7 +188,7 @@ section bisim
           exact false.elim this },
         { rw [destruct_ret, destruct_think] at this,
           exact false.elim this },
-        { simp at this, simp [*] }          
+        { simp at this, simp [*] }
       end
     end,
     exact ⟨s₁, s₂, rfl, rfl, r⟩
@@ -428,8 +428,8 @@ mem_rec_on (get_mem s) (h1 _) h2
 def map (f : α → β) : computation α → computation β
 | ⟨s, al⟩ := ⟨s.map (λo, option.cases_on o none (some ∘ f)),
 λn b, begin
-  dsimp [stream.map],
-  ginduction s n with e a; dsimp; intro h,
+  dsimp [stream.map, stream.nth],
+  ginduction s n with e a; intro h,
   { contradiction }, { rw [al e, ←h] }
 end⟩
 
@@ -466,10 +466,10 @@ by apply s.cases_on; intro; simp
 
 @[simp] theorem map_id : ∀ (s : computation α), map id s = s
 | ⟨f, al⟩ := begin
-  apply subtype.eq; dsimp [map],
+  apply subtype.eq; simp [map, function.comp],
   have e : (@option.rec α (λ_, option α) none some) = id,
   { apply funext, intro, cases x; refl },
-  rw [e, stream.map_id]
+  simp [e, stream.map_id]
 end
 
 lemma map_comp (f : α → β) (g : β → γ) :
@@ -719,7 +719,7 @@ equiv_of_mem h (ret_mem _)
 
 def lift_rel (R : α → β → Prop) (ca : computation α) (cb : computation β) : Prop :=
 (∀ {a}, a ∈ ca → ∃ {b}, b ∈ cb ∧ R a b) ∧
- ∀ {b}, b ∈ cb → ∃ {a}, a ∈ ca ∧ R a b 
+ ∀ {b}, b ∈ cb → ∃ {a}, a ∈ ca ∧ R a b
 
 theorem lift_rel.swap (R : α → β → Prop) (ca : computation α) (cb : computation β) :
   lift_rel (function.swap R) cb ca ↔ lift_rel R ca cb :=
@@ -746,7 +746,7 @@ def lift_rel.trans (R : α → α → Prop) (H : transitive R) : transitive (lif
 
 def lift_rel.equiv (R : α → α → Prop) : equivalence R → equivalence (lift_rel R)
 | ⟨refl, symm, trans⟩ :=
-  ⟨lift_rel.refl R refl, lift_rel.symm R symm, lift_rel.trans R trans⟩ 
+  ⟨lift_rel.refl R refl, lift_rel.symm R symm, lift_rel.trans R trans⟩
 
 def lift_rel.imp {R S : α → β → Prop} (H : ∀ {a b}, R a b → S a b) (s t) :
   lift_rel R s t → lift_rel S s t | ⟨l, r⟩ :=
@@ -775,14 +775,14 @@ H.left h
 theorem exists_of_lift_rel_right {R : α → β → Prop} {ca cb}
   (H : lift_rel R ca cb) {b} (h : b ∈ cb) : ∃ {a}, a ∈ ca ∧ R a b :=
 H.right h
- 
+
 theorem lift_rel_def {R : α → β → Prop} {ca cb} : lift_rel R ca cb ↔
   (terminates ca ↔ terminates cb) ∧ ∀ {a b}, a ∈ ca → b ∈ cb → R a b :=
 ⟨λh, ⟨terminates_of_lift_rel h, λ a b ma mb,
   let ⟨b', mb', ab⟩ := h.left ma in by rwa mem_unique mb mb'⟩,
 λ⟨l, r⟩,
  ⟨λ a ma, let ⟨b, mb⟩ := l.1 ⟨_, ma⟩ in ⟨b, mb, r ma mb⟩,
-  λ b mb, let ⟨a, ma⟩ := l.2 ⟨_, mb⟩ in ⟨a, ma, r ma mb⟩⟩⟩ 
+  λ b mb, let ⟨a, ma⟩ := l.2 ⟨_, mb⟩ in ⟨a, ma, r ma mb⟩⟩⟩
 
 theorem lift_rel_bind {δ} (R : α → β → Prop) (S : γ → δ → Prop)
   {s1 : computation α} {s2 : computation β}

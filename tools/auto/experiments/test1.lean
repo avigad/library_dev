@@ -48,7 +48,7 @@ open nat
 
 example (x y : ℕ) : succ x = succ y → x = y ∨ x = succ y := by finish
 example (x y z : ℕ) : succ (succ x) = succ y ∧ y = succ z →
-  y = succ x ∧ succ x = succ z := 
+  y = succ x ∧ succ x = succ z :=
 by finish
 
 end
@@ -89,8 +89,8 @@ by finish
 
 end
 
-/- 
-  more examples 
+/-
+  more examples
 -/
 
 
@@ -171,8 +171,10 @@ by finish
 example (h : ¬ ∀ x, ¬ p x) (h₁ : ∀ x, p x → q x) (h₂ : ∀ x, ¬ q x) : false :=
 by finish
 
+/-
 example (h : p a) (h' : p a → false) : false :=
 by finish
+-/
 
 end
 
@@ -194,8 +196,7 @@ section
 
   example (h₁ : a → b ∨ c) (h₂ : ¬ b) : a → c :=
   begin
-    self_simplify_hyps,
+    simp * at *,
     assumption
-  end 
+  end
 end
-
