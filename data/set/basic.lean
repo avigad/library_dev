@@ -10,7 +10,7 @@ import algebra.lattice algebra.lattice.complete_boolean_algebra
 import tools.auto.finish
 
 open function tactic set lattice auto
- 
+
 universes u v w x
 variables {α : Type u} {β : Type v} {γ : Type w} {ι : Sort x}
 
@@ -52,7 +52,7 @@ instance lattice_set : complete_lattice (set α) :=
   le_sup_left  := subset_union_left,
   le_sup_right := subset_union_right,
   sup_le       := assume a b c, union_subset,
-  
+
   inf          := (∩),
   inf_le_left  := inter_subset_left,
   inf_le_right := inter_subset_right,
@@ -291,7 +291,7 @@ ext (assume c, by simp)
 
 -- TODO(Jeremy): make this automatic
 theorem insert_ne_empty (a : α) (s : set α) : insert a s ≠ ∅ :=
-begin safe [set_eq_def, iff_def]; have h' := h a; finish end
+begin safe [set_eq_def, iff_def]; have h' := h a; clear h; finish end
 
 -- useful in proofs by induction
 theorem forall_of_forall_insert {P : α → Prop} {a : α} {s : set α} (h : ∀ x, x ∈ insert a s → P x) :
@@ -343,7 +343,7 @@ theorem singleton_ne_empty (a : α) : ({a} : set α) ≠ ∅ := insert_ne_empty 
 
 @[simp]
 lemma singleton_subset_iff {a : α} {s : set α} : {a} ⊆ s ↔ a ∈ s :=
-⟨λh, h (by simp), λh b e, by simp at e; simp [*]⟩ 
+⟨λh, h (by simp), λh b e, by simp at e; simp [*]⟩
 
 /- separation -/
 
@@ -497,7 +497,7 @@ mem_image_elim h h_y
 
 theorem image_eq_image_of_eq_on {f₁ f₂ : α → β} {s : set α} (heq : eq_on f₁ f₂ s) :
   image f₁ s = image f₂ s :=
-by finish [set_eq_def, iff_def, mem_image_eq]
+by safe [set_eq_def, iff_def, mem_image_eq, eq_on]
 
 -- TODO(Jeremy): make automatic
 lemma image_comp (f : β → γ) (g : α → β) (a : set α) : image (f ∘ g) a = image f (image g a) :=
@@ -524,8 +524,8 @@ theorem mem_image_compl (t : set α) (S : set (set α)) :
   t ∈ image compl S ↔ -t ∈ S :=
 begin
   safe [mem_image_eq, iff_def, fix_set_compl],
-  have h' := h_1 (- t),
-  safe [compl_compl]
+  have h' := h_1 (- t), clear h_1,
+  all_goals { simp [compl_compl] at *; contradiction }
 end
 
 theorem image_id (s : set α) : image id s = s :=
@@ -571,7 +571,7 @@ notation `⋂` binders `, ` r:(scoped f, Inter f) := r
 @[simp]
 theorem mem_Union_eq (x : β) (s : ι → set β) : (x ∈ ⋃ i, s i) = (∃ i, x ∈ s i) :=
 propext
-  ⟨assume ⟨t, ⟨⟨a, (t_eq : t = s a)⟩, (h : x ∈ t)⟩⟩, ⟨a, t_eq ▸ h⟩, 
+  ⟨assume ⟨t, ⟨⟨a, (t_eq : t = s a)⟩, (h : x ∈ t)⟩⟩, ⟨a, t_eq ▸ h⟩,
   assume ⟨a, h⟩, ⟨s a, ⟨⟨a, rfl⟩, h⟩⟩⟩
 /- alternative proof: dsimp [Union, supr, Sup]; simp -/
   -- TODO: more rewrite rules wrt forall / existentials and logical connectives
@@ -650,7 +650,7 @@ show u x ≤ (⨆ x ∈ s, u x),
 
 theorem bInter_subset_of_mem {s : set α} {t : α → set β} {x : α} (xs : x ∈ s) :
   (⋂ x ∈ s, t x) ⊆ t x :=
-show (⨅x ∈ s, t x) ≤ t x, 
+show (⨅x ∈ s, t x) ≤ t x,
   from infi_le_of_le x $ infi_le _ xs
 
 @[simp]
@@ -827,7 +827,7 @@ instance : complete_boolean_algebra (set α) :=
   sup_neg_eq_top      := assume s, ext $ assume x, ⟨assume h, trivial, assume _, classical.em $ x ∈ s⟩,
   le_sup_inf          := distrib_lattice.le_sup_inf,
   sub_eq              := assume x y, rfl,
-  infi_sup_le_sup_Inf := assume s t x, show x ∈ (⋂ b ∈ t, s ∪ b) → x ∈ s ∪ (⋂₀ t), 
+  infi_sup_le_sup_Inf := assume s t x, show x ∈ (⋂ b ∈ t, s ∪ b) → x ∈ s ∪ (⋂₀ t),
     by simp; exact assume h,
       or.imp_right
         (assume hn : x ∉ s, assume i hi, or.resolve_left (h i hi) hn)
@@ -843,7 +843,7 @@ sup_neg_eq_top
 
 @[simp]
 lemma sdiff_singleton_eq_same {a : α} {s : set α} (h : a ∉ s) : s \ {a} = s :=
-sub_eq_left $ eq_empty_of_forall_not_mem $ assume x ⟨ht, ha⟩, 
+sub_eq_left $ eq_empty_of_forall_not_mem $ assume x ⟨ht, ha⟩,
   begin simp at ha, simp [ha] at ht, exact h ht end
 
 @[simp]

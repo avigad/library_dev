@@ -780,7 +780,9 @@ theorem mem_image_compl (t : set α) (S : set (set α)) :
 begin
   safe [mem_image_eq, iff_def, fix_set_compl],
   have h' := h_1 (- t),
-  safe [compl_compl]
+  safe [compl_compl],
+  rw compl_compl at h, contradiction
+  -- TODO(Jeremy): figure out why safe [compl_compl] doesn't solve it.
 end
 
 /- old proof

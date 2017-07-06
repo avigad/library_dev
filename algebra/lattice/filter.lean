@@ -22,8 +22,7 @@ section monad
 variables {α β γ : Type u} {m : Type u → Type v} [monad m]
 
 theorem map_bind (x : m α) {g : α → m β} {f : β → γ} : f <$> (x >>= g) = (x >>= λa, f <$> g a) :=
-show f <$> (bind x g) = bind x (λa, f <$> (g a)),
-  by rw [←monad.bind_pure_comp_eq_map]; simp [monad.bind_pure_comp_eq_map, monad.bind_assoc]
+by simp [monad.bind_assoc, (∘), (monad.bind_pure_comp_eq_map _ _ _).symm]
 
 theorem seq_bind_eq (x : m α) {g : β → m γ} {f : α → β} : (f <$> x) >>= g = (x >>= g ∘ f) :=
 show bind (f <$> x) g = bind x (g ∘ f),
@@ -1275,7 +1274,7 @@ begin
   rw [map_lift_eq2], tactic.swap, exact (monotone_lift' monotone_const $
     monotone_lam $ assume t, set.monotone_prod monotone_id monotone_const),
   apply congr_arg, apply funext, intro t,
-  dsimp,
+  dsimp [(∘)],
   rw [map_lift'_eq], tactic.swap, exact set.monotone_prod monotone_const monotone_id,
   rw [map_lift'_eq2], tactic.swap, exact set.monotone_prod monotone_const monotone_id,
   apply congr_arg, apply funext, intro t,

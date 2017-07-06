@@ -156,7 +156,7 @@ namespace pos_num
 
   theorem cmp_swap (m) : ∀n, (cmp m n).swap = cmp n m :=
   by induction m with m IH m IH; intro n;
-     cases n with n n; unfold cmp; try {refl}; rw ←IH; cases cmp m n; refl
+     cases n with n n; try {unfold cmp}; try {refl}; rw ←IH; cases cmp m n; refl
 
   lemma cmp_dec_lemma {m n} : m < n → bit1 m < bit0 n :=
   show (m:ℕ) < n → (m + m + 1 + 1 : ℕ) ≤ n + n,
@@ -270,7 +270,7 @@ namespace num
     by { cases pred' p; dsimp [option.get_or_else]; intro h, rw h; refl, exact h }
 
   theorem cmp_swap (m n) : (cmp m n).swap = cmp n m :=
-  by cases m; cases n; unfold cmp; try {refl}; apply pos_num.cmp_swap
+  by cases m; cases n; try {unfold cmp}; try {refl}; apply pos_num.cmp_swap
 
   theorem cmp_dec : ∀ (m n), (ordering.cases_on (cmp m n) (m < n) (m = n) (m > n) : Prop)
   | 0       0       := rfl
