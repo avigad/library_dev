@@ -44,7 +44,7 @@ end ordered_ring
 
 /- auxiliary -/
 
-lemma not_antimono {a b : Prop} (nb : ¬ b) (h : (a → b)) : ¬ a := 
+lemma not_antimono {a b : Prop} (nb : ¬ b) (h : (a → b)) : ¬ a :=
 assume ha, nb (h ha)
 
 /- rational numbers -/
@@ -64,13 +64,13 @@ private lemma rel_trans : Π{p q r}, rat.rel p q → rat.rel q r → rat.rel p r
     from eq_of_mul_eq_mul_right (ne_of_lt ‹d₂ > 0›)^.symm (by cc)
 
 instance setoid_rat.rel : setoid rat.num_denum :=
-{r := rat.rel, iseqv := 
-  ⟨assume ⟨_, ⟨_, _⟩⟩, rfl, 
+{r := rat.rel, iseqv :=
+  ⟨assume ⟨_, ⟨_, _⟩⟩, rfl,
     assume  ⟨n₁, ⟨d₁, _⟩⟩ ⟨n₂, ⟨d₂, _⟩⟩ h, h^.symm,
     assume a b c, rel_trans⟩}
 
 @[simp]
-protected theorem rel_eq {n₁ d₁ n₂ d₂ : ℤ} { h₁ : d₁ > 0 } { h₂ : d₂ > 0 } : 
+protected theorem rel_eq {n₁ d₁ n₂ d₂ : ℤ} { h₁ : d₁ > 0 } { h₂ : d₂ > 0 } :
   @setoid.r rat.num_denum _ (n₁, ⟨d₁, h₁⟩) (n₂, ⟨d₂, h₂⟩) = (n₁ * d₂ = n₂ * d₁) :=
 rfl
 
@@ -83,7 +83,7 @@ namespace rat
 
 protected def zero : ℚ := ⟦⟨0, ⟨1, zero_lt_one⟩⟩⟧
 
-instance : has_zero ℚ := ⟨rat.zero⟩ 
+instance : has_zero ℚ := ⟨rat.zero⟩
 
 protected def one : ℚ := ⟦⟨1, ⟨1, zero_lt_one⟩⟩⟧
 
@@ -94,19 +94,19 @@ private def add' : rat.num_denum → rat.num_denum → ℚ
 
 protected def add : ℚ → ℚ → ℚ :=
 quotient.lift₂ add' $ λ⟨n₁, ⟨d₁, h₁⟩⟩ ⟨n₂, ⟨d₂, h₂⟩⟩ ⟨n₃, ⟨d₃, h₃⟩⟩ ⟨n₄, ⟨d₄, h₄⟩⟩,
-  assume (h₁ : n₁ * d₃ = n₃ * d₁) (h₂ : n₂ * d₄ = n₄ * d₂), 
+  assume (h₁ : n₁ * d₃ = n₃ * d₁) (h₂ : n₂ * d₄ = n₄ * d₂),
   quotient.sound $
   calc (n₁ * d₂ + n₂ * d₁) * (d₃ * d₄) =
           (n₁ * d₃) * d₂ * d₄ + (n₂ * d₄) * (d₁ * d₃) : by simp [mul_add, add_mul]
     ... = (n₃ * d₁) * d₂ * d₄ + (n₄ * d₂) * (d₁ * d₃) : by rw [h₁, h₂]
     ... = (n₃ * d₄ + n₄ * d₃) * (d₁ * d₂)             : by simp [mul_add, add_mul]
 
-instance : has_add ℚ := ⟨rat.add⟩ 
+instance : has_add ℚ := ⟨rat.add⟩
 
 private def neg' : rat.num_denum → ℚ
 | ⟨n, d⟩ := ⟦⟨-n, d⟩⟧
 
-protected def neg : ℚ → ℚ := 
+protected def neg : ℚ → ℚ :=
   quotient.lift neg' $ λ⟨n₁, ⟨d₁, h₁⟩⟩ ⟨n₂, ⟨d₂, h₂⟩⟩,
   assume (h : n₁ * d₂ = n₂ * d₁),
   quotient.sound $ show (-n₁) * d₂ = (-n₂) * d₁,
@@ -147,13 +147,13 @@ protected def inv : ℚ → ℚ :=
 quotient.lift inv' $ λ⟨n₁, ⟨d₁, h₁⟩⟩ ⟨n₂, ⟨d₂, h₂⟩⟩,
   assume h_eq : n₁ * d₂ = n₂ * d₁,
   linear_order_cases_on n₁ 0
-    (assume : n₁ = 0, 
+    (assume : n₁ = 0,
       have n₂ * d₁ = 0,
         by simp [this] at h_eq; simp [h_eq],
       have n₂ = 0,
         from (eq_zero_or_eq_zero_of_mul_eq_zero this)^.resolve_right $ (ne_of_lt h₁)^.symm,
       by simp [this, ‹n₁ = 0›, inv'_zero])
-    (assume : n₁ < 0, 
+    (assume : n₁ < 0,
       have n₂ * d₁ < 0,
         from h_eq ▸ mul_neg_of_neg_of_pos this ‹0 < d₂›,
       have n₂ < 0,
@@ -163,7 +163,7 @@ quotient.lift inv' $ λ⟨n₁, ⟨d₁, h₁⟩⟩ ⟨n₂, ⟨d₂, h₂⟩⟩
         apply quotient.sound,
         simp [h_eq]
       end)
-    (assume : n₁ > 0, 
+    (assume : n₁ > 0,
       have n₂ * d₁ > 0,
         from h_eq ▸ mul_pos this ‹0 < d₂›,
       have n₂ > 0,
@@ -224,11 +224,11 @@ quotient.induction_on₃ a b c $ λ⟨n₁, ⟨d₁, h₁⟩⟩ ⟨n₂, ⟨d₂
 
 private lemma rat_eq_zero : ∀{a : rat.num_denum}, ⟦a⟧ = (0:ℚ) → a.1 = 0
 | ⟨n, ⟨d, h⟩⟩ eq_0 :=
-  have n * 1 = 0 * d, from quotient.exact eq_0, 
+  have n * 1 = 0 * d, from quotient.exact eq_0,
   begin simp at this, assumption end
 
 private lemma eq_zero_of_rat_eq_zero : ∀{a : rat.num_denum}, a.1 = 0 → ⟦a⟧ = (0:ℚ)
-| ⟨n, ⟨d, h⟩⟩ _ := begin simp [‹n = 0›], apply quotient.sound, simp [rat.rel] end
+| ⟨n, ⟨d, h⟩⟩ (_ : n = 0) := begin simp [‹n = 0›], apply quotient.sound, simp [rat.rel] end
 
 private lemma rat_eq_zero_iff {a : rat.num_denum} : ⟦a⟧ = (0:ℚ) ↔ a.1 = 0 :=
 ⟨rat_eq_zero, eq_zero_of_rat_eq_zero⟩
@@ -239,15 +239,15 @@ assume h, zero_ne_one (rat_eq_zero h^.symm)^.symm
 protected lemma mul_inv_cancel : a ≠ 0 → a * a⁻¹ = 1 :=
 quotient.induction_on a $ λ⟨n, ⟨d, h⟩⟩ neq0,
 let a : rat.num_denum := ⟨n, ⟨d, h⟩⟩ in
-linear_order_cases_on n 0 
+linear_order_cases_on n 0
   (assume : n = 0, by rw [this, @eq_zero_of_rat_eq_zero ⟨0, ⟨d, h⟩⟩ rfl] at neq0; contradiction)
   (assume : n < 0,
     have @has_inv.inv rat _ ⟦a⟧ = ⟦⟨-d, ⟨-n, neg_pos_of_neg this⟩⟩⟧,
-      from @inv'_neg n d h _, 
+      from @inv'_neg n d h _,
     begin simp [this], apply quotient.sound, simp [rat.rel] end)
   (assume : n > 0,
     have @has_inv.inv rat _ ⟦a⟧ = ⟦⟨d, ⟨n, this⟩⟩⟧,
-      from @inv'_pos n d h _, 
+      from @inv'_pos n d h _,
     begin simp [this], apply quotient.sound, simp [rat.rel] end)
 
 protected lemma inv_mul_cancel (h : a ≠ 0) : a⁻¹ * a = 1 :=
@@ -273,7 +273,7 @@ instance field_rat : discrete_field ℚ :=
   add_left_neg     := rat.add_left_neg,
   mul_one          := rat.mul_one,
   one_mul          := rat.one_mul,
-  mul_comm         := rat.mul_comm, 
+  mul_comm         := rat.mul_comm,
   mul_assoc        := rat.mul_assoc,
   left_distrib     := rat.mul_add,
   right_distrib    := rat.add_mul,
@@ -287,7 +287,7 @@ private def nonneg' : rat.num_denum → Prop
 | ⟨n₁, ⟨d₁, h₁⟩⟩ := 0 ≤ n₁
 
 protected def nonneg : ℚ → Prop :=
-quotient.lift nonneg' $ λ⟨n₁, ⟨d₁, h₁⟩⟩ ⟨n₂, ⟨d₂, h₂⟩⟩ (h : n₁ * d₂ = n₂ * d₁), 
+quotient.lift nonneg' $ λ⟨n₁, ⟨d₁, h₁⟩⟩ ⟨n₂, ⟨d₂, h₂⟩⟩ (h : n₁ * d₂ = n₂ * d₁),
   propext $ calc (0 ≤ n₁) ↔ (0 ≤ n₁ * d₂) : (mul_nonneg_iff_right_nonneg_of_pos h₂)^.symm
                       ... ↔ (0 ≤ n₂ * d₁) : by rw h
                       ... ↔ (0 ≤ n₂) : mul_nonneg_iff_right_nonneg_of_pos h₁
@@ -325,7 +325,7 @@ instance : linear_strong_order_pair ℚ :=
 { le              := rat.le,
   lt              := λa b, a ≤ b ∧ a ≠ b,
   le_iff_lt_or_eq := assume a b,
-    ⟨assume : a ≤ b, if h : a = b then or.inr h else or.inl ⟨this, h⟩, 
+    ⟨assume : a ≤ b, if h : a = b then or.inr h else or.inl ⟨this, h⟩,
       or.rec and.left (assume : a = b, show a ≤ b, from this ▸ rat.le_refl _)⟩,
   lt_irrefl       := assume a ⟨_, h⟩, h rfl,
   le_refl         := rat.le_refl,
@@ -373,8 +373,8 @@ instance : discrete_linear_ordered_field ℚ :=
   mul_nonneg      := assume a b ha hb, rat.zero_le_of_nonneg _ $
     rat.nonneg_mul _ _ (rat.nonneg_of_zero_le a ha) (rat.nonneg_of_zero_le b hb),
   mul_pos         := assume a b ⟨nn_a, a_ne_zero⟩ ⟨nn_b, b_ne_zero⟩,
-    ⟨rat.zero_le_of_nonneg _ $ rat.nonneg_mul _ _ 
-      (rat.nonneg_of_zero_le a nn_a) (rat.nonneg_of_zero_le b nn_b), 
+    ⟨rat.zero_le_of_nonneg _ $ rat.nonneg_mul _ _
+      (rat.nonneg_of_zero_le a nn_a) (rat.nonneg_of_zero_le b nn_b),
       (mul_ne_zero a_ne_zero^.symm b_ne_zero^.symm)^.symm⟩,
   decidable_eq    := by apply_instance,
   decidable_le    := assume a b, rat.decidable_nonneg (b - a),

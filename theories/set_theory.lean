@@ -82,7 +82,7 @@ namespace pSet
   def to_set (u : pSet.{u}) : set pSet.{u} := {x | x ∈ u}
 
   def equiv.eq {x y : pSet} (h : equiv x y) : to_set x = to_set y :=
-  set.ext (λz, mem.congr_right h) 
+  set.ext (λz, mem.congr_right h)
 
   instance : has_coe pSet (set pSet) := ⟨to_set⟩
 
@@ -140,9 +140,9 @@ namespace pSet
 
   prefix ⇑ := pSet.lift
 
-  def embed : pSet.{max u+1 v} := ⟨ulift.{v u+1} pSet, λ⟨x⟩, pSet.lift.{u (max u+1 v)} x⟩
+  def embed : pSet.{max (u+1) v} := ⟨ulift.{v u+1} pSet, λ⟨x⟩, pSet.lift.{u (max (u+1) v)} x⟩
 
-  def lift_mem_embed : Π (x : pSet.{u}), pSet.lift.{u (max u+1 v)} x ∈ embed.{u v} :=
+  def lift_mem_embed : Π (x : pSet.{u}), pSet.lift.{u (max (u+1) v)} x ∈ embed.{u v} :=
   λx, ⟨⟨x⟩, equiv.refl _⟩
 
   def arity.equiv : Π {n}, arity pSet.{u} n → arity pSet.{u} n → Prop
@@ -191,7 +191,7 @@ namespace pSet
 
   def definable.eq_mk {n} (f) : Π {s : arity Set.{u} n} (H : resp.eval _ f = s), definable n s
   | ._ rfl := ⟨f⟩
-  
+
   def definable.resp {n} : Π (s : arity Set.{u} n) [definable n s], resp n
   | ._ ⟨f⟩ := f
 
@@ -473,11 +473,11 @@ namespace Set
 
   @[simp] def mem_funs {x y f : Set.{u}} : f ∈ funs x y ↔ is_func x y f :=
   by simp[funs]; exact ⟨and.left, λh, ⟨h, h.left⟩⟩
-  
+
   -- TODO(Mario): Prove this computably
   noncomputable instance map_definable_aux (f : Set → Set) [H : definable 1 f] : definable 1 (λy, pair y (f y)) :=
   @classical.all_definable 1 _
-  
+
   noncomputable def map (f : Set → Set) [H : definable 1 f] : Set → Set :=
   image (λy, pair y (f y))
 
@@ -512,7 +512,7 @@ namespace Class
 
   def univ : Class := set.univ
 
-  def to_Set (p : Set.{u} → Prop) (A : Class.{u}) : Prop := ∃x, ↑x = A ∧ p x 
+  def to_Set (p : Set.{u} → Prop) (A : Class.{u}) : Prop := ∃x, ↑x = A ∧ p x
 
   protected def mem (A B : Class.{u}) : Prop := to_Set.{u} (λx, x ∈ B) A
   instance : has_mem Class Class := ⟨Class.mem⟩
@@ -594,7 +594,7 @@ namespace Set
 
   variables (x : Set.{u}) (h : (∅:Set.{u}) ∉ x)
   noncomputable def choice : Set := @map (λy, classical.epsilon (λz, z ∈ y)) (classical.all_definable _) x
-  
+
   include h
   def choice_mem_aux (y : Set.{u}) (yx : y ∈ x) : classical.epsilon (λz:Set.{u}, z ∈ y) ∈ y :=
   @classical.epsilon_spec _ (λz:Set.{u}, z ∈ y) $ classical.by_contradiction $ λn, h $

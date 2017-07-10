@@ -59,9 +59,6 @@ theorem implies_self (h : a) : a := h
 
 theorem implies_intro (h : a) (h₂ : b) : a := h
 
-theorem true_implies_iff (a : Prop) : (true → a) ↔ a :=
-iff.intro (assume H, H trivial) implies_intro
-
 theorem implies_false_iff (a : Prop) : (a → false) ↔ ¬ a := iff.rfl
 
 /- not -/
@@ -408,7 +405,7 @@ decidable.not_forall_iff_exists_not p
 
 theorem forall_or_iff_or_forall {q : Prop} {p : α → Prop} :
   (∀x, q ∨ p x) ↔ q ∨ (∀x, p x) :=
-⟨assume h, if hq : q then or.inl hq else or.inr $ assume x, or.resolve_left (h x) hq, 
+⟨assume h, if hq : q then or.inl hq else or.inr $ assume x, or.resolve_left (h x) hq,
   assume h x, or.imp_right (assume : ∀x, p x, this x) h⟩
 
 end classical
