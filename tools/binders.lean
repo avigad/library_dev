@@ -10,6 +10,12 @@ import ..algebra.lattice
 
 #exit -- conv was essentially killed
 
+/-
+
+  |-  t = ?m x y z
+
+-/
+
 namespace conv
 open tactic monad
 
@@ -86,7 +92,7 @@ Examples:
   ∃: there is no `p` and `t` is `Prop`.
   ⨅, ⨆: here p is `β` and `[complete_lattice β]`, `p` is `β`
 
-Problem: ∀x, _ should be a binder, but is not a constant! 
+Problem: ∀x, _ should be a binder, but is not a constant!
 
 Provide a mechanism to rewrite:
 

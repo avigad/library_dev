@@ -13,7 +13,7 @@ namespace nat
 /- gcd -/
 
 theorem gcd_dvd (m n : ℕ) : (gcd m n ∣ m) ∧ (gcd m n ∣ n) :=
-gcd.induction n m
+gcd.induction m n
   (λn, by rw gcd_zero_left; exact ⟨dvd_zero n, dvd_refl n⟩)
   (λm n npos, by rw ←gcd_rec; exact λ ⟨IH₁, IH₂⟩, ⟨IH₂, (dvd_mod_iff IH₂).1 IH₁⟩)
 
@@ -22,7 +22,7 @@ theorem gcd_dvd_left (m n : ℕ) : gcd m n ∣ m := (gcd_dvd m n).left
 theorem gcd_dvd_right (m n : ℕ) : gcd m n ∣ n := (gcd_dvd m n).right
 
 theorem dvd_gcd {m n k : ℕ} : k ∣ m → k ∣ n → k ∣ gcd m n :=
-gcd.induction n m (λn _ kn, by rw gcd_zero_left; exact kn)
+gcd.induction m n (λn _ kn, by rw gcd_zero_left; exact kn)
   (λn m mpos IH H1 H2, by rw gcd_rec; exact IH ((dvd_mod_iff H1).2 H2) H1)
 
 theorem gcd_comm (m n : ℕ) : gcd m n = gcd n m :=
@@ -43,7 +43,7 @@ dvd_antisymm
 eq.trans (gcd_comm n 1) $ gcd_one_left n
 
 theorem gcd_mul_left (m n k : ℕ) : gcd (m * n) (m * k) = m * gcd n k :=
-gcd.induction k n
+gcd.induction n k
   (λk, by repeat {rw mul_zero <|> rw gcd_zero_left})
   (λk n H IH, by rwa [←mul_mod_mul_left, ←gcd_rec, ←gcd_rec] at IH)
 
