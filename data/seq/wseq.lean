@@ -289,7 +289,7 @@ def lift_rel (R : α → β → Prop) (s : wseq α) (t : wseq β) : Prop :=
 
 -- If two sequences are equivalent, then they have the same values and
 -- the same computational behavior (i.e. if one loops forever then so does
--- the other), although they may differ in the number  of `think`s needed to
+-- the other), although they may differ in the number of `think`s needed to
 -- arrive at the answer.
 def equiv : wseq α → wseq α → Prop := lift_rel (=)
 

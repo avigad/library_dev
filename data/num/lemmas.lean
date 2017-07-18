@@ -14,6 +14,9 @@ namespace pos_num
 
   theorem one_to_nat : ((1 : pos_num) : ℕ) = 1 := rfl
 
+  theorem bit_to_nat (b n) : (bit b n : ℕ) = nat.bit b n :=
+  by cases b; refl
+
   theorem succ_to_nat : ∀ n, (succ n : ℕ) = n + 1
   | 1        := rfl
   | (bit0 p) := rfl
@@ -88,6 +91,9 @@ namespace num
   theorem zero_to_nat : ((0 : num) : ℕ) = 0 := rfl
 
   theorem one_to_nat : ((1 : num) : ℕ) = 1 := rfl
+
+  theorem bit_to_nat (b n) : (bit b n : ℕ) = nat.bit b n :=
+  by cases b; cases n; refl
 
   theorem add_to_nat : ∀ m n, ((m + n : num) : ℕ) = m + n
   | 0       0       := rfl
@@ -354,17 +360,108 @@ namespace num
     decidable_le               := num.decidable_le,
     decidable_eq               := num.decidable_eq }
 
-  lemma bitwise_to_nat_lemma {f : num → num → num} (m n) :
-    (f m n : ℕ) = (f ((m : ℕ) : num) ((n : ℕ) : num) : ℕ) := by simp
+  lemma bitwise_to_nat {f : num → num → num} {g : bool → bool → bool}
+    (p : pos_num → pos_num → num)
+    (gff : g ff ff = ff)
+    (f00 : f 0 0 = 0)
+    (f0n : ∀ n, f 0 (pos n) = cond (g ff tt) (pos n) 0)
+    (fn0 : ∀ n, f (pos n) 0 = cond (g tt ff) (pos n) 0)
+    (fnn : ∀ m n, f (pos m) (pos n) = p m n)
+    (p11 : p 1 1 = cond (g tt tt) 1 0)
+    (p1b : ∀ b n, p 1 (pos_num.bit b n) = bit (g tt b) (cond (g ff tt) ↑n 0))
+    (pb1 : ∀ a m, p (pos_num.bit a m) 1 = bit (g a tt) (cond (g tt ff) ↑m 0))
+    (pbb : ∀ a b m n, p (pos_num.bit a m) (pos_num.bit b n) = bit (g a b) (p m n))
+    : ∀ m n : num, (f m n : ℕ) = nat.bitwise g m n :=
+  begin
+    intros, cases m with m; cases n with n;
+    try {rw show zero = 0, from rfl};
+    try {rw show ((0:num):ℕ) = 0, from rfl},
+    { rw [f00, nat.bitwise_zero]; refl },
+    { unfold nat.bitwise, rw [f0n, nat.binary_rec_zero],
+      cases g ff tt; refl },
+    { unfold nat.bitwise,
+      generalize2 (pos m : ℕ) m' h, revert h,
+      apply nat.bit_cases_on m' _, intros b m' h,
+      rw [fn0, nat.binary_rec_eq, nat.binary_rec_zero, ←h],
+      cases g tt ff; refl,
+      apply nat.bitwise_bit_aux gff },
+    { rw fnn, revert n,
+      have : ∀b (n : pos_num), cond b ↑n 0 = ↑(cond b n 0 : num) :=
+        by intros; cases b; refl,
+      induction m with m IH m IH; intro n; cases n with n n,
+      any_goals { change one with 1 },
+      any_goals { change pos 1 with 1 },
+      any_goals { change pos_num.bit0 with pos_num.bit ff },
+      any_goals { change pos_num.bit1 with pos_num.bit tt },
+      any_goals { change ((1:num):ℕ) with nat.bit tt 0 },
+      all_goals {
+        repeat {
+          rw show ∀ b n, (pos (pos_num.bit b n) : ℕ) = nat.bit b ↑n,
+             by intros; cases b; refl },
+        rw nat.bitwise_bit },
+      any_goals { assumption },
+      any_goals { rw [nat.bitwise_zero, p11], cases g tt tt; refl },
+      any_goals { rw [nat.bitwise_zero_left, this, ←bit_to_nat, p1b] },
+      any_goals { rw [nat.bitwise_zero_right _ gff, this, ←bit_to_nat, pb1] },
+      all_goals { rw [←show ∀ n, ↑(p m n) = nat.bitwise g ↑m ↑n, from IH],
+        rw [←bit_to_nat, pbb] } }
+  end
 
-/- TODO(Jeremy): I commented these out to get library_dev to compile. Mario, should we delete
-   them?
-  @[simp] lemma lor_to_nat   : ∀ m n, (lor    m n : ℕ) = nat.lor    m n := bitwise_to_nat_lemma
-  @[simp] lemma land_to_nat  : ∀ m n, (land   m n : ℕ) = nat.land   m n := bitwise_to_nat_lemma
-  @[simp] lemma ldiff_to_nat : ∀ m n, (ldiff  m n : ℕ) = nat.ldiff  m n := bitwise_to_nat_lemma
-  @[simp] lemma lxor_to_nat  : ∀ m n, (lxor   m n : ℕ) = nat.lxor   m n := bitwise_to_nat_lemma
-  @[simp] lemma shiftl_to_nat (m n) : (shiftl m n : ℕ) = nat.shiftl m n := by unfold nat.shiftl; simp
-  @[simp] lemma shiftr_to_nat (m n) : (shiftr m n : ℕ) = nat.shiftr m n := by unfold nat.shiftr; simp
--/
+  @[simp] lemma lor_to_nat   : ∀ m n, (lor    m n : ℕ) = nat.lor    m n :=
+  by apply bitwise_to_nat (λx y, ↑(pos_num.lor x y)); intros; try {cases a}; try {cases b}; refl
+  @[simp] lemma land_to_nat  : ∀ m n, (land   m n : ℕ) = nat.land   m n :=
+  by apply bitwise_to_nat pos_num.land; intros; try {cases a}; try {cases b}; refl
+  @[simp] lemma ldiff_to_nat : ∀ m n, (ldiff  m n : ℕ) = nat.ldiff  m n :=
+  by apply bitwise_to_nat pos_num.ldiff; intros; try {cases a}; try {cases b}; refl
+  @[simp] lemma lxor_to_nat  : ∀ m n, (lxor   m n : ℕ) = nat.lxor   m n :=
+  by apply bitwise_to_nat pos_num.lxor; intros; try {cases a}; try {cases b}; refl
+
+  @[simp] lemma shiftl_to_nat (m n) : (shiftl m n : ℕ) = nat.shiftl m n :=
+  begin
+    cases m; dunfold shiftl, {symmetry, apply nat.zero_shiftl},
+    induction n with n IH, {refl},
+    simp [pos_num.shiftl], rw ←IH, refl
+  end
+
+  set_option type_context.unfold_lemmas true
+  @[simp] lemma shiftr_to_nat (m n) : (shiftr m n : ℕ) = nat.shiftr m n :=
+  begin
+    cases m with m; dunfold shiftr, {symmetry, apply nat.zero_shiftr},
+    revert m; induction n with n IH; intro m, {cases m; refl},
+    cases m with m m; dunfold pos_num.shiftr,
+    { rw [nat.shiftr_eq_div_pow], symmetry, apply nat.div_eq_of_lt,
+      exact @nat.pow_lt_pow_of_lt_right 2 dec_trivial 0 (n+1) (nat.succ_pos _) },
+    { transitivity, apply IH,
+      change nat.shiftr m n = nat.shiftr (bit1 m) (n+1),
+      rw [add_comm n 1, nat.shiftr_add],
+      apply congr_arg (λx, nat.shiftr x n), unfold nat.shiftr,
+      change (bit1 ↑m : ℕ) with nat.bit tt m,
+      rw nat.div2_bit },
+    { transitivity, apply IH,
+      change nat.shiftr m n = nat.shiftr (bit0 m) (n + 1),
+      rw [add_comm n 1, nat.shiftr_add],
+      apply congr_arg (λx, nat.shiftr x n), unfold nat.shiftr,
+      change (bit0 ↑m : ℕ) with nat.bit ff m,
+      rw nat.div2_bit }
+  end
+
+  @[simp] lemma test_bit_to_nat (m n) : test_bit m n = nat.test_bit m n :=
+  begin
+    cases m with m; unfold test_bit nat.test_bit,
+    { change (zero : nat) with 0, rw nat.zero_shiftr, refl },
+    revert m; induction n with n IH; intro m;
+    cases m; dunfold pos_num.test_bit, {refl},
+    { exact (nat.bodd_bit _ _).symm },
+    { exact (nat.bodd_bit _ _).symm },
+    { change ff = nat.bodd (nat.shiftr 1 (n + 1)),
+      rw [add_comm, nat.shiftr_add], change nat.shiftr 1 1 with 0,
+      rw nat.zero_shiftr; refl },
+    { change pos_num.test_bit a n = nat.bodd (nat.shiftr (nat.bit tt a) (n + 1)),
+      rw [add_comm, nat.shiftr_add], unfold nat.shiftr,
+      rw nat.div2_bit, apply IH },
+    { change pos_num.test_bit a n = nat.bodd (nat.shiftr (nat.bit ff a) (n + 1)),
+      rw [add_comm, nat.shiftr_add], unfold nat.shiftr,
+      rw nat.div2_bit, apply IH },
+  end
 
 end num

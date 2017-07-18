@@ -69,7 +69,7 @@ namespace pos_num
   | (n+1) := bit0 (shiftl n)
 
   def shiftr : pos_num → nat → num
-  | p        0     := 1
+  | p        0     := p
   | 1        (n+1) := 0
   | (bit0 p) (n+1) := shiftr p n
   | (bit1 p) (n+1) := shiftr p n

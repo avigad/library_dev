@@ -56,6 +56,8 @@ instance : decidable_eq snum := by tactic.mk_dec_eq_instance
 
 namespace pos_num
 
+  def bit (b : bool) : pos_num → pos_num := cond b bit1 bit0
+
   def succ : pos_num → pos_num
   | 1        := bit0 one
   | (bit1 n) := bit0 (succ n)
@@ -138,9 +140,9 @@ section
   | 0           := 0
   | (num.pos p) := cast_pos_num p
 
-  instance pos_num_coe : has_coe pos_num α := ⟨cast_pos_num⟩
+  @[priority 0] instance pos_num_coe : has_coe pos_num α := ⟨cast_pos_num⟩
 
-  instance num_nat_coe : has_coe num α := ⟨cast_num⟩
+  @[priority 0] instance num_nat_coe : has_coe num α := ⟨cast_num⟩
 end
 
 namespace nat
@@ -187,6 +189,8 @@ namespace num
   protected def bit1 : num → num
   | 0       := 1
   | (pos n) := pos (pos_num.bit1 n)
+
+  def bit (b : bool) : num → num := cond b num.bit1 num.bit0
 
   def size : num → num
   | 0       := 0
