@@ -32,11 +32,11 @@ by rw [insert.def, if_neg h]
 
 @[simp]
 theorem mem_insert_self (a : α) (l : list α) : a ∈ insert a l :=
-if h : a ∈ l then by simp [h] else by simp [h]
+by by_cases a ∈ l with h; simp [h]
 
 @[simp]
 theorem mem_insert_of_mem {a b : α} {l : list α} (h : a ∈ l) : a ∈ insert b l :=
-if h' : b ∈ l then by simp [h, h'] else by simp [h, h']
+by by_cases b ∈ l with h'; simp [h, h']
 
 theorem eq_or_mem_of_mem_insert {a b : α} {l : list α} (h : a ∈ insert b l) : a = b ∨ a ∈ l :=
 if h' : b ∈ l then
