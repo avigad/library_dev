@@ -136,7 +136,7 @@ begin
   refine ⟨stream.corec' (corec.F f) (some b), λn h, _⟩,
   rw stream.corec'_eq,
   change stream.corec' (corec.F f) (corec.F f (some b)).2 n = none,
-  revert h, generalize (some b) o,
+  revert h, generalize : some b = o, revert o,
   induction n with n IH; intro o,
   { change (corec.F f o).1 = none → (corec.F f (corec.F f o).2).1 = none,
     cases o with b; intro h, { refl },
@@ -512,7 +512,7 @@ lemma exists_of_mem_map {f} {b : β} : ∀ {s : seq α}, b ∈ map f s → ∃ a
 def of_mem_append {s₁ s₂ : seq α} {a : α} (h : a ∈ append s₁ s₂) : a ∈ s₁ ∨ a ∈ s₂ :=
 begin
   have := h, revert this,
-  generalize2 (append s₁ s₂) ss e, intro h, revert s₁,
+  generalize e : append s₁ s₂ = ss, intro h, revert s₁,
   apply mem_rec_on h _,
   intros b s' o s₁,
   apply s₁.cases_on _ (λ c t₁, _); intros m e;
@@ -626,7 +626,7 @@ begin
   rw [←map_comp],
   change (λ x, join (map g (f x))) with (join ∘ ((map g) ∘ f)),
   rw [map_comp _ join],
-  generalize (seq.map (map g ∘ f) s) SS, intro SS,
+  generalize : seq.map (map g ∘ f) s = SS,
   cases map g (f a) with s S,
   cases s with a s,
   apply cases_on s; intros; apply cases_on S; intros; simp,

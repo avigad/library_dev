@@ -68,12 +68,29 @@ def assert (p : Prop) (f : p → roption α) : roption α :=
 protected def bind (f : roption α) (g : α → roption β) : roption β :=
 assert (dom f) (λb, g (f.get b))
 
+protected def map (f : α → β) (o : roption α) : roption β :=
+⟨o.dom, f ∘ o.get⟩
+
+theorem bind_some_eq_map (f : α → β) (x) :
+  roption.bind x (roption.some ∘ f) = roption.map f x :=
+roption.ext ⟨λ⟨h, _⟩, h, λh, ⟨h, trivial⟩⟩ (λ_ _, rfl)
+
+theorem some_bind (x : α) (f : α → roption β) :
+  roption.bind (roption.some x) f = f x :=
+roption.ext ⟨λ⟨_, h⟩, h, λh, ⟨trivial, h⟩⟩ (λ_ _, rfl)
+
+theorem bind_assoc {γ} (f : roption α) (g : α → roption β) (k : β → roption γ) :
+  roption.bind (roption.bind f g) k = roption.bind f (λ x, roption.bind (g x) k) :=
+roption.ext (⟨λ⟨⟨h1, h2⟩, h3⟩, ⟨h1, h2, h3⟩, λ⟨h1, h2, h3⟩, ⟨⟨h1, h2⟩, h3⟩⟩) (λ_ _, rfl)
+
 instance : monad roption :=
 { pure := @roption.some,
+  map := @roption.map,
   bind := @roption.bind,
-  id_map := λβ f, roption.ext (⟨λ⟨h, _⟩, h, λh, ⟨h, trivial⟩⟩) (λ_ _, rfl),
-  pure_bind := λβ γ x f, roption.ext (⟨λ⟨_, h⟩, h, λh, ⟨trivial, h⟩⟩) (λ_ _, rfl),
-  bind_assoc := λβ γ δ f g k, roption.ext (⟨λ⟨⟨h1, h2⟩, h3⟩, ⟨h1, h2, h3⟩, λ⟨h1, h2, h3⟩, ⟨⟨h1, h2⟩, h3⟩⟩) (λ_ _, rfl) }
+  bind_pure_comp_eq_map := @bind_some_eq_map,
+  id_map := λβ f, by cases f; refl,
+  pure_bind := @some_bind,
+  bind_assoc := @bind_assoc }
 
 instance : monad_fail roption :=
 { roption.monad with fail := λ_ _, roption.none }
@@ -156,12 +173,18 @@ protected def pure (x : β) : α →. β := λ_, roption.some x
 protected def bind (f : α →. β) (g : β → α →. γ) : α →. γ :=
 λa, roption.bind (f a) (λb, g b a)
 
-instance : monad (pfun α) :=
+protected def map (f : β → γ) (g : α →. β) : α →. γ :=
+λa, roption.map f (g a)
+
+instance : monad (pfun.{u v} α) :=
 { pure := @pfun.pure _,
   bind := @pfun.bind _,
-  id_map := λβ f, funext $ λ a, @functor.id_map roption _ _ _,
-  pure_bind := λβ γ x f, funext $ λ a, @monad.pure_bind roption _ _ _ _ _,
-  bind_assoc := λβ γ δ f g k, funext $ λ a, @monad.bind_assoc roption _ _ _ _ _ _ _}
+  map := @pfun.map _,
+  bind_pure_comp_eq_map := λβ γ f x, funext $ λ a, roption.bind_some_eq_map _ _,
+  id_map := λβ f, funext $ λ a, by dsimp [pfun.map]; cases f a; refl,
+  pure_bind := λβ γ x f, funext $ λ a, roption.some_bind _ (f x),
+  bind_assoc := λβ γ δ f g k,
+    funext $ λ a, roption.bind_assoc (f a) (λ b, g b a) (λ b, k b a) }
 
 theorem pure_defined (p : set α) (x : β) : p ⊆ (@pfun.pure α _ x).dom := set.subset_univ p
 

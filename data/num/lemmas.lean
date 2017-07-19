@@ -72,7 +72,7 @@ namespace pos_num
     | some p, (IH : ↑p = nat.pred q) :=
       show _root_.bit1 ↑p = nat.pred (q + q), begin
         rw [←nat.succ_pred_eq_of_pos (to_nat_pos q), IH],
-        generalize (nat.pred q) n, intro n,
+        generalize : nat.pred q = n,
         simp [_root_.bit1, _root_.bit0]
       end
     end
@@ -380,7 +380,7 @@ namespace num
     { unfold nat.bitwise, rw [f0n, nat.binary_rec_zero],
       cases g ff tt; refl },
     { unfold nat.bitwise,
-      generalize2 (pos m : ℕ) m' h, revert h,
+      generalize h : (pos m : ℕ) = m', revert h,
       apply nat.bit_cases_on m' _, intros b m' h,
       rw [fn0, nat.binary_rec_eq, nat.binary_rec_zero, ←h],
       cases g tt ff; refl,
@@ -420,10 +420,9 @@ namespace num
   begin
     cases m; dunfold shiftl, {symmetry, apply nat.zero_shiftl},
     induction n with n IH, {refl},
-    simp [pos_num.shiftl], rw ←IH, refl
+    simp [pos_num.shiftl, nat.shiftl_succ], rw ←IH, refl
   end
 
-  set_option type_context.unfold_lemmas true
   @[simp] lemma shiftr_to_nat (m n) : (shiftr m n : ℕ) = nat.shiftr m n :=
   begin
     cases m with m; dunfold shiftr, {symmetry, apply nat.zero_shiftr},

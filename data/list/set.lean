@@ -267,37 +267,36 @@ theorem union_cons (l₁ l₂ : list α) (a : α) : l₁ ∪ (a :: l₂) = inser
 
 theorem mem_or_mem_of_mem_union : ∀ {l₁ l₂ : list α} {a : α}, a ∈ l₁ ∪ l₂ → a ∈ l₁ ∨ a ∈ l₂
 | l₁ []        a h := begin simp at h, simp [h] end
-| l₁ (b :: l₂) a h := if h' : b ∈ l₂ then
-                        begin
-                          simp at h,
-                          cases mem_or_mem_of_mem_union h with h₀ h₀,
-                          { simp at h₀, cases h₀ with h₁ h₁, simp [h₁], simp [h₁] },
-                          simp [h₀]
-                        end
-                      else
-                        begin
-                          simp [union_cons] at h,
-                          cases mem_or_mem_of_mem_union h with h₀ h₀,
-                          { simp at h₀, cases h₀ with h₁ h₁, repeat { simp [h₁] } },
-                          simp [h₀]
-                        end
+| l₁ (b :: l₂) a h :=
+  if h' : b ∈ l₂ then
+    begin
+      simp at h,
+      cases mem_or_mem_of_mem_union h with h₀ h₀,
+      { simp at h₀, cases h₀ with h₁ h₁, simp [h₁], simp [h₁] },
+      simp [h₀]
+    end
+  else
+    begin
+      simp [union_cons] at h,
+      cases mem_or_mem_of_mem_union h with h₀ h₀,
+      { simp at h₀, cases h₀ with h₁ h₁, repeat { simp [h₁] } },
+      simp [h₀]
+    end
 
 theorem mem_union_left {a : α} {l₁ : list α} (h : a ∈ l₁) (l₂ : list α) : a ∈ l₁ ∪ l₂ :=
 begin
-  revert h,
-  generalize l₁ l,
-  induction l₂ with b l₂ ih,
-  { simp, intros, assumption },
-  intros, apply ih, simp [h]
+  induction l₂ with b l₂ ih generalizing l₁,
+  { simp [h] },
+  { apply ih, simp [h] }
 end
 
 theorem mem_union_right {a : α} (l₁ : list α) {l₂ : list α} (h : a ∈ l₂) : a ∈ l₁ ∪ l₂ :=
 begin
-  generalize l₁ l, induction l₂ with b l₂ ih,
+  induction l₂ with b l₂ ih generalizing l₁,
   { simp at h, contradiction },
-  intro l, simp, simp at h,
+  simp, simp at h,
   cases h with h₀ h₀,
-  { simp [h₀], apply mem_union_left, simp },
+  { subst h₀, apply mem_union_left, simp },
   apply ih h₀
 end
 
@@ -730,14 +729,12 @@ theorem nodup_union_of_nodup_of_nodup [decidable_eq α] {l₁ l₂ : list α}
     (h₁ : nodup l₁) (h₂ : nodup l₂) :
   nodup (l₁ ∪ l₂) :=
 begin
-  revert h₁,
-  generalize l₁ l,
-  induction l₂ with a l₂ ih,
-  { intros l nodupl, exact nodupl },
-  intros l nodupl, simp,
+  induction l₂ with a l₂ ih generalizing l₁,
+  { exact h₁ },
+  simp,
   apply ih,
-  { apply nodup_of_nodup_cons h₂},
-  apply nodup_insert nodupl
+  { apply nodup_of_nodup_cons h₂ },
+  apply nodup_insert h₁
 end
 
 theorem nodup_inter_of_nodup [decidable_eq α] : ∀ {l₁ : list α} (l₂), nodup l₁ → nodup (l₁ ∩ l₂)

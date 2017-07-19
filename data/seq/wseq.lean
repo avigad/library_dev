@@ -604,7 +604,7 @@ end
 theorem eq_or_mem_iff_mem {s : wseq α} {a a' s'} :
   some (a', s') ∈ destruct s → (a ∈ s ↔ a = a' ∨ a ∈ s') :=
 begin
-  generalize2 (destruct s) c e, intro h,
+  generalize e : destruct s = c, intro h,
   revert s, apply computation.mem_rec_on h _ (λ c IH, _); intro s;
   apply s.cases_on _ (λ x s, _) (λ s, _); intros m;
   have := congr_arg computation.destruct m; simp at this;
@@ -692,10 +692,11 @@ end
 
 theorem exists_of_lift_rel_left {R : α → β → Prop} {s t}
   (H : lift_rel R s t) {a} (h : a ∈ s) : ∃ {b}, b ∈ t ∧ R a b :=
-let ⟨n, h⟩ := exists_nth_of_mem h,
+/-let ⟨n, h⟩ := exists_nth_of_mem h,
     ⟨some (._, s'), sd, rfl⟩ := exists_of_mem_map h,
     ⟨some (b, t'), td, ⟨ab, _⟩⟩ := (lift_rel_dropn_destruct H n).left sd in
-⟨b, nth_mem (mem_map ((<$>) prod.fst.{v v}) td), ab⟩
+⟨b, nth_mem (mem_map ((<$>) prod.fst.{v v}) td), ab⟩-/
+sorry -- TODO(Mario): This proof causes an unknown type-checking error
 
 theorem exists_of_lift_rel_right {R : α → β → Prop} {s t}
   (H : lift_rel R s t) {b} (h : b ∈ t) : ∃ {a}, a ∈ s ∧ R a b :=

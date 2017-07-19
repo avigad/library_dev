@@ -122,7 +122,7 @@ begin
   refine ⟨stream.corec' (corec.F f) (sum.inr b), λn a' h, _⟩,
   rw stream.corec'_eq,
   change stream.corec' (corec.F f) (corec.F f (sum.inr b)).2 n = some a',
-  revert h, generalize (sum.inr b) o,
+  revert h, generalize : sum.inr b = o, revert o,
   induction n with n IH; intro o,
   { change (corec.F f o).1 = some a' → (corec.F f (corec.F f o).2).1 = some a',
     cases o with a b; intro h, { exact h },
@@ -253,8 +253,8 @@ theorem not_terminates_empty : ¬ terminates (empty α) :=
 theorem eq_empty_of_not_terminates {s} (H : ¬ terminates s) : s = empty α :=
 begin
   apply subtype.eq, apply funext, intro n,
-  ginduction s.val n with h,
-  { exact h }, { refine absurd _ H, exact ⟨_, _, h.symm⟩ }
+  ginduction s.val n with h, {refl},
+  refine absurd _ H, exact ⟨_, _, h.symm⟩
 end
 
 theorem thinkN_mem {s : computation α} {a} : ∀ n, a ∈ thinkN s n ↔ a ∈ s
@@ -417,7 +417,7 @@ def mem_rec_on {C : computation α → Sort v} {a s} (M : a ∈ s)
 begin
   have T := terminates_of_mem M,
   rw [eq_thinkN' s, get_eq_of_mem s M],
-  generalize (length s) n, intro n,
+  generalize : length s = n,
   induction n with n IH, exacts [h1, h2 _ IH]
 end
 
@@ -531,7 +531,7 @@ begin
     | c, ._, or.inl rfl := by cases destruct c with b cb; simp
     | ._, ._, or.inr ⟨s, rfl, rfl⟩ := begin
       apply cases_on s; intros s; simp,
-      { generalize (f s) fs, intro fs,
+      { generalize : f s = fs,
         apply cases_on fs; intros t; simp,
         { cases destruct (g t) with b cb; simp } },
       { exact or.inr ⟨s, rfl, rfl⟩ }

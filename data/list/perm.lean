@@ -609,18 +609,14 @@ assume p, perm_induction_on p
 section perm_union
 variable [decidable_eq α]
 
-theorem perm_union_left {l₁ l₂ : list α} (t₁ : list α) : l₁ ~ l₂ → (l₁ ∪ t₁) ~ (l₂ ∪ t₁) :=
+theorem perm_union_left {l₁ l₂ : list α} (t₁ : list α) (h : l₁ ~ l₂) : (l₁ ∪ t₁) ~ (l₂ ∪ t₁) :=
 begin
-  generalize l₂ l₂, clear l₂,
-  generalize l₁ l₁, clear l₁,
-  induction t₁ with a t ih,
-  { intros l₁ l₂ h, exact h },
+  induction t₁ with a t ih generalizing l₁ l₂,
+  { exact h },
   exact
-    assume l₁ l₂,
-    assume h : l₁ ~ l₂,
     if ha₁ : a ∈ l₁ then
       have ha₂ : a ∈ l₂, from mem_of_perm h ha₁,
-      begin simp [ha₁, ha₂], apply ih l₁ l₂ h end
+      begin simp [ha₁, ha₂], apply ih h end
     else
       have ha₂ : a ∉ l₂, from assume otherwise, ha₁ (mem_of_perm h.symm otherwise),
       begin simp [ha₁, ha₂], apply ih, apply perm_app_left, exact h end
@@ -641,20 +637,13 @@ else
                                     contradiction end,
       begin simp [xl, yl, h₁, h₂], apply perm_app_right, apply perm.swap end
 
-theorem perm_union_right (l : list α) {t₁ t₂ : list α} : t₁ ~ t₂ → (l ∪ t₁) ~ (l ∪ t₂) :=
+theorem perm_union_right (l : list α) {t₁ t₂ : list α} (h : t₁ ~ t₂) : (l ∪ t₁) ~ (l ∪ t₂) :=
 begin
-  intro h, generalize l l, clear l,
-  exact
-    perm.rec_on h
-      (λ l, perm.refl l)
-      (assume x t₁ t₂,
-        assume ht : t₁ ~ t₂,
-        assume ih,
-        assume l,
-        ih _)
-      (assume x y t l,
-        begin simp, apply perm_union_left, apply perm_insert_insert end)
-      (λ l₁ l₂ l₃ p₁ p₂ h₁ h₂ l, perm.trans (h₁ l) (h₂ l))
+  induction h using list.perm.rec_on generalizing l,
+  { refl },
+  { apply ih_1 },
+  { simp, apply perm_union_left, apply perm_insert_insert },
+  { exact perm.trans (ih_1 l) (ih_2 l) }
 end
 
 -- attribute [congr]
