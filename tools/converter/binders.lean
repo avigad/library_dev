@@ -5,10 +5,7 @@ Authors: Johannes Hölzl
 
 Binder elimination
 -/
-import standard
-import ..algebra.lattice
-
-#exit -- conv was essentially killed
+import standard algebra.lattice tools.converter.old_conv
 
 /-
 
@@ -16,33 +13,33 @@ import ..algebra.lattice
 
 -/
 
-namespace conv
+namespace old_conv
 open tactic monad
 
-meta instance : monad_fail conv :=
-{ conv.monad with fail := λ α s, (λr e, tactic.fail (to_fmt s) : conv α) }
+meta instance : monad_fail old_conv :=
+{ old_conv.monad with fail := λ α s, (λr e, tactic.fail (to_fmt s) : old_conv α) }
 
-meta instance : monad.has_monad_lift tactic conv :=
+meta instance : monad.has_monad_lift tactic old_conv :=
 ⟨λα, lift_tactic⟩
 
-meta instance (α : Type) : has_coe (tactic α) (conv α) :=
+meta instance (α : Type) : has_coe (tactic α) (old_conv α) :=
 ⟨monad.monad_lift⟩
 
-meta def current_relation : conv name := λr lhs, return ⟨r, lhs, none⟩
+meta def current_relation : old_conv name := λr lhs, return ⟨r, lhs, none⟩
 
-meta def head_beta : conv unit :=
+meta def head_beta : old_conv unit :=
 λ r e, do n ← tactic.head_beta e, return ⟨(), n, none⟩
 
 /- congr should forward data! -/
-meta def congr_arg : conv unit → conv unit := congr_core (return ())
-meta def congr_fun : conv unit → conv unit := λc, congr_core c (return ())
+meta def congr_arg : old_conv unit → old_conv unit := congr_core (return ())
+meta def congr_fun : old_conv unit → old_conv unit := λc, congr_core c (return ())
 
-meta def congr_rule (congr : expr) (cs : list (list expr → conv unit)) : conv unit := λr lhs, do
+meta def congr_rule (congr : expr) (cs : list (list expr → old_conv unit)) : old_conv unit := λr lhs, do
   meta_rhs ← infer_type lhs >>= mk_meta_var, -- is maybe overly restricted for `heq`
   t ← mk_app r [lhs, meta_rhs],
   ((), meta_pr) ← solve_aux t (do
     apply congr,
-    focus $ cs^.map $ λc, (do
+    focus $ cs.map $ λc, (do
       xs ← intros,
       conversion (head_beta >> c xs)),
     done),
@@ -50,13 +47,13 @@ meta def congr_rule (congr : expr) (cs : list (list expr → conv unit)) : conv 
   pr ← instantiate_mvars meta_pr,
   return ⟨(), rhs, some pr⟩
 
-meta def congr_binder (congr : name) (cs : expr → conv unit) : conv unit := do
+meta def congr_binder (congr : name) (cs : expr → old_conv unit) : old_conv unit := do
   e ← mk_const congr,
   congr_rule e [λbs, do [b] ← return bs, cs b]
 
-meta def funext' : (expr → conv unit) → conv unit := congr_binder ``_root_.funext
+meta def funext' : (expr → old_conv unit) → old_conv unit := congr_binder ``_root_.funext
 
-meta def propext {α : Type} (c : conv α) : conv α := λr lhs, (do
+meta def propext {α : Type} (c : old_conv α) : old_conv α := λr lhs, (do
   guard (r = `iff),
   c r lhs)
 <|> (do
@@ -67,23 +64,23 @@ meta def propext {α : Type} (c : conv α) : conv α := λr lhs, (do
   | none := return ⟨res, rhs, none⟩
   end)
 
-meta def apply (pr : expr) : conv unit :=
+meta def apply (pr : expr) : old_conv unit :=
 λ r e, do
-  sl ← simp_lemmas.mk^.add pr,
+  sl ← simp_lemmas.mk.add pr,
   apply_lemmas sl r e
 
-meta def applyc (n : name) : conv unit :=
+meta def applyc (n : name) : old_conv unit :=
 λ r e, do
-  sl ← simp_lemmas.mk^.add_simp n,
+  sl ← simp_lemmas.mk.add_simp n,
   apply_lemmas sl r e
 
-meta def apply' (n : name) : conv unit := do
+meta def apply' (n : name) : old_conv unit := do
   e ← mk_const n,
   congr_rule e []
 
-end conv
+end old_conv
 
-open expr tactic conv
+open expr tactic old_conv
 
 /- Binder elimination:
 
@@ -104,47 +101,47 @@ Here ..x.. are binders, maybe also some constants which provide commutativity ru
 
 meta structure binder_eq_elim :=
 (match_binder  : expr → tactic (expr × expr))    -- returns the bound type and body
-(adapt_rel     : conv unit → conv unit)          -- optionally adapt `eq` to `iff`
-(apply_comm    : conv unit)                      -- apply commutativity rule
-(apply_congr   : (expr → conv unit) → conv unit) -- apply congruence rule
-(apply_elim_eq : conv unit)                      -- (B (x : β) (h : x = t), s x) = s t
+(adapt_rel     : old_conv unit → old_conv unit)          -- optionally adapt `eq` to `iff`
+(apply_comm    : old_conv unit)                      -- apply commutativity rule
+(apply_congr   : (expr → old_conv unit) → old_conv unit) -- apply congruence rule
+(apply_elim_eq : old_conv unit)                      -- (B (x : β) (h : x = t), s x) = s t
 
 meta def binder_eq_elim.check_eq (b : binder_eq_elim) (x : expr) : expr → tactic unit
-| `(@eq %%β %%l %%r) := guard ((l = x ∧ ¬ x^.occurs r) ∨ (r = x ∧ ¬ x^.occurs l))
+| `(@eq %%β %%l %%r) := guard ((l = x ∧ ¬ x.occurs r) ∨ (r = x ∧ ¬ x.occurs l))
 | _ := fail "no match"
 
-meta def binder_eq_elim.pull (b : binder_eq_elim) (x : expr) : conv unit := do
-  (β, f) ← lhs >>= (lift_tactic ∘ b^.match_binder),
-  guard (¬ x^.occurs β)
-  <|> b^.check_eq x β
+meta def binder_eq_elim.pull (b : binder_eq_elim) (x : expr) : old_conv unit := do
+  (β, f) ← lhs >>= (lift_tactic ∘ b.match_binder),
+  guard (¬ x.occurs β)
+  <|> b.check_eq x β
   <|> (do
-    b^.apply_congr $ λx, binder_eq_elim.pull,
-    b^.apply_comm)
+    b.apply_congr $ λx, binder_eq_elim.pull,
+    b.apply_comm)
 
-meta def binder_eq_elim.push (b : binder_eq_elim) : conv unit :=
-  b^.apply_elim_eq
+meta def binder_eq_elim.push (b : binder_eq_elim) : old_conv unit :=
+  b.apply_elim_eq
 <|> (do
-  b^.apply_comm,
-  b^.apply_congr $ λx, binder_eq_elim.push)
+  b.apply_comm,
+  b.apply_congr $ λx, binder_eq_elim.push)
 <|> (do
-  b^.apply_congr $ b^.pull,
+  b.apply_congr $ b.pull,
   binder_eq_elim.push)
 
 meta def binder_eq_elim.check (b : binder_eq_elim) (x : expr) : expr → tactic unit
 | e := do
-  (β, f) ← b^.match_binder e,
-  b^.check_eq x β
+  (β, f) ← b.match_binder e,
+  b.check_eq x β
   <|> (do
     (lam n bi d bd) ← return f,
     x ← mk_local' n bi d,
-    binder_eq_elim.check $ bd^.instantiate_var x)
+    binder_eq_elim.check $ bd.instantiate_var x)
 
-meta def binder_eq_elim.conv (b : binder_eq_elim) : conv unit := do
-  (β, f) ← lhs >>= (lift_tactic ∘ b^.match_binder),
+meta def binder_eq_elim.old_conv (b : binder_eq_elim) : old_conv unit := do
+  (β, f) ← lhs >>= (lift_tactic ∘ b.match_binder),
   (lam n bi d bd) ← return f,
   x ← mk_local' n bi d,
-  b^.check x (bd^.instantiate_var x),
-  b^.adapt_rel b^.push
+  b.check x (bd.instantiate_var x),
+  b.adapt_rel b.push
 
 lemma {u v} exists_comm {α : Sort u} {β : Sort v} (p : α → β → Prop) :
   (∃a b, p a b) ↔ (∃b a, p a b) :=
@@ -213,13 +210,13 @@ variables [complete_lattice α]
 lemma Inf_image {s : set β} {f : β → α} : Inf (set.image f s) = (⨅ a ∈ s, f a) :=
 begin
   simp [Inf_eq_infi, infi_and],
-  conversion infi_eq_elim^.conv,
+  conversion infi_eq_elim.old_conv,
 end
 
 lemma Sup_image {s : set β} {f : β → α} : Sup (set.image f s) = (⨆ a ∈ s, f a) :=
 begin
   simp [Sup_eq_supr, supr_and],
-  conversion supr_eq_elim^.conv,
+  conversion supr_eq_elim.old_conv,
 end
 
 end
