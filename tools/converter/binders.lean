@@ -7,12 +7,6 @@ Binder elimination
 -/
 import standard algebra.lattice tools.converter.old_conv
 
-/-
-
-  |-  t = ?m x y z
-
--/
-
 namespace old_conv
 open tactic monad
 
