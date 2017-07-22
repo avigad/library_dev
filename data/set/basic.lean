@@ -291,7 +291,7 @@ ext (assume c, by simp)
 
 -- TODO(Jeremy): make this automatic
 theorem insert_ne_empty (a : α) (s : set α) : insert a s ≠ ∅ :=
-begin safe [set_eq_def, iff_def]; have h' := h a; clear h; finish end
+begin safe [set_eq_def, iff_def]; have h' := a_1 a; finish end
 
 -- useful in proofs by induction
 theorem forall_of_forall_insert {P : α → Prop} {a : α} {s : set α} (h : ∀ x, x ∈ insert a s → P x) :

@@ -10,17 +10,13 @@ and congruence closure to try to finish off a goal at the end.
 The procedures *do* split on disjunctions and recreate the smt state for each terminal call, so
 they are only meant to be used on small, straightforward problems.
 
-(For more substantial automation, I will experiment with a procedure that does similar things but
-says within a single smt state, uses e-matching to chain forward with new facts, and splits
-only as a last resort.)
-
 We provide the following tactics:
 
   finish  -- solves the goal or fails
   clarify -- makes as much progress as possible while not leaving more than one goal
   safe    -- splits freely, finishes off whatever subgoals it can, and leaves the rest
 
-All can assume a list of simplifier rules, typically definitions that should be expanded.
+All accept an optional list of simplifier rules, typically definitions that should be expanded.
 (The equations and identities should not refer to the local context.)
 
 The variants ifinish, iclarify, and isafe restrict to intuitionistic logic. They do not work
@@ -46,7 +42,6 @@ theorem iff_def (p q : Prop) : (p ↔ q) ↔ (p → q) ∧ (q → p) :=
 theorem {u} bexists_def {α : Type u} (p q : α → Prop) : (∃ x (h : p x), q x) ↔ ∃ x, p x ∧ q x :=
 ⟨λ ⟨x, px, qx⟩, ⟨x, px, qx⟩, λ ⟨x, px, qx⟩, ⟨x, px, qx⟩⟩
 
-
 namespace auto
 
 /- Utilities -/
@@ -54,7 +49,7 @@ namespace auto
 meta def whnf_reducible (e : expr) : tactic expr := whnf e reducible
 
 -- stolen from interactive.lean
-private meta def add_simps : simp_lemmas → list name → tactic simp_lemmas
+meta def add_simps : simp_lemmas → list name → tactic simp_lemmas
 | s []      := return s
 | s (n::ns) := do s' ← s.add_simp n, add_simps s' ns
 
@@ -90,64 +85,105 @@ do repeat (intro1 >> skip),
      skip
 
 /-
-  Normalize hypotheses. Bring conjunctions to the outside (for splitting), bring universal quantifiers to the
-  outside (for ematching). The classical normalizer eliminates a → b in favor of ¬ a ∨ b.
+  Normalize hypotheses. Bring conjunctions to the outside (for splitting),
+  bring universal quantifiers to the outside (for ematching). The classical normalizer
+  eliminates a → b in favor of ¬ a ∨ b.
 
-  TODO (Jeremy): using the simplifier this way is inefficient. In particular, negations should be
-  eliminated from the top down. Use ext_simplify_core instead.
+  For efficiency, we push negations inwards from the top down. (For example, consider
+  simplifying ¬ ¬ (p ∨ q).)
 -/
 
-def logic_eval_simps : list name :=
-[ ``not_true, ``not_false,
-   ``or_true, ``or_false, ``true_or, ``false_or,
-   ``true_and, ``and_true, ``false_and, ``and_false,
-   ``true_implies_iff, ``false_implies_iff, ``implies_true_iff, ``implies_false_iff]
+section
 
--- note: with current normalization procedure, or distribs cause exponential blowup
+universe u
+variable  {α : Type u}
+variables (p q : Prop)
+variable  (s : α → Prop)
+
+theorem not_not_eq : (¬ ¬ p) = p := propext (classical.not_not_iff p)
+theorem not_and_eq : (¬ (p ∧ q)) = (¬ p ∨ ¬ q) := propext (classical.not_and_iff p q)
+theorem not_or_eq : (¬ (p ∨ q)) = (¬ p ∧ ¬ q) := propext (not_or_iff p q)
+theorem not_forall_eq : (¬ ∀ x, s x) = (∃ x, ¬ s x) := propext (classical.not_forall_iff_exists_not s)
+theorem not_exists_eq : (¬ ∃ x, s x) = (∀ x, ¬ s x) := propext (not_exists_iff_forall_not s)
+theorem not_implies_eq : (¬ (p → q)) = (p ∧ ¬ q) := propext (classical.not_implies_iff_and_not p q)
+
+end
+
 def common_normalize_lemma_names : list name :=
-logic_eval_simps ++
-[``and_assoc, ``or_assoc,
-  -- unfold bounded quantifiers
-  ``bexists_def,
-  -- negations
-  ``not_or_iff,
-  ``not_exists_iff_forall_not,
-  -- bring out conjunctions
-  ``or_implies_distrib,  -- ((a ∨ b) → c) ↔ ((a → c) ∧ (b → c))
-  ``implies_and_iff,     -- (a → b ∧ c) ↔ (a → b) ∧ (a → c))
-  -- ``or_distrib,
-  -- ``or_distrib_right,
-  ``forall_and_distrib,
-  -- bring out universal quantifiers
-  ``exists_implies_distrib,
-  -- good for intuitionistic logic
-  ``curry_iff]
+[``bexists_def, ``forall_and_distrib, ``exists_implies_distrib]
 
 def classical_normalize_lemma_names : list name :=
-common_normalize_lemma_names ++
-[ -- negations
-  ``classical.not_not_iff,
-  ``classical.not_and_iff,
-  ``classical.not_forall_iff_exists_not,
-  -- implication
-  ``classical.implies_iff_not_or]
+common_normalize_lemma_names ++ [``classical.implies_iff_not_or]
 
-meta def normalize_hyp (simps : simp_lemmas) (h : expr) : tactic expr :=
-do htype ← infer_type h,
-   mcond (is_prop htype)
-     ((do (new_htype, heq) ← simplify simps [] htype,
-           newh ← assert (expr.local_pp_name h) new_htype,
-           mk_eq_mp heq h >>= exact,
-           try $ clear h,
-           return newh) <|> return h)
-     (return h)
+-- optionally returns an equivalent expression and proof of equivalence
+private meta def transform_negation_step (cfg : auto_config) (e : expr) :
+  tactic (option (expr × expr)) :=
+do e ← whnf_reducible e,
+   match e with
+   | `(¬ %%ne) :=
+      (do ne ← whnf_reducible ne,
+      match ne with
+      | `(¬ %%a)      := do pr ← mk_app ``not_not_eq [a],
+                            return (some (a, pr))
+      | `(%%a ∧ %%b)  := do pr ← mk_app ``not_and_eq [a, b],
+                            return (some (`(¬ %%a ∨ ¬ %%b), pr))
+      | `(%%a ∨ %%b)  := do pr ← mk_app ``not_or_eq [a, b],
+                            return (some (`(¬ %%a ∧ ¬ %%b), pr))
+      | `(Exists %%p) := do pr ← mk_app ``not_exists_eq [p],
+                            `(%%_ = %%e') ← infer_type pr,
+                            return (some (e', pr))
+      | (pi n bi d p) := if ¬ cfg.classical then return none
+                         else if p.has_var then do
+                            pr ← mk_app ``not_forall_eq [lam n bi d (expr.abstract_local p n)],
+                            `(%%_ = %%e') ← infer_type pr,
+                            return (some (e', pr))
+                         else do
+                            pr ← mk_app ``not_implies_eq [d, p],
+                            `(%%_ = %%e') ← infer_type pr,
+                            return (some (e', pr))
+      | _             := return none
+      end)
+    | _        := return none
+  end
+
+-- given an expr 'e', returns a new expression and a proof of equality
+private meta def transform_negation (cfg : auto_config) : expr → tactic (option (expr × expr)) :=
+λ e, do
+  opr ← transform_negation_step cfg e,
+  match opr with
+  | (some (e', pr)) := do
+    opr' ← transform_negation e',
+    match opr' with
+    | none              := return (some (e', pr))
+    | (some (e'', pr')) := do pr'' ← mk_eq_trans pr pr',
+                              return (some (e'', pr''))
+    end
+  | none            := return none
+  end
+
+meta def normalize_negations (cfg : auto_config) (h : expr) : tactic unit :=
+do t ← infer_type h,
+   (_, e, pr) ← simplify_top_down ()
+                   (λ _, λ e, do
+                       oepr ← transform_negation cfg e,
+                       match oepr with
+                       | (some (e', pr)) := return ((), e', pr)
+                       | none            := do pr ← mk_eq_refl e, return ((), e, pr)
+                       end)
+                   t,
+   replace_hyp h e pr,
+   skip
+
+meta def normalize_hyp (cfg : auto_config) (simps : simp_lemmas) (h : expr) : tactic unit :=
+(do h ← simp_hyp simps [] h, try (normalize_negations cfg h)) <|>
+try (normalize_negations cfg h)
 
 meta def normalize_hyps (cfg : auto_config) : tactic unit :=
 do simps ← if cfg.classical then
              add_simps simp_lemmas.mk classical_normalize_lemma_names
            else
              add_simps simp_lemmas.mk common_normalize_lemma_names,
-   local_context >>= monad.mapm' (normalize_hyp simps)
+   local_context >>= monad.mapm' (normalize_hyp cfg simps)
 
 /-
   Eliminate existential quantifiers.
@@ -221,25 +257,6 @@ meta def split_hyps_aux : list expr → tactic bool
 meta def split_hyps : tactic unit := local_context >>= split_hyps_aux >>= guardb
 
 /-
-  Use each hypothesis to simplify the others. For example, given a and a → b, we get b, and given
-  a ∨ b ∨ c and ¬ b we get a ∨ c.
-
-  TODO(Jeremy): use a version of simp_at_using_hs that takes simp lemmas
--/
-meta def self_simplify_hyps_aux : tactic unit :=
-do ctx ← local_context,
-   extra_simps ← mmap mk_const logic_eval_simps >>= simp_lemmas.mk.append,
-   first $ ctx.for $ λ h,
-     do infer_type h >>= is_prop >>= guardb,
-        hs ← collect_ctx_simps,
-        es ← extra_simps.append $ (hs.filter (≠ h)),
-        simp_hyp extra_simps [] h,
-        skip
-
-meta def self_simplify_hyps : tactic unit :=
-self_simplify_hyps_aux >> repeat self_simplify_hyps_aux
-
-/-
   Eagerly apply all the preprocessing rules.
 -/
 
@@ -247,17 +264,15 @@ meta def preprocess_hyps (cfg : auto_config) : tactic unit :=
 do repeat (intro1 >> skip),
    preprocess_goal cfg,
    normalize_hyps cfg,
-   repeat (do_substs <|> split_hyps <|> eelim <|> self_simplify_hyps)
+   repeat (do_substs <|> split_hyps <|> eelim /-<|> self_simplify_hyps-/)
 
 /-
   The terminal tactic, used to try to finish off goals:
-  - Call the simplifier again.
   - Call the contradiction tactic.
   - Open an SMT state, and use ematching and congruence closure, with all the universal
     statements in the context.
 
-  TODO(Jeremy): allow users to specify attribute for ematching lemmas, and maybe
-    also another list?
+  TODO(Jeremy): allow users to specify attribute for ematching lemmas?
 -/
 
 meta def mk_hinst_lemmas : list expr → smt_tactic hinst_lemmas
@@ -277,7 +292,6 @@ meta def mk_hinst_lemmas : list expr → smt_tactic hinst_lemmas
 
 meta def done (cfg : auto_config := {}) : tactic unit :=
 do when_tracing `auto.done (trace "entering done" >> trace_state),
-   /- if cfg^.use_simp then simp_all s else skip, -/
    contradiction <|>
    (solve1 $
      (do revert_all,
@@ -333,11 +347,16 @@ local_context >>= case_some_hyp_aux s cont
 
 meta def safe_core (s : simp_lemmas × list name) (cfg : auto_config) : case_option → tactic unit :=
 λ co, focus1 $
-do when_tracing `auto.finish (trace "entering safe_core"),
-   if cfg^.use_simp then simp_all s.1 s.2 { fail_if_unchanged := ff } else skip,
+do when_tracing `auto.finish (trace "entering safe_core" >> trace_state),
+   if cfg^.use_simp then do
+     when_tracing `auto.finish (trace "simplifying hypotheses"),
+     simp_all s.1 s.2 { fail_if_unchanged := ff },
+     when_tracing `auto.finish (trace "result:" >> trace_state)
+   else skip,
    tactic.done <|>
    do when_tracing `auto.finish (trace "preprocessing hypotheses"),
       preprocess_hyps cfg,
+      when_tracing `auto.finish (trace "result:" >> trace_state),
       done cfg <|>
         (mcond (case_some_hyp co safe_core)
           skip
@@ -347,15 +366,23 @@ do when_tracing `auto.finish (trace "entering safe_core"),
             | case_option.accept      := try (done cfg)
             end))
 
-meta def clarify (s : simp_lemmas × list name) (cfg : auto_config := {}) : tactic unit := safe_core s cfg case_option.at_most_one
-meta def safe (s : simp_lemmas × list name) (cfg : auto_config := {}) : tactic unit := safe_core s cfg case_option.accept
-meta def finish (s : simp_lemmas × list name) (cfg : auto_config := {}) : tactic unit := safe_core s cfg case_option.force
+meta def clarify (s : simp_lemmas × list name) (cfg : auto_config := {}) : tactic unit :=
+  safe_core s cfg case_option.at_most_one
+meta def safe (s : simp_lemmas × list name) (cfg : auto_config := {}) : tactic unit :=
+  safe_core s cfg case_option.accept
+meta def finish (s : simp_lemmas × list name) (cfg : auto_config := {}) : tactic unit :=
+  safe_core s cfg case_option.force
 
-meta def iclarify (s : simp_lemmas × list name) (cfg : auto_config := {}) : tactic unit := clarify s {cfg with classical := false}
-meta def isafe (s : simp_lemmas × list name) (cfg : auto_config := {}) : tactic unit := safe s {cfg with classical := false}
-meta def ifinish (s : simp_lemmas × list name) (cfg : auto_config := {}) : tactic unit := finish s {cfg with classical := false}
+meta def iclarify (s : simp_lemmas × list name) (cfg : auto_config := {}) : tactic unit :=
+  clarify s {cfg with classical := false}
+meta def isafe (s : simp_lemmas × list name) (cfg : auto_config := {}) : tactic unit :=
+  safe s {cfg with classical := false}
+meta def ifinish (s : simp_lemmas × list name) (cfg : auto_config := {}) : tactic unit :=
+  finish s {cfg with classical := false}
 
 end auto
+
+/- interactive versions -/
 
 open auto
 

@@ -381,7 +381,7 @@ ext (assume c, by simp)
 theorem insert_ne_empty (a : α) (s : set α) : insert a s ≠ ∅ :=
 begin
   safe [set_eq_def, iff_def],
-  have h' := h a, clear h, finish
+  have a_1' := a_1 a, finish
 end
 --begin safe [set_eq_def, iff_def]; have h' := h a; finish end
 
